@@ -138,6 +138,7 @@ export default function Garage() {
     purchaseHorse:        s.purchaseHorse,
     horseUpgrades:        s.horseUpgrades,
     upgradeHorseStat:     s.upgradeHorseStat,
+    garageOpenTab:        s.garageOpenTab,
   }));
 
   const [tab,         setTab]         = useState(garageOpenTab ?? 'jockey'); // 'jockey' | 'horse' | 'hara'
@@ -382,6 +383,9 @@ export default function Garage() {
             </div>
           </>
         )}
+
+        {/* ── HARA TAB ── */}
+        {tab === 'hara' && <Hara />}
       </div>
     </div>
   );
