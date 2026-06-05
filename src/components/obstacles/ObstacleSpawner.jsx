@@ -17,6 +17,15 @@ const M_BOX_A  = KK+'box_A.gltf';
 const M_BOX_B  = KK+'box_B.gltf';
 [M_CAR_S, M_CAR_T, M_CAR_P, M_DUMP, M_BOX_A, M_BOX_B].forEach(p => useGLTF.preload(p));
 
+// ── Desert obstacle models ────────────────────────────────────────────────────
+const DES = '/assets/models/desert/';
+const M_CACTUS_S  = DES+'cactus_short.glb';
+const M_CACTUS_T  = DES+'cactus_tall.glb';
+const M_ROCK_A    = DES+'rock_largeA.glb';
+const M_ROCK_B    = DES+'rock_largeB.glb';
+const M_TUMBLEWEED= DES+'Tumbleweed.glb';
+[M_CACTUS_S, M_CACTUS_T, M_ROCK_A, M_ROCK_B, M_TUMBLEWEED].forEach(p => useGLTF.preload(p));
+
 const BASE_TIMER = 2.0;
 const POOL       = 18;
 
@@ -90,6 +99,22 @@ function CityDump()   { return <CityGLB path={M_DUMP}  scale={2.5} yOffset={0.0}
 function CityBoxA()   { return <CityGLB path={M_BOX_A} scale={4.0} yOffset={0.0}  />; }
 function CityBoxB()   { return <CityGLB path={M_BOX_B} scale={4.0} yOffset={0.0}  />; }
 
+// ── Desert GLB obstacles ─────────────────────────────────────────────────────
+function DesertGLB({ path, scale = 1, yOffset = 0 }) {
+  const { scene } = useGLTF(path);
+  const cloned = useRef(null);
+  if (!cloned.current) {
+    cloned.current = scene.clone(true);
+    cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  }
+  return <primitive object={cloned.current} scale={scale} position={[0, yOffset, 0]} />;
+}
+function DesertCactusShort() { return <DesertGLB path={M_CACTUS_S} scale={2.5} />; }
+function DesertCactusTall()  { return <DesertGLB path={M_CACTUS_T} scale={2.5} />; }
+function DesertRockA()       { return <DesertGLB path={M_ROCK_A}   scale={2.0} />; }
+function DesertRockB()       { return <DesertGLB path={M_ROCK_B}   scale={2.0} />; }
+function DesertTumbleweed()  { return <DesertGLB path={M_TUMBLEWEED} scale={2.0} />; }
+
 // ── Engel tipi listeleri ──────────────────────────────────────────────────────
 const TYPES_FARM = [
   Barrel, HayBale, LogPile,
@@ -99,6 +124,10 @@ const TYPES_FARM = [
 const TYPES_CITY = [
   CityCar, CityTaxi, CityPolice, CityDump,
   CityCar, CityTaxi, CityPolice, CityDump,
+];
+const TYPES_DESERT = [
+  DesertCactusShort, DesertCactusTall, DesertRockA, DesertRockB, DesertTumbleweed,
+  DesertCactusShort, DesertCactusTall, DesertRockA,
 ];
 
 // ── Tip → hitbox [dx, dz] eşlemesi (function ref, minification-safe) ──────────
@@ -116,7 +145,15 @@ const _setCity = () => {
   HITBOX_MAP.set(CityPolice,[1.10, 1.80]);
   HITBOX_MAP.set(CityDump,  [0.90, 1.20]);
 };
-_setFarm(); _setCity();
+// Desert
+const _setDesert = () => {
+  HITBOX_MAP.set(DesertCactusShort, [0.55, 0.55]);
+  HITBOX_MAP.set(DesertCactusTall,  [0.50, 0.50]);
+  HITBOX_MAP.set(DesertRockA,       [1.00, 1.00]);
+  HITBOX_MAP.set(DesertRockB,       [1.00, 1.00]);
+  HITBOX_MAP.set(DesertTumbleweed,  [0.80, 0.80]);
+};
+_setFarm(); _setCity(); _setDesert();
 export function getHitbox(TypeFnOrName) {
   if (typeof TypeFnOrName === 'function') return HITBOX_MAP.get(TypeFnOrName) ?? [1.00, 1.00];
   return [1.00, 1.00];
@@ -144,7 +181,7 @@ export default function ObstacleSpawner() {
   const phase   = useGameStore((s) => s.phase);
   const runId   = useGameStore((s) => s.runId);
   const mapId   = useGameStore((s) => s.mapId);
-  const types   = mapId === 2 ? TYPES_CITY : TYPES_FARM;
+  const types   = mapId === 3 ? TYPES_DESERT : mapId === 2 ? TYPES_CITY : TYPES_FARM;
   const poolRef = useRef(null);
   if (!poolRef.current) {
     poolRef.current = Array.from({ length: POOL }, (_, i) => ({

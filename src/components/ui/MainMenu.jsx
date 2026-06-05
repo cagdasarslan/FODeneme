@@ -16,7 +16,7 @@ function StatRow({ label, value, color }) {
 const MAP_INFO = {
   1: { emoji: '🌿', name: 'AT YARIŞI',  color: '#6aaa44' },
   2: { emoji: '🏙️', name: 'ŞEHİR',     color: '#4a90d9' },
-  3: { emoji: '🌆', name: 'ŞEHİR-2',   color: '#d4a020' },
+  3: { emoji: '🌵', name: 'ÇÖLLER',    color: '#d4a020' },
 };
 
 function getDailyChallenge() {
@@ -113,7 +113,7 @@ export default function MainMenu() {
               <StatRow label="BU HARİTA REKORU"  value={Math.floor(mapHs).toLocaleString()}  color={mapInfo.color} />
               <StatRow label="HARİTA 1 REKORU"   value={Math.floor(highScoreMap1).toLocaleString()} color="#6aaa44" />
               <StatRow label="HARİTA 2 REKORU"   value={Math.floor(highScoreMap2).toLocaleString()} color="#4a90d9" />
-              <StatRow label="ŞEHİR-2 REKORU"     value={Math.floor(highScoreMap3).toLocaleString()} color="#d4a020" />
+              <StatRow label="ÇÖLLER REKORU"       value={Math.floor(highScoreMap3).toLocaleString()} color="#d4a020" />
               <StatRow label="HAVUÇ"             value={`🥕 ${carrots}`}                        color="#ffd700" />
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function MainMenu() {
           {[
             { id: 1, emoji: '🌿', name: 'AT YARIŞI',  sub: 'Çiftlik / Pist',   color: '#6aaa44', rgb: '106,170,68',  hs: highScoreMap1 },
             { id: 2, emoji: '🏙️', name: 'ŞEHİR',     sub: 'Kent Sokakları',   color: '#4a90d9', rgb: '74,144,217',  hs: highScoreMap2 },
-            { id: 3, emoji: '🌆', name: 'ŞEHİR-2',   sub: 'Şehir Yolları',   color: '#d4a020', rgb: '212,160,32',  hs: highScoreMap3 },
+            { id: 3, emoji: '🌵', name: 'ÇÖLLER',    sub: 'Çöl Koşusu',      color: '#d4a020', rgb: '212,160,32',  hs: highScoreMap3 },
           ].map(m => (
             <div
               key={m.id}
