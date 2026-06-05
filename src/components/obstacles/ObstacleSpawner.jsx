@@ -151,12 +151,12 @@ const TYPES_CITY = [
   CityCar, CityTaxi, CityPolice, CityDump,
 ];
 const TYPES_DESERT = [
-  DesertCactusShort, DesertCactusTall, DesertRockA, DesertRockB,
-  DesertCactusShort, DesertCactusTall, DesertRockA, DesertRockB,
+  DesertCactusShort, DesertCactusTall,
+  DesertCactusShort, DesertCactusTall, DesertCactusShort,
 ];
 const TYPES_SPACE = [
-  SpaceBarrel, SpaceBarrels, SpaceRover, SpaceMeteor, SpaceRock, SpacePlatform,
-  SpaceBarrel, SpaceRover, SpaceMeteor, SpaceRock,
+  SpaceBarrel, SpaceBarrels, SpaceRover, SpaceMeteor, SpacePlatform,
+  SpaceBarrel, SpaceBarrels, SpaceRover, SpaceMeteor,
 ];
 
 // ── Tip → hitbox [dx, dz] eşlemesi (function ref, minification-safe) ──────────
