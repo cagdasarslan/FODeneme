@@ -14,9 +14,10 @@ function StatRow({ label, value, color }) {
 }
 
 const MAP_INFO = {
-  1: { emoji: '🌿', name: 'AT YARIŞI',  color: '#6aaa44' },
-  2: { emoji: '🏙️', name: 'ŞEHİR',     color: '#4a90d9' },
-  3: { emoji: '🌵', name: 'ÇÖLLER',    color: '#d4a020' },
+  1: { emoji: '🌿', name: 'AT YARIŞI',     color: '#6aaa44' },
+  2: { emoji: '🏙️', name: 'ŞEHİR',        color: '#4a90d9' },
+  3: { emoji: '🌵', name: 'ÇÖLLER',        color: '#d4a020' },
+  4: { emoji: '🚀', name: 'UZAY KOLONİSİ', color: '#9944dd' },
 };
 
 function getDailyChallenge() {
@@ -45,7 +46,7 @@ export default function MainMenu() {
   const {
     phase, sessionReady, sessionError, score, carrots,
     startRun, openGarage, selectedCharacterId, selectedHorseId,
-    mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3,
+    mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4,
     horseLevels,
   } = useGameStore(s => ({
     phase:               s.phase,
@@ -62,12 +63,13 @@ export default function MainMenu() {
     highScoreMap1:       s.highScoreMap1,
     highScoreMap2:       s.highScoreMap2,
     highScoreMap3:       s.highScoreMap3,
+    highScoreMap4:       s.highScoreMap4,
     horseLevels:         s.horseLevels,
   }));
 
   const activeChar  = CHARACTERS.find(c => c.id === selectedCharacterId) ?? CHARACTERS[0];
   const activeHorse = HORSES.find(h => h.id === selectedHorseId) ?? HORSES[0];
-  const mapHs       = mapId === 3 ? highScoreMap3 : mapId === 2 ? highScoreMap2 : highScoreMap1;
+  const mapHs       = mapId === 4 ? highScoreMap4 : mapId === 3 ? highScoreMap3 : mapId === 2 ? highScoreMap2 : highScoreMap1;
   const mapInfo     = MAP_INFO[mapId] ?? MAP_INFO[1];
   const horseLevel  = (horseLevels && horseLevels[selectedHorseId]) ?? 1;
 
@@ -114,6 +116,7 @@ export default function MainMenu() {
               <StatRow label="HARİTA 1 REKORU"   value={Math.floor(highScoreMap1).toLocaleString()} color="#6aaa44" />
               <StatRow label="HARİTA 2 REKORU"   value={Math.floor(highScoreMap2).toLocaleString()} color="#4a90d9" />
               <StatRow label="ÇÖLLER REKORU"       value={Math.floor(highScoreMap3).toLocaleString()} color="#d4a020" />
+              <StatRow label="UZAY KOLONİSİ REKORU" value={Math.floor(highScoreMap4 ?? 0).toLocaleString()} color="#9944dd" />
               <StatRow label="HAVUÇ"             value={`🥕 ${carrots}`}                        color="#ffd700" />
             </div>
           </div>
@@ -166,9 +169,10 @@ export default function MainMenu() {
         {/* Harita seçici */}
         <div style={styles.mapRow}>
           {[
-            { id: 1, emoji: '🌿', name: 'AT YARIŞI',  sub: 'Çiftlik / Pist',   color: '#6aaa44', rgb: '106,170,68',  hs: highScoreMap1 },
-            { id: 2, emoji: '🏙️', name: 'ŞEHİR',     sub: 'Kent Sokakları',   color: '#4a90d9', rgb: '74,144,217',  hs: highScoreMap2 },
-            { id: 3, emoji: '🌵', name: 'ÇÖLLER',    sub: 'Çöl Koşusu',      color: '#d4a020', rgb: '212,160,32',  hs: highScoreMap3 },
+            { id: 1, emoji: '🌿', name: 'AT YARIŞI',     sub: 'Çiftlik / Pist',    color: '#6aaa44', rgb: '106,170,68',  hs: highScoreMap1 },
+            { id: 2, emoji: '🏙️', name: 'ŞEHİR',        sub: 'Kent Sokakları',    color: '#4a90d9', rgb: '74,144,217',  hs: highScoreMap2 },
+            { id: 3, emoji: '🌵', name: 'ÇÖLLER',        sub: 'Çöl Koşusu',        color: '#d4a020', rgb: '212,160,32',  hs: highScoreMap3 },
+            { id: 4, emoji: '🚀', name: 'UZAY KOLONİSİ', sub: 'Mars\'ta At Yarışı', color: '#9944dd', rgb: '153,68,221',  hs: highScoreMap4 ?? 0 },
           ].map(m => (
             <div
               key={m.id}

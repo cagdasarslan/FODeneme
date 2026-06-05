@@ -17,14 +17,23 @@ const M_BOX_A  = KK+'box_A.gltf';
 const M_BOX_B  = KK+'box_B.gltf';
 [M_CAR_S, M_CAR_T, M_CAR_P, M_DUMP, M_BOX_A, M_BOX_B].forEach(p => useGLTF.preload(p));
 
+// ── Space obstacle models ─────────────────────────────────────────────────────
+const SPC = '/assets/models/space/';
+const M_SP_BARREL   = SPC+'barrel.glb';
+const M_SP_BARRELS  = SPC+'barrels.glb';
+const M_SP_ROVER    = SPC+'rover.glb';
+const M_SP_METEOR   = SPC+'meteor.glb';
+const M_SP_ROCK_A   = SPC+'rock_largeA.glb';
+const M_SP_PLATFORM = SPC+'platform_low.glb';
+[M_SP_BARREL, M_SP_BARRELS, M_SP_ROVER, M_SP_METEOR, M_SP_ROCK_A, M_SP_PLATFORM].forEach(p => useGLTF.preload(p));
+
 // ── Desert obstacle models ────────────────────────────────────────────────────
 const DES = '/assets/models/desert/';
-const M_CACTUS_S  = DES+'cactus_short.glb';
-const M_CACTUS_T  = DES+'cactus_tall.glb';
-const M_ROCK_A    = DES+'rock_largeA.glb';
-const M_ROCK_B    = DES+'rock_largeB.glb';
-const M_TUMBLEWEED= DES+'Tumbleweed.glb';
-[M_CACTUS_S, M_CACTUS_T, M_ROCK_A, M_ROCK_B, M_TUMBLEWEED].forEach(p => useGLTF.preload(p));
+const M_CACTUS_S = DES+'cactus_short.glb';
+const M_CACTUS_T = DES+'cactus_tall.glb';
+const M_ROCK_A   = DES+'rock_largeA.glb';
+const M_ROCK_B   = DES+'rock_largeB.glb';
+[M_CACTUS_S, M_CACTUS_T, M_ROCK_A, M_ROCK_B].forEach(p => useGLTF.preload(p));
 
 const BASE_TIMER = 2.0;
 const POOL       = 18;
@@ -113,7 +122,23 @@ function DesertCactusShort() { return <DesertGLB path={M_CACTUS_S} scale={2.5} /
 function DesertCactusTall()  { return <DesertGLB path={M_CACTUS_T} scale={2.5} />; }
 function DesertRockA()       { return <DesertGLB path={M_ROCK_A}   scale={2.0} />; }
 function DesertRockB()       { return <DesertGLB path={M_ROCK_B}   scale={2.0} />; }
-function DesertTumbleweed()  { return <DesertGLB path={M_TUMBLEWEED} scale={2.0} />; }
+
+// ── Space GLB obstacles ──────────────────────────────────────────────────────
+function SpaceGLB({ path, scale = 1, yOffset = 0, rotY = 0 }) {
+  const { scene } = useGLTF(path);
+  const cloned = useRef(null);
+  if (!cloned.current) {
+    cloned.current = scene.clone(true);
+    cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  }
+  return <primitive object={cloned.current} scale={scale} position={[0, yOffset, 0]} rotation={[0, rotY, 0]} />;
+}
+function SpaceBarrel()   { return <SpaceGLB path={M_SP_BARREL}   scale={3.0} yOffset={0.0} />; }
+function SpaceBarrels()  { return <SpaceGLB path={M_SP_BARRELS}  scale={2.8} yOffset={0.0} />; }
+function SpaceRover()    { return <SpaceGLB path={M_SP_ROVER}    scale={2.0} yOffset={0.0} />; }
+function SpaceMeteor()   { return <SpaceGLB path={M_SP_METEOR}   scale={2.5} yOffset={0.5} />; }
+function SpaceRock()     { return <SpaceGLB path={M_SP_ROCK_A}   scale={2.2} yOffset={0.0} />; }
+function SpacePlatform() { return <SpaceGLB path={M_SP_PLATFORM} scale={3.5} yOffset={0.0} />; }
 
 // ── Engel tipi listeleri ──────────────────────────────────────────────────────
 const TYPES_FARM = [
@@ -126,8 +151,12 @@ const TYPES_CITY = [
   CityCar, CityTaxi, CityPolice, CityDump,
 ];
 const TYPES_DESERT = [
-  DesertCactusShort, DesertCactusTall, DesertRockA, DesertRockB, DesertTumbleweed,
-  DesertCactusShort, DesertCactusTall, DesertRockA,
+  DesertCactusShort, DesertCactusTall, DesertRockA, DesertRockB,
+  DesertCactusShort, DesertCactusTall, DesertRockA, DesertRockB,
+];
+const TYPES_SPACE = [
+  SpaceBarrel, SpaceBarrels, SpaceRover, SpaceMeteor, SpaceRock, SpacePlatform,
+  SpaceBarrel, SpaceRover, SpaceMeteor, SpaceRock,
 ];
 
 // ── Tip → hitbox [dx, dz] eşlemesi (function ref, minification-safe) ──────────
@@ -151,9 +180,17 @@ const _setDesert = () => {
   HITBOX_MAP.set(DesertCactusTall,  [0.50, 0.50]);
   HITBOX_MAP.set(DesertRockA,       [1.00, 1.00]);
   HITBOX_MAP.set(DesertRockB,       [1.00, 1.00]);
-  HITBOX_MAP.set(DesertTumbleweed,  [0.80, 0.80]);
 };
-_setFarm(); _setCity(); _setDesert();
+// Space
+const _setSpace = () => {
+  HITBOX_MAP.set(SpaceBarrel,   [0.50, 0.50]);
+  HITBOX_MAP.set(SpaceBarrels,  [0.80, 0.80]);
+  HITBOX_MAP.set(SpaceRover,    [1.20, 1.60]);
+  HITBOX_MAP.set(SpaceMeteor,   [1.00, 1.00]);
+  HITBOX_MAP.set(SpaceRock,     [1.00, 1.00]);
+  HITBOX_MAP.set(SpacePlatform, [1.40, 0.80]);
+};
+_setFarm(); _setCity(); _setDesert(); _setSpace();
 export function getHitbox(TypeFnOrName) {
   if (typeof TypeFnOrName === 'function') return HITBOX_MAP.get(TypeFnOrName) ?? [1.00, 1.00];
   return [1.00, 1.00];
@@ -181,7 +218,7 @@ export default function ObstacleSpawner() {
   const phase   = useGameStore((s) => s.phase);
   const runId   = useGameStore((s) => s.runId);
   const mapId   = useGameStore((s) => s.mapId);
-  const types   = mapId === 3 ? TYPES_DESERT : mapId === 2 ? TYPES_CITY : TYPES_FARM;
+  const types   = mapId === 4 ? TYPES_SPACE : mapId === 3 ? TYPES_DESERT : mapId === 2 ? TYPES_CITY : TYPES_FARM;
   const poolRef = useRef(null);
   if (!poolRef.current) {
     poolRef.current = Array.from({ length: POOL }, (_, i) => ({

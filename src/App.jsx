@@ -8,6 +8,7 @@ import Track from '@/components/track/Track';
 import FarmEnvironment from '@/components/track/FarmEnvironment';
 import CityEnvironment from '@/components/track/CityEnvironment';
 import DesertEnvironment from '@/components/track/DesertEnvironment';
+import SpaceEnvironment from '@/components/track/SpaceEnvironment';
 import ObstacleSpawner from '@/components/obstacles/ObstacleSpawner';
 import CarrotSpawner from '@/components/track/CarrotSpawner';
 import SuperNalSpawner from '@/components/track/SuperNalSpawner';
@@ -22,8 +23,18 @@ export default function App() {
 
   useEffect(() => { initSession(); }, [initSession]);
 
+  const isSpace = mapId === 4;
+
+  // Space map uses its own lights + background set inside SpaceEnvironment
   const fogColor   = mapId === 2 ? '#88b8e0' : mapId === 3 ? '#f5d090' : '#a8d4e8';
   const hemiGround = mapId === 2 ? '#333333' : '#4e8040';
+
+  function EnvironmentLayer() {
+    if (mapId === 4) return <SpaceEnvironment />;
+    if (mapId === 3) return <DesertEnvironment />;
+    if (mapId === 2) return <CityEnvironment />;
+    return <FarmEnvironment />;
+  }
 
   return (
     <>
@@ -35,11 +46,12 @@ export default function App() {
         dpr={[1, 2]}
         performance={{ min: 0.5 }}
       >
-        <fog attach="fog" args={[fogColor, 90, 420]} />
+        {!isSpace && <fog attach="fog" args={[fogColor, 90, 420]} />}
+        {isSpace  && <fog attach="fog" args={['#1a0530', 120, 500]} />}
 
         <CameraRig />
 
-        {mapId !== 3 && (
+        {!isSpace && (
           <>
             <ambientLight intensity={0.65} />
             <directionalLight castShadow position={[-50, 80, 30]}
@@ -54,7 +66,7 @@ export default function App() {
         )}
 
         <>
-          {mapId === 3 ? <DesertEnvironment /> : mapId === 1 ? <FarmEnvironment /> : <CityEnvironment />}
+          <EnvironmentLayer />
           <Physics gravity={[0, -20, 0]}>
             <Track />
             <ObstacleSpawner />
