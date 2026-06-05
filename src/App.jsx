@@ -22,8 +22,9 @@ export default function App() {
   const mapId = useGameStore((s) => s.mapId);
   useEffect(() => { initSession(); }, [initSession]);
 
-  const isSpace = mapId === 4;
-  const fogColor = mapId === 4 ? '#1a0530' : mapId === 3 ? '#f5d090' : mapId === 2 ? '#88b8e0' : '#a8d4e8';
+  const isSpace  = mapId === 4;
+  const isMars   = mapId === 3;
+  const fogColor = mapId === 4 ? '#0d0518' : mapId === 3 ? '#0d0518' : mapId === 2 ? '#88b8e0' : '#a8d4e8';
   const hemiGround = mapId === 2 ? '#333333' : '#4e8040';
 
   function EnvLayer() {
@@ -39,9 +40,9 @@ export default function App() {
         style={{ width:'100vw', height:'100vh' }}
         gl={{ antialias:true, powerPreference:'high-performance' }}
         dpr={[1,2]} performance={{ min:0.5 }}>
-        <fog attach="fog" args={[fogColor, isSpace ? 120 : 90, isSpace ? 500 : 420]} />
+        <fog attach="fog" args={[fogColor, (isSpace || isMars) ? 120 : 90, (isSpace || isMars) ? 500 : 420]} />
         <CameraRig />
-        {!isSpace && (
+        {!isSpace && !isMars && (
           <>
             <ambientLight intensity={0.65} />
             <directionalLight castShadow position={[-50,80,30]} intensity={2.0}
