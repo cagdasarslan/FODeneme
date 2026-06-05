@@ -1,308 +1,209 @@
-import { useRef, useEffect, Suspense } from 'react';
+import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 
-const SEG_LEN       = 120;
-const SEG_COUNT     = 6;
+const SEG_LEN = 120;
+const SEG_COUNT = 6;
 const RECYCLE_AFTER = SEG_LEN + 20;
 
-const SP = '/assets/models/space/';
-const PATHS = {
-  crater:       SP + 'crater.glb',
-  craterLarge:  SP + 'craterLarge.glb',
-  rock:         SP + 'rock.glb',
-  rockSmA:      SP + 'rocks_smallA.glb',
-  rockSmB:      SP + 'rocks_smallB.glb',
-  rockLargeA:   SP + 'rock_largeA.glb',
-  rockLargeB:   SP + 'rock_largeB.glb',
-  hangar:       SP + 'hangar_roundA.glb',
-  hangarLarge:  SP + 'hangar_largeA.glb',
-  satellite:    SP + 'satelliteDish.glb',
-  satelliteLg:  SP + 'satelliteDish_large.glb',
-  rocketBase:   SP + 'rocket_baseA.glb',
-  rocketTop:    SP + 'rocket_topA.glb',
-  rocketFins:   SP + 'rocket_finsA.glb',
-  generator:    SP + 'machine_generator.glb',
-};
-Object.values(PATHS).forEach(p => useGLTF.preload(p));
+const ROAD_COLOR = '#6b3a2a';
+const GROUND_COLOR = '#2a1a35';
 
-// ── Shared materials ──────────────────────────────────────────────────────────
-const matRoad  = new THREE.MeshStandardMaterial({ color: '#6b3a2a', roughness: 0.85 });
-const matDust  = new THREE.MeshStandardMaterial({ color: '#8c4a30', roughness: 0.95 });
-const matDustF = new THREE.MeshStandardMaterial({ color: '#7a3f28', roughness: 0.95 });
-const matRidge = new THREE.MeshStandardMaterial({ color: '#5a2e1a', roughness: 1.0 });
-const markMat  = new THREE.MeshStandardMaterial({ color: '#ff9955', roughness: 0.7, emissive: '#ff5500', emissiveIntensity: 0.3 });
-const markGeo  = new THREE.BoxGeometry(0.18, 0.02, 3.2);
+function Stars() {
+  const positions = useMemo(() => {
+    const arr = new Float32Array(2000 * 3);
+    for (let i = 0; i < 2000; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * 600;
+      arr[i * 3 + 1] = Math.random() * 200 + 10;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 600;
+    }
+    return arr;
+  }, []);
 
-// ── GLB helper ────────────────────────────────────────────────────────────────
-function GLBInner({ path, position = [0,0,0], scale = 1, rotY = 0 }) {
-  const { scene } = useGLTF(path);
-  const cloned = useRef(null);
-  if (!cloned.current) {
-    cloned.current = scene.clone(true);
-    cloned.current.traverse(o => {
-      if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
-    });
-  }
-  return <primitive object={cloned.current} position={position} scale={scale} rotation={[0, rotY, 0]} />;
-}
-function GLB(props) {
-  return <Suspense fallback={null}><GLBInner {...props} /></Suspense>;
-}
-
-// ── Deterministic hash ────────────────────────────────────────────────────────
-const h = (seed, n) => ((seed * 7919 + n * 1013) % 1000) / 1000;
-
-// ── Lane markings — glowing orange ───────────────────────────────────────────
-function LaneMarkings() {
-  const half  = SEG_LEN / 2;
-  const count = Math.ceil(SEG_LEN / 8);
   return (
-    <group position={[0, 0.17, 0]}>
-      {Array.from({ length: count }, (_, i) => (
-        <group key={i}>
-          <mesh geometry={markGeo} material={markMat} position={[-4, 0, -half + i * 8 + 4]} />
-          <mesh geometry={markGeo} material={markMat} position={[ 4, 0, -half + i * 8 + 4]} />
-        </group>
+    <points>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+        />
+      </bufferGeometry>
+      <pointsMaterial color="#ffffff" size={0.5} sizeAttenuation />
+    </points>
+  );
+}
+
+function BigPlanet() {
+  return (
+    <group position={[120, 60, -300]}>
+      <mesh>
+        <sphereGeometry args={[30, 32, 32]} />
+        <meshStandardMaterial color="#7b4fa6" roughness={0.7} metalness={0.1} />
+      </mesh>
+      {/* Ring */}
+      <mesh rotation={[Math.PI * 0.15, 0, 0]}>
+        <torusGeometry args={[44, 3, 4, 64]} />
+        <meshStandardMaterial color="#9b6fc0" roughness={0.8} transparent opacity={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+function ProceduralCrater({ position, radius = 1.5 }) {
+  return (
+    <group position={position}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[radius * 0.7, radius, 16]} />
+        <meshStandardMaterial color="#3d2255" roughness={1} />
+      </mesh>
+      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[radius * 0.65, 16]} />
+        <meshStandardMaterial color="#1e0f2a" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+function ProceduralSpaceRock({ position, scale = 1 }) {
+  return (
+    <mesh castShadow position={position} scale={[scale * 0.7, scale * 0.5, scale * 0.7]}>
+      <dodecahedronGeometry args={[0.7, 0]} />
+      <meshStandardMaterial color="#4a3060" roughness={0.95} metalness={0.2} />
+    </mesh>
+  );
+}
+
+function ProceduralRocket({ position }) {
+  return (
+    <group position={position}>
+      <mesh castShadow position={[0, 1.5, 0]}>
+        <cylinderGeometry args={[0.3, 0.3, 3, 8]} />
+        <meshStandardMaterial color="#888" metalness={0.8} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 3.2, 0]}>
+        <coneGeometry args={[0.3, 1, 8]} />
+        <meshStandardMaterial color="#cc4444" metalness={0.6} roughness={0.4} />
+      </mesh>
+      {[-0.5, 0.5].map((dx) => (
+        <mesh key={dx} castShadow position={[dx, 0.8, 0]} rotation={[0, 0, dx > 0 ? 0.4 : -0.4]}>
+          <boxGeometry args={[0.15, 0.8, 0.4]} />
+          <meshStandardMaterial color="#aaaaaa" metalness={0.7} roughness={0.4} />
+        </mesh>
       ))}
     </group>
   );
 }
 
-// ── Background horizon structures (rocket, hangar, satellite) ─────────────────
-const BG_SLOTS = [
-  { dx: 42, dzFrac: 0.10 }, { dx: 50, dzFrac: 0.40 }, { dx: 45, dzFrac: 0.70 },
-  { dx: 55, dzFrac: 0.25 }, { dx: 48, dzFrac: 0.85 },
-];
-const BG_LEFT_SLOTS = [
-  { dx: 38, dzFrac: 0.15 }, { dx: 52, dzFrac: 0.55 }, { dx: 44, dzFrac: 0.90 },
-];
-
-function BackgroundStructures({ seed }) {
-  const half = SEG_LEN / 2;
-  const items = [];
-
-  // Right side — hangars, satellites, rockets
-  BG_SLOTS.forEach((slot, i) => {
-    const t    = h(seed, i * 4 + 1);
-    const rotY = h(seed, i * 3) * Math.PI * 2;
-    const dz   = -half + slot.dzFrac * SEG_LEN;
-    if (t < 0.3) {
-      items.push(<GLB key={`rr${i}`} path={PATHS.rocketBase}  position={[ slot.dx, 0, dz]} scale={5.5} rotY={rotY} />);
-      items.push(<GLB key={`rt${i}`} path={PATHS.rocketTop}   position={[ slot.dx, 5.2, dz]} scale={5.5} rotY={rotY} />);
-      items.push(<GLB key={`rf${i}`} path={PATHS.rocketFins}  position={[ slot.dx, 0, dz]} scale={5.5} rotY={rotY} />);
-    } else if (t < 0.6) {
-      items.push(<GLB key={`hr${i}`} path={PATHS.hangarLarge} position={[ slot.dx, 0, dz]} scale={6.0} rotY={rotY} />);
-    } else {
-      items.push(<GLB key={`sr${i}`} path={PATHS.satelliteLg} position={[ slot.dx, 0, dz]} scale={4.5} rotY={rotY} />);
-    }
-  });
-
-  // Left side — generators, satellites, hangar
-  BG_LEFT_SLOTS.forEach((slot, i) => {
-    const t    = h(seed, i * 7 + 13);
-    const rotY = h(seed, i * 5 + 3) * Math.PI * 2;
-    const dz   = -half + slot.dzFrac * SEG_LEN;
-    if (t < 0.4) {
-      items.push(<GLB key={`sl${i}`} path={PATHS.satellite}   position={[-slot.dx, 0, dz]} scale={4.0} rotY={rotY} />);
-    } else if (t < 0.75) {
-      items.push(<GLB key={`gl${i}`} path={PATHS.generator}   position={[-slot.dx, 0, dz]} scale={5.0} rotY={rotY} />);
-    } else {
-      items.push(<GLB key={`hl${i}`} path={PATHS.hangar}      position={[-slot.dx, 0, dz]} scale={5.5} rotY={rotY} />);
-    }
-  });
-
-  return <>{items}</>;
+function RoadSegment() {
+  return (
+    <group>
+      {/* Alien ground on sides */}
+      <mesh receiveShadow position={[-22, 0.05, 0]}>
+        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+        <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
+      </mesh>
+      <mesh receiveShadow position={[22, 0.05, 0]}>
+        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+        <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
+      </mesh>
+      {/* Road - exactly 9 units wide, dark reddish-brown */}
+      <mesh receiveShadow position={[0, 0.15, 0]}>
+        <boxGeometry args={[9, 0.30, SEG_LEN]} />
+        <meshStandardMaterial color={ROAD_COLOR} roughness={0.9} />
+      </mesh>
+      {/* Lane markings at x=-4 and x=4 */}
+      {[-4, 4].map((x) =>
+        Array.from({ length: 8 }).map((_, i) => (
+          <mesh key={`lm-${x}-${i}`} position={[x, 0.31, -SEG_LEN / 2 + 8 + i * 14]}>
+            <boxGeometry args={[0.15, 0.02, 5]} />
+            <meshStandardMaterial color="#ff6633" emissive="#ff3300" emissiveIntensity={0.4} />
+          </mesh>
+        ))
+      )}
+    </group>
+  );
 }
 
-// ── Near-road props (craters, rocks) ─────────────────────────────────────────
-const NEAR_SLOTS = [
-  { dx: 10, dzFrac: 0.08 }, { dx: 12, dzFrac: 0.25 }, { dx: 11, dzFrac: 0.50 },
-  { dx: 13, dzFrac: 0.72 }, { dx: 10, dzFrac: 0.90 },
-  { dx: 10, dzFrac: 0.15 }, { dx: 12, dzFrac: 0.38 }, { dx: 11, dzFrac: 0.62 },
-  { dx: 14, dzFrac: 0.80 },
-];
+function getSideProps(segIdx) {
+  const props = [];
+  const pseudoRand = (n) => ((Math.sin(n * 127.1 + segIdx * 311.7) * 43758.5453) % 1 + 1) % 1;
+  for (let i = 0; i < 6; i++) {
+    const localZ = -SEG_LEN / 2 + pseudoRand(i * 3) * SEG_LEN;
+    const lx = -(6.5 + pseudoRand(i * 3 + 1) * 12);
+    const rx = 6.5 + pseudoRand(i * 3 + 2) * 12;
+    const r = pseudoRand(i * 5);
+    const type = r < 0.3 ? 'crater' : r < 0.65 ? 'rock' : 'rocket';
+    const scale = 0.5 + pseudoRand(i * 11) * 1.0;
+    const craterR = 0.8 + pseudoRand(i * 13) * 1.5;
+    props.push({ id: `l${i}`, x: lx, z: localZ, type, scale, craterR });
+    props.push({ id: `r${i}`, x: rx, z: localZ, type, scale, craterR });
+  }
+  return props;
+}
 
-function NearProps({ seed }) {
-  const half = SEG_LEN / 2;
+function SegmentContent({ segIdx }) {
+  const sideProps = getSideProps(segIdx);
   return (
     <>
-      {NEAR_SLOTS.map((slot, i) => {
-        const t     = h(seed, i * 11 + 5);
-        const side  = i % 2 === 0 ? 1 : -1;
-        const rotY  = h(seed, i * 6) * Math.PI * 2;
-        const scale = 1.5 + h(seed, i * 3) * 1.5;
-        const dz    = -half + slot.dzFrac * SEG_LEN;
-        const path  = t < 0.25 ? PATHS.craterLarge :
-                      t < 0.50 ? PATHS.crater :
-                      t < 0.70 ? PATHS.rockLargeA :
-                      t < 0.85 ? PATHS.rockLargeB : PATHS.rock;
-        return (
-          <GLB key={i} path={path} position={[side * slot.dx, 0, dz]} scale={scale} rotY={rotY} />
-        );
-      })}
-      {/* Scattered small rocks */}
-      {Array.from({ length: 8 }, (_, i) => {
-        const side = i % 2 === 0 ? 1 : -1;
-        const dx   = 7 + h(seed, i * 17) * 5;
-        const dz   = -half + h(seed, i * 9 + 2) * SEG_LEN;
-        const path = h(seed, i * 13) < 0.5 ? PATHS.rockSmA : PATHS.rockSmB;
-        return (
-          <GLB key={`sm${i}`} path={path} position={[side * dx, 0, dz]}
-            scale={1.0 + h(seed, i * 7) * 1.2} rotY={h(seed, i) * Math.PI * 2} />
-        );
+      <RoadSegment />
+      {sideProps.map((p) => {
+        if (p.type === 'crater') return <ProceduralCrater key={p.id} position={[p.x, 0.11, p.z]} radius={p.craterR} />;
+        if (p.type === 'rocket') return <ProceduralRocket key={p.id} position={[p.x, 0, p.z]} />;
+        return <ProceduralSpaceRock key={p.id} position={[p.x, 0, p.z]} scale={p.scale} />;
       })}
     </>
   );
 }
 
-// ── Wide star-field ground ────────────────────────────────────────────────────
-function GroundPlane() {
-  return (
-    <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, -300]}>
-      <planeGeometry args={[500, 1200]} />
-      <primitive object={matDustF} attach="material" />
-    </mesh>
-  );
-}
-
-// ── Procedural star field (static points) ────────────────────────────────────
-function Stars() {
-  const geo = useRef(null);
-  if (!geo.current) {
-    const positions = new Float32Array(2000 * 3);
-    const rng = (n) => ((n * 127773 + 16807) % 2147483647) / 2147483647;
-    for (let i = 0; i < 2000; i++) {
-      positions[i * 3]     = (rng(i * 3 + 1) - 0.5) * 900;
-      positions[i * 3 + 1] = 20 + rng(i * 3 + 2) * 200;
-      positions[i * 3 + 2] = (rng(i * 3 + 3) - 0.5) * 1200;
-    }
-    geo.current = new THREE.BufferGeometry();
-    geo.current.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  }
-  return (
-    <points geometry={geo.current}>
-      <pointsMaterial size={0.35} color="#ffffff" sizeAttenuation />
-    </points>
-  );
-}
-
-// ── Giant planet/moon on horizon ─────────────────────────────────────────────
-function HorizonPlanet() {
-  return (
-    <mesh position={[120, 80, -400]}>
-      <sphereGeometry args={[55, 24, 16]} />
-      <meshStandardMaterial
-        color="#c06040"
-        roughness={0.7}
-        emissive="#400800"
-        emissiveIntensity={0.15}
-      />
-    </mesh>
-  );
-}
-
-// ── Single scrolling track segment ───────────────────────────────────────────
-function SpaceSegment({ seed }) {
-  const half = SEG_LEN / 2;
-  return (
-    <group>
-      {/* Road surface */}
-      <mesh receiveShadow position={[0, 0.15, 0]}>
-        <boxGeometry args={[9, 0.30, SEG_LEN]} />
-        <primitive object={matRoad} attach="material" />
-      </mesh>
-      {/* Dust strip both sides */}
-      <mesh receiveShadow position={[-19, 0, 0]}>
-        <boxGeometry args={[22, 0.30, SEG_LEN]} />
-        <primitive object={matDust} attach="material" />
-      </mesh>
-      <mesh receiveShadow position={[19, 0, 0]}>
-        <boxGeometry args={[22, 0.30, SEG_LEN]} />
-        <primitive object={matDust} attach="material" />
-      </mesh>
-      {/* Far ground */}
-      <mesh receiveShadow position={[-60, -0.1, 0]}>
-        <boxGeometry args={[80, 0.20, SEG_LEN]} />
-        <primitive object={matDustF} attach="material" />
-      </mesh>
-      <mesh receiveShadow position={[60, -0.1, 0]}>
-        <boxGeometry args={[80, 0.20, SEG_LEN]} />
-        <primitive object={matDustF} attach="material" />
-      </mesh>
-      {/* Rocky ridgeline silhouettes */}
-      <mesh receiveShadow position={[-68, 6, 0]} scale={[30, 12, SEG_LEN * 0.9]}>
-        <sphereGeometry args={[1, 8, 5]} />
-        <primitive object={matRidge} attach="material" />
-      </mesh>
-      <mesh receiveShadow position={[68, 6, 0]} scale={[30, 12, SEG_LEN * 0.9]}>
-        <sphereGeometry args={[1, 8, 5]} />
-        <primitive object={matRidge} attach="material" />
-      </mesh>
-      <LaneMarkings />
-      <NearProps seed={seed} />
-      <BackgroundStructures seed={seed} />
-    </group>
-  );
-}
-
-// ── Main ─────────────────────────────────────────────────────────────────────
 export default function SpaceEnvironment() {
-  const grpRefs = useRef([]);
-  const posRef  = useRef(Array.from({ length: SEG_COUNT }, (_, i) => 5 - i * SEG_LEN));
-  const phase   = useGameStore(s => s.phase);
-  const runId   = useGameStore(s => s.runId);
-
-  useEffect(() => {
-    posRef.current = Array.from({ length: SEG_COUNT }, (_, i) => 5 - i * SEG_LEN);
-    posRef.current.forEach((z, i) => grpRefs.current[i]?.position.set(0, 0, z));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId]);
+  const speed = useGameStore((s) => s.speed);
+  const running = useGameStore((s) => s.running);
+  const posRef = useRef(Array.from({ length: SEG_COUNT }, (_, i) => -i * SEG_LEN));
+  const groupsRef = useRef([]);
 
   useFrame((_, delta) => {
-    if (phase !== 'playing') return;
-    const speed = useGameStore.getState().speed;
-    posRef.current = posRef.current.map((z, i) => {
-      const next     = z + speed * delta;
-      const recycled = next > RECYCLE_AFTER ? next - SEG_COUNT * SEG_LEN : next;
-      grpRefs.current[i]?.position.set(0, 0, recycled);
-      return recycled;
-    });
+    if (!running) return;
+    const vel = (speed || 10) * delta;
+    for (let i = 0; i < SEG_COUNT; i++) {
+      posRef.current[i] += vel;
+      if (posRef.current[i] > RECYCLE_AFTER) {
+        const minZ = Math.min(...posRef.current);
+        posRef.current[i] = minZ - SEG_LEN;
+      }
+      if (groupsRef.current[i]) {
+        groupsRef.current[i].position.z = posRef.current[i];
+      }
+    }
   });
 
   return (
     <>
-      {/* Deep space sky — procedural color via background color */}
       <color attach="background" args={['#0d0518']} />
-
-      {/* Warm orange "alien sun" directional light */}
+      {/* SpaceEnvironment manages its own lights */}
       <directionalLight
         castShadow
-        position={[60, 100, -80]}
+        position={[80, 60, -150]}
         intensity={2.6}
         color="#ff8844"
         shadow-mapSize={[2048, 2048]}
         shadow-camera-near={1}
-        shadow-camera-far={300}
-        shadow-camera-left={-70}
-        shadow-camera-right={70}
-        shadow-camera-top={70}
-        shadow-camera-bottom={-70}
+        shadow-camera-far={350}
+        shadow-camera-left={-80}
+        shadow-camera-right={80}
+        shadow-camera-top={80}
+        shadow-camera-bottom={-80}
       />
-      {/* Subtle purple fill from the other side */}
-      <hemisphereLight skyColor="#3311aa" groundColor="#4a1808" intensity={0.55} />
-      {/* Faint ambient so shadows aren't pitch black */}
-      <ambientLight intensity={0.18} color="#220833" />
-
+      <hemisphereLight skyColor="#6622aa" groundColor="#110022" intensity={0.4} />
       <Stars />
-      <HorizonPlanet />
-      <GroundPlane />
-
-      {posRef.current.map((z, i) => (
-        <group key={i} ref={el => (grpRefs.current[i] = el)} position={[0, 0, z]}>
-          <SpaceSegment seed={i * 31 + 7} />
+      <BigPlanet />
+      {Array.from({ length: SEG_COUNT }, (_, i) => (
+        <group
+          key={i}
+          ref={(el) => (groupsRef.current[i] = el)}
+          position={[0, 0, -i * SEG_LEN]}
+        >
+          <SegmentContent segIdx={i} />
         </group>
       ))}
     </>

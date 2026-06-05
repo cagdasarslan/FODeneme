@@ -1,168 +1,159 @@
-import { useRef, useEffect, Suspense } from 'react';
+import { useRef, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, Sky } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 
-const SEG_LEN       = 120;
-const SEG_COUNT     = 6;
+const SEG_LEN = 120;
+const SEG_COUNT = 6;
 const RECYCLE_AFTER = SEG_LEN + 20;
 
-const D = '/assets/models/desert/';
-const PATHS = {
-  cactusShort: D + 'cactus_short.glb',
-  cactusTall:  D + 'cactus_tall.glb',
-  rockA:       D + 'rock_largeA.glb',
-  rockB:       D + 'rock_largeB.glb',
-  rockC:       D + 'rock_largeC.glb',
-  rockSmA:     D + 'rock_smallA.glb',
-  rockSmB:     D + 'rock_smallB.glb',
-};
-Object.values(PATHS).forEach(p => useGLTF.preload(p));
+const ROAD_COLOR = '#8b7355';
+const SAND_COLOR = '#c2955a';
 
-const matRoad  = new THREE.MeshStandardMaterial({ color: '#8a7255', roughness: 0.9 });
-const matSand  = new THREE.MeshStandardMaterial({ color: '#c8a060', roughness: 0.95 });
-const matSandF = new THREE.MeshStandardMaterial({ color: '#b48840', roughness: 0.95 });
-const matDune  = new THREE.MeshStandardMaterial({ color: '#d4a86a', roughness: 1.0 });
-const markMat  = new THREE.MeshStandardMaterial({ color: '#e8d4a0', roughness: 0.8 });
-const markGeo  = new THREE.BoxGeometry(0.18, 0.02, 3.2);
-
-function GLBInner({ path, position = [0,0,0], scale = 1, rotY = 0 }) {
-  const { scene } = useGLTF(path);
-  const cloned = useRef(null);
-  if (!cloned.current) {
-    cloned.current = scene.clone(true);
-    cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  }
-  return <primitive object={cloned.current} position={position} scale={scale} rotation={[0, rotY, 0]} />;
-}
-function GLB(props) { return <Suspense fallback={null}><GLBInner {...props} /></Suspense>; }
-
-const h = (seed, n) => ((seed * 7919 + n * 1013) % 1000) / 1000;
-
-function LaneMarkings() {
-  const half  = SEG_LEN / 2;
-  const count = Math.ceil(SEG_LEN / 8);
-  return (
-    <group position={[0, 0.17, 0]}>
-      {Array.from({ length: count }, (_, i) => (
-        <group key={i}>
-          <mesh geometry={markGeo} material={markMat} position={[-4, 0, -half + i * 8 + 4]} />
-          <mesh geometry={markGeo} material={markMat} position={[ 4, 0, -half + i * 8 + 4]} />
-        </group>
-      ))}
-    </group>
-  );
-}
-
-const PROP_SLOTS = [
-  { dx: 10.5, dzFrac: 0.10 }, { dx: 11.0, dzFrac: 0.32 }, { dx: 10.8, dzFrac: 0.54 },
-  { dx: 11.5, dzFrac: 0.76 }, { dx: 18.0, dzFrac: 0.20 }, { dx: 20.0, dzFrac: 0.42 },
-  { dx: 19.5, dzFrac: 0.65 }, { dx: 21.0, dzFrac: 0.88 }, { dx: 32.0, dzFrac: 0.15 },
-  { dx: 35.0, dzFrac: 0.48 }, { dx: 38.0, dzFrac: 0.75 },
-];
-const PROP_TYPES  = [PATHS.cactusShort, PATHS.cactusTall, PATHS.rockA, PATHS.rockB, PATHS.rockSmA, PATHS.cactusShort, PATHS.cactusTall];
-const PROP_SCALES = [2.2, 2.8, 1.8, 2.0, 1.5, 3.0, 3.5];
-
-function SideProps({ seed, side }) {
-  const half = SEG_LEN / 2;
-  return (
-    <>
-      {PROP_SLOTS.map((slot, i) => {
-        const typeIdx = Math.floor(h(seed, i * 3 + 7) * PROP_TYPES.length);
-        const scale   = PROP_SCALES[typeIdx] * (0.85 + h(seed, i * 5) * 0.45);
-        const rotY    = h(seed, i * 2) * Math.PI * 2;
-        const dz      = -half + slot.dzFrac * SEG_LEN;
-        return <GLB key={i} path={PROP_TYPES[typeIdx]} position={[side * slot.dx, 0, dz]} scale={scale} rotY={rotY} />;
-      })}
-    </>
-  );
-}
-
-function DesertSegment({ seed }) {
-  const half = SEG_LEN / 2;
+function RoadSegment() {
   return (
     <group>
+      {/* Sand ground on sides */}
+      <mesh receiveShadow position={[-22, 0.05, 0]}>
+        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+        <meshStandardMaterial color={SAND_COLOR} />
+      </mesh>
+      <mesh receiveShadow position={[22, 0.05, 0]}>
+        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+        <meshStandardMaterial color={SAND_COLOR} />
+      </mesh>
+      {/* Road - exactly 9 units wide */}
       <mesh receiveShadow position={[0, 0.15, 0]}>
         <boxGeometry args={[9, 0.30, SEG_LEN]} />
-        <primitive object={matRoad} attach="material" />
+        <meshStandardMaterial color={ROAD_COLOR} />
       </mesh>
-      <mesh receiveShadow position={[-19, 0, 0]}>
-        <boxGeometry args={[22, 0.30, SEG_LEN]} />
-        <primitive object={matSand} attach="material" />
-      </mesh>
-      <mesh receiveShadow position={[19, 0, 0]}>
-        <boxGeometry args={[22, 0.30, SEG_LEN]} />
-        <primitive object={matSand} attach="material" />
-      </mesh>
-      <mesh receiveShadow position={[-60, -0.1, 0]}>
-        <boxGeometry args={[80, 0.20, SEG_LEN]} />
-        <primitive object={matSandF} attach="material" />
-      </mesh>
-      <mesh receiveShadow position={[60, -0.1, 0]}>
-        <boxGeometry args={[80, 0.20, SEG_LEN]} />
-        <primitive object={matSandF} attach="material" />
-      </mesh>
-      <mesh receiveShadow position={[-62, 5, 0]} scale={[38, 10, SEG_LEN * 0.9]}>
-        <sphereGeometry args={[1, 8, 5]} />
-        <primitive object={matDune} attach="material" />
-      </mesh>
-      <mesh receiveShadow position={[62, 5, 0]} scale={[38, 10, SEG_LEN * 0.9]}>
-        <sphereGeometry args={[1, 8, 5]} />
-        <primitive object={matDune} attach="material" />
-      </mesh>
-      <LaneMarkings />
-      <SideProps seed={seed} side={-1} />
-      <SideProps seed={seed} side={ 1} />
+      {/* Lane markings at x=-4 and x=4 */}
+      {[-4, 4].map((x) =>
+        Array.from({ length: 8 }).map((_, i) => (
+          <mesh key={`lm-${x}-${i}`} position={[x, 0.31, -SEG_LEN / 2 + 8 + i * 14]}>
+            <boxGeometry args={[0.15, 0.02, 5]} />
+            <meshStandardMaterial color="#e8d5a0" />
+          </mesh>
+        ))
+      )}
     </group>
   );
 }
 
-function GroundPlane() {
+function ProceduralCactus({ position }) {
   return (
-    <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, -300]}>
-      <planeGeometry args={[500, 1200]} />
-      <primitive object={matSandF} attach="material" />
+    <group position={position}>
+      <mesh castShadow position={[0, 1.2, 0]}>
+        <cylinderGeometry args={[0.18, 0.22, 2.4, 8]} />
+        <meshStandardMaterial color="#5a8a3a" roughness={0.8} />
+      </mesh>
+      <mesh castShadow position={[-0.42, 1.6, 0]}>
+        <cylinderGeometry args={[0.1, 0.12, 0.8, 8]} />
+        <meshStandardMaterial color="#5a8a3a" roughness={0.8} />
+      </mesh>
+      <mesh castShadow position={[0.42, 1.4, 0]}>
+        <cylinderGeometry args={[0.1, 0.12, 0.6, 8]} />
+        <meshStandardMaterial color="#5a8a3a" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+function ProceduralRock({ position, scale = 1 }) {
+  return (
+    <mesh castShadow position={position} scale={[scale * 0.8, scale * 0.55, scale * 0.8]}>
+      <dodecahedronGeometry args={[0.6, 0]} />
+      <meshStandardMaterial color="#a08060" roughness={0.9} />
     </mesh>
   );
 }
 
-export default function DesertEnvironment() {
-  const grpRefs = useRef([]);
-  const posRef  = useRef(Array.from({ length: SEG_COUNT }, (_, i) => 5 - i * SEG_LEN));
-  const phase   = useGameStore(s => s.phase);
-  const runId   = useGameStore(s => s.runId);
+function getSideProps(segIdx) {
+  const props = [];
+  const pseudoRand = (n) => ((Math.sin(n * 127.1 + segIdx * 311.7) * 43758.5453) % 1 + 1) % 1;
+  for (let i = 0; i < 7; i++) {
+    const localZ = -SEG_LEN / 2 + pseudoRand(i * 3) * SEG_LEN;
+    const lx = -(6.5 + pseudoRand(i * 3 + 1) * 12);
+    const rx = 6.5 + pseudoRand(i * 3 + 2) * 12;
+    const type = pseudoRand(i * 7) > 0.45 ? 'cactus' : 'rock';
+    const scale = 0.5 + pseudoRand(i * 11) * 1.0;
+    props.push({ id: `l${i}`, x: lx, z: localZ, type, scale });
+    props.push({ id: `r${i}`, x: rx, z: localZ, type, scale });
+  }
+  return props;
+}
 
-  useEffect(() => {
-    posRef.current = Array.from({ length: SEG_COUNT }, (_, i) => 5 - i * SEG_LEN);
-    posRef.current.forEach((z, i) => grpRefs.current[i]?.position.set(0, 0, z));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId]);
+function SegmentContent({ segIdx }) {
+  const sideProps = getSideProps(segIdx);
+  return (
+    <>
+      <RoadSegment />
+      {sideProps.map((p) =>
+        p.type === 'cactus' ? (
+          <ProceduralCactus key={p.id} position={[p.x, 0, p.z]} />
+        ) : (
+          <ProceduralRock key={p.id} position={[p.x, 0, p.z]} scale={p.scale} />
+        )
+      )}
+    </>
+  );
+}
+
+export default function DesertEnvironment() {
+  const speed = useGameStore((s) => s.speed);
+  const running = useGameStore((s) => s.running);
+  const segRefs = useRef(Array.from({ length: SEG_COUNT }, () => ({ ref: null })));
+  const posRef = useRef(Array.from({ length: SEG_COUNT }, (_, i) => -i * SEG_LEN));
+  const groupsRef = useRef([]);
 
   useFrame((_, delta) => {
-    if (phase !== 'playing') return;
-    const speed = useGameStore.getState().speed;
-    posRef.current = posRef.current.map((z, i) => {
-      const next     = z + speed * delta;
-      const recycled = next > RECYCLE_AFTER ? next - SEG_COUNT * SEG_LEN : next;
-      grpRefs.current[i]?.position.set(0, 0, recycled);
-      return recycled;
-    });
+    if (!running) return;
+    const vel = (speed || 10) * delta;
+    for (let i = 0; i < SEG_COUNT; i++) {
+      posRef.current[i] += vel;
+      if (posRef.current[i] > RECYCLE_AFTER) {
+        const minZ = Math.min(...posRef.current);
+        posRef.current[i] = minZ - SEG_LEN;
+      }
+      if (groupsRef.current[i]) {
+        groupsRef.current[i].position.z = posRef.current[i];
+      }
+    }
   });
 
   return (
     <>
-      <color attach="background" args={['#e8c080']} />
-      <Sky sunPosition={[100, 30, -80]} turbidity={8} rayleigh={0.5} inclination={0.55} azimuth={0.25} />
-      <directionalLight castShadow position={[80, 120, -60]} intensity={2.4} color="#ffe090"
-        shadow-mapSize={[2048, 2048]} shadow-camera-near={1} shadow-camera-far={300}
-        shadow-camera-left={-70} shadow-camera-right={70} shadow-camera-top={70} shadow-camera-bottom={-70}
+      <Sky
+        sunPosition={[100, 20, -200]}
+        turbidity={8}
+        rayleigh={2}
+        mieCoefficient={0.005}
+        mieDirectionalG={0.8}
+        inclination={0.52}
+        azimuth={0.25}
       />
-      <hemisphereLight skyColor="#f5c060" groundColor="#7a5020" intensity={0.65} />
-      <GroundPlane />
-      {posRef.current.map((z, i) => (
-        <group key={i} ref={el => (grpRefs.current[i] = el)} position={[0, 0, z]}>
-          <DesertSegment seed={i} />
+      {/* Warm orange desert sun - no ambientLight/hemiLight, those come from App.jsx */}
+      <directionalLight
+        castShadow
+        position={[60, 80, -100]}
+        intensity={2.2}
+        color="#ffbb66"
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-near={1}
+        shadow-camera-far={300}
+        shadow-camera-left={-80}
+        shadow-camera-right={80}
+        shadow-camera-top={80}
+        shadow-camera-bottom={-80}
+      />
+      {Array.from({ length: SEG_COUNT }, (_, i) => (
+        <group
+          key={i}
+          ref={(el) => (groupsRef.current[i] = el)}
+          position={[0, 0, -i * SEG_LEN]}
+        >
+          <SegmentContent segIdx={i} />
         </group>
       ))}
     </>

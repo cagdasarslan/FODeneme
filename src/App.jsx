@@ -19,17 +19,14 @@ import LoadingScreen from '@/components/ui/LoadingScreen';
 
 export default function App() {
   const initSession = useGameStore((s) => s.initSession);
-  const mapId       = useGameStore((s) => s.mapId);
-
+  const mapId = useGameStore((s) => s.mapId);
   useEffect(() => { initSession(); }, [initSession]);
 
   const isSpace = mapId === 4;
-
-  // Space map uses its own lights + background set inside SpaceEnvironment
-  const fogColor   = mapId === 2 ? '#88b8e0' : mapId === 3 ? '#f5d090' : '#a8d4e8';
+  const fogColor = mapId === 4 ? '#1a0530' : mapId === 3 ? '#f5d090' : mapId === 2 ? '#88b8e0' : '#a8d4e8';
   const hemiGround = mapId === 2 ? '#333333' : '#4e8040';
 
-  function EnvironmentLayer() {
+  function EnvLayer() {
     if (mapId === 4) return <SpaceEnvironment />;
     if (mapId === 3) return <DesertEnvironment />;
     if (mapId === 2) return <CityEnvironment />;
@@ -38,45 +35,31 @@ export default function App() {
 
   return (
     <>
-      <Canvas
-        shadows
-        camera={{ position: [0, 8, 14], fov: 68, near: 0.1, far: 600 }}
-        style={{ width: '100vw', height: '100vh' }}
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
-        dpr={[1, 2]}
-        performance={{ min: 0.5 }}
-      >
-        {!isSpace && <fog attach="fog" args={[fogColor, 90, 420]} />}
-        {isSpace  && <fog attach="fog" args={['#1a0530', 120, 500]} />}
-
+      <Canvas shadows camera={{ position: [0,8,14], fov:68, near:0.1, far:600 }}
+        style={{ width:'100vw', height:'100vh' }}
+        gl={{ antialias:true, powerPreference:'high-performance' }}
+        dpr={[1,2]} performance={{ min:0.5 }}>
+        <fog attach="fog" args={[fogColor, isSpace ? 120 : 90, isSpace ? 500 : 420]} />
         <CameraRig />
-
         {!isSpace && (
           <>
             <ambientLight intensity={0.65} />
-            <directionalLight castShadow position={[-50, 80, 30]}
-              intensity={2.0}
-              shadow-mapSize={[2048, 2048]}
-              shadow-camera-near={1} shadow-camera-far={280}
+            <directionalLight castShadow position={[-50,80,30]} intensity={2.0}
+              shadow-mapSize={[2048,2048]} shadow-camera-near={1} shadow-camera-far={280}
               shadow-camera-left={-60} shadow-camera-right={60}
-              shadow-camera-top={60}    shadow-camera-bottom={-60}
-            />
+              shadow-camera-top={60} shadow-camera-bottom={-60} />
             <hemisphereLight skyColor="#87ceeb" groundColor={hemiGround} intensity={0.55} />
           </>
         )}
-
-        <>
-          <EnvironmentLayer />
-          <Physics gravity={[0, -20, 0]}>
-            <Track />
-            <ObstacleSpawner />
-            <CarrotSpawner />
-            <SuperNalSpawner />
-            <Horse />
-          </Physics>
-        </>
+        <EnvLayer />
+        <Physics gravity={[0,-20,0]}>
+          <Track />
+          <ObstacleSpawner />
+          <CarrotSpawner />
+          <SuperNalSpawner />
+          <Horse />
+        </Physics>
       </Canvas>
-
       <LoadingScreen />
       <HUD />
       <MainMenu />
