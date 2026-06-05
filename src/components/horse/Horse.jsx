@@ -295,7 +295,8 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   const prevRightRef  = useRef(false);
   const selectedHorseId = useGameStore((s) => s.selectedHorseId);
   const horseUpgrades   = useGameStore((s) => s.horseUpgrades);
-  const horseVariant    = HORSES.find(h => h.id === selectedHorseId) ?? HORSES[0];
+  const customHorses    = useGameStore((s) => s.customHorses ?? []);
+  const horseVariant    = [...HORSES, ...customHorses].find(h => h.id === selectedHorseId) ?? HORSES[0];
   const horseUps        = horseUpgrades?.[selectedHorseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
   const { phase, tick, registerCloseCall, registerCollision, runId } = useGameStore(
     (s) => ({

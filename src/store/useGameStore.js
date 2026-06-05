@@ -19,7 +19,7 @@ import {
   BREED_COST, BREED_COOLDOWN_MS, SHOP_TIER1_COST, SHOP_TIER2_COST, EXTRA_SLOT_COST,
   STAGE_CONFIG, TRAITS, TRAIT_CHANCE, TOKLUK_DECAY_PER_MS, MUTLULUK_DECAY_PER_MS,
   FEED_COST, FEED_TOKLUK, FEED_BP, FEED_MAX_DAY,
-  GROOM_MUTLULUK, GROOM_BP, GROOM_COOLDOWN_MS,
+  GROOM_MUTLULUK, GROOM_BP, GROOM_BOND, GROOM_COOLDOWN_MS,
   TRAIN_BP, TRAIN_BOND, TRAIN_COOLDOWN_MS, BP_PER_500M,
 } from '@/constants/foals';
 
@@ -168,7 +168,8 @@ const useGameStore = create(
       const { phase, speed, score, distance, adrenaline, magnetTimer, horseUpgrades, adrenalinBoosting, adrenalinBoostTimer } = get();
       if (phase !== 'playing') return;
 
-      const horse = HORSES.find(h => h.id === get().selectedHorseId);
+      const allHorsesForTick = [...HORSES, ...(get().customHorses ?? [])];
+      const horse = allHorsesForTick.find(h => h.id === get().selectedHorseId);
       const ups = horseUpgrades[get().selectedHorseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
       const speedMult = (horse?.baseSpeedMult ?? 1.0) * (1 + ups.speedLevel * 0.08);
       const cap = (horse?.baseMaxSpeed ?? MAX_SPEED) * speedMult;
@@ -429,6 +430,7 @@ const useGameStore = create(
       const updated = { ...foal,
         mutluluk: Math.min(100, foal.mutluluk + GROOM_MUTLULUK),
         bp: foal.bp + GROOM_BP,
+        bag: Math.min(5, foal.bag + GROOM_BOND),
         lastGroomedAt: now,
       };
       const newFoals = foals.map((f, i) => i === idx ? updated : f);
@@ -460,7 +462,8 @@ const useGameStore = create(
       if (foals.length === 0) return;
       const gain = Math.floor(distanceMeters / 500) * BP_PER_500M;
       if (gain <= 0) return;
-      const newFoals = foals.map(f => ({ ...f, bp: f.bp + gain }));
+      // Only fed foals (tokluk >= 20) earn BP from runs
+      const newFoals = foals.map(f => f.tokluk >= 20 ? { ...f, bp: f.bp + gain } : f);
       localStorage.setItem('foals', JSON.stringify(newFoals));
       set({ foals: newFoals });
     },
@@ -494,6 +497,7 @@ const useGameStore = create(
       if (elapsed < cfg.minMs) return false;
       if (foal.bp < cfg.bp) return false;
       if (foal.bag < cfg.bondGate) return false;
+      if (foal.tokluk < 20) return false;
 
       const nextStage = stageOrder[currentIdx + 1];
       const updated = { ...foal, stage: nextStage, stageStartedAt: now };

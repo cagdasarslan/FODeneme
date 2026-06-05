@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { HORSES } from '@/constants/horses';
 import { STAGE_CONFIG, BREED_COST, SHOP_TIER1_COST, SHOP_TIER2_COST, EXTRA_SLOT_COST, TRAITS, GROOM_COOLDOWN_MS, TRAIN_COOLDOWN_MS, FEED_MAX_DAY } from '@/constants/foals';
@@ -88,6 +88,12 @@ function FoalCard({ foal, onFlash }) {
   const matureFoal = useGameStore(s => s.matureFoal);
   const carrots = useGameStore(s => s.carrots);
 
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => forceUpdate(n => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
   const now = Date.now();
   const groomReady  = now - foal.lastGroomedAt > GROOM_COOLDOWN_MS;
   const trainReady  = now - foal.lastTrainedAt > TRAIN_COOLDOWN_MS;
@@ -100,7 +106,7 @@ function FoalCard({ foal, onFlash }) {
   // Check if ready to advance
   const cfg = STAGE_CONFIG[foal.stage];
   const elapsed = now - foal.stageStartedAt;
-  const canAdvance = foal.stage !== 'YETISKIN' && elapsed >= cfg.minMs && foal.bp >= cfg.bp && foal.bag >= cfg.bondGate;
+  const canAdvance = foal.stage !== 'YETISKIN' && elapsed >= cfg.minMs && foal.bp >= cfg.bp && foal.bag >= cfg.bondGate && foal.tokluk >= 20;
   const isMature = foal.stage === 'YETISKIN';
 
   return (

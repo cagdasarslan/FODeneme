@@ -4,7 +4,7 @@ export const STAGES = ['TAY', 'YAVRU', 'GENC', 'YETISKIN'];
 export const STAGE_CONFIG = {
   TAY:      { minMs: 4  * 3600_000, bp: 100, bondGate: 0, scale: 0.50 },
   YAVRU:    { minMs: 8  * 3600_000, bp: 250, bondGate: 2, scale: 0.65 },
-  GENC:     { minMs: 12 * 3600_000, bp: 500, bondGate: 4, scale: 0.80 },
+  GENC:     { minMs: 12 * 3600_000, bp: 500, bondGate: 2, scale: 0.80 },
   YETISKIN: { minMs: 0,             bp: 0,   bondGate: 0, scale: 1.00 },
 };
 
@@ -24,6 +24,7 @@ export const FEED_MAX_DAY  = 4;
 
 export const GROOM_MUTLULUK    = 30;
 export const GROOM_BP          = 5;
+export const GROOM_BOND        = 1;
 export const GROOM_COOLDOWN_MS = 4 * 3600_000;
 
 export const TRAIN_BP          = 20;

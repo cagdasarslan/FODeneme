@@ -1,4 +1,4 @@
-import { useState, useRef, Suspense } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, useAnimations, OrbitControls } from '@react-three/drei';
 import useGameStore from '@/store/useGameStore';
@@ -116,35 +116,42 @@ function HorsePreview3D({ variant }) {
 
 // ── Main Garage ───────────────────────────────────────────────────────────────
 export default function Garage() {
-  const {
-    showGarage, closeGarage,
-    garageOpenTab,
-    carrots,
-    selectedCharacterId, ownedCharacterIds, selectCharacter, purchaseCharacter,
-    selectedHorseId,     ownedHorseIds,     selectHorse,     purchaseHorse,
-    horseUpgrades, upgradeHorseStat,
-  } = useGameStore(s => ({
-    showGarage:           s.showGarage,
-    closeGarage:          s.closeGarage,
-    garageOpenTab:        s.garageOpenTab,
-    carrots:              s.carrots,
-    selectedCharacterId:  s.selectedCharacterId,
-    ownedCharacterIds:    s.ownedCharacterIds,
-    selectCharacter:      s.selectCharacter,
-    purchaseCharacter:    s.purchaseCharacter,
-    selectedHorseId:      s.selectedHorseId,
-    ownedHorseIds:        s.ownedHorseIds,
-    selectHorse:          s.selectHorse,
-    purchaseHorse:        s.purchaseHorse,
-    horseUpgrades:        s.horseUpgrades,
-    upgradeHorseStat:     s.upgradeHorseStat,
-    garageOpenTab:        s.garageOpenTab,
-  }));
+  const showGarage          = useGameStore(s => s.showGarage);
+  const closeGarage         = useGameStore(s => s.closeGarage);
+  const garageOpenTab       = useGameStore(s => s.garageOpenTab);
+  const carrots             = useGameStore(s => s.carrots);
+  const selectedCharacterId = useGameStore(s => s.selectedCharacterId);
+  const ownedCharacterIds   = useGameStore(s => s.ownedCharacterIds);
+  const selectCharacter     = useGameStore(s => s.selectCharacter);
+  const purchaseCharacter   = useGameStore(s => s.purchaseCharacter);
+  const selectedHorseId     = useGameStore(s => s.selectedHorseId);
+  const ownedHorseIds       = useGameStore(s => s.ownedHorseIds);
+  const selectHorse         = useGameStore(s => s.selectHorse);
+  const purchaseHorse       = useGameStore(s => s.purchaseHorse);
+  const horseUpgrades       = useGameStore(s => s.horseUpgrades);
+  const upgradeHorseStat    = useGameStore(s => s.upgradeHorseStat);
+  const customHorses        = useGameStore(s => s.customHorses ?? []);
+  const tickFoals           = useGameStore(s => s.tickFoals);
 
-  const [tab,         setTab]         = useState(garageOpenTab ?? 'jockey'); // 'jockey' | 'horse' | 'hara'
+  const allHorses = [...HORSES, ...customHorses];
+
+  const [tab,         setTab]         = useState('jockey'); // 'jockey' | 'horse' | 'hara'
   const [charPreview, setCharPreview] = useState(selectedCharacterId);
   const [horsePrev,   setHorsePrev]   = useState(selectedHorseId);
   const [flash,       setFlash]       = useState('');
+
+  // Sync tab when garageOpenTab changes (e.g. AHIR button)
+  useEffect(() => {
+    if (garageOpenTab) setTab(garageOpenTab);
+  }, [garageOpenTab]);
+
+  // Tick foal meters on open and every 60s while open
+  useEffect(() => {
+    if (!showGarage) return;
+    tickFoals(Date.now());
+    const id = setInterval(() => tickFoals(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, [showGarage, tickFoals]);
 
   if (!showGarage) return null;
 
@@ -167,7 +174,7 @@ export default function Garage() {
   };
 
   // ── Horse action ──────────────────────────────────────────────────────────
-  const previewHorse = HORSES.find(h => h.id === horsePrev) ?? HORSES[0];
+  const previewHorse = allHorses.find(h => h.id === horsePrev) ?? allHorses[0];
   const horseOwned   = ownedHorseIds.includes(horsePrev);
   const horseSel     = selectedHorseId === horsePrev;
 
@@ -261,14 +268,11 @@ export default function Garage() {
           </>
         )}
 
-        {/* ── HARA TAB ── */}
-        {tab === 'hara' && <Hara />}
-
         {/* ── HORSE TAB ── */}
         {tab === 'horse' && (
           <>
             <div style={{ ...S.grid, gridTemplateColumns: 'repeat(3,1fr)' }}>
-              {HORSES.map(h => {
+              {allHorses.map(h => {
                 const owned    = ownedHorseIds.includes(h.id);
                 const selected = selectedHorseId === h.id;
                 const active   = horsePrev === h.id;
