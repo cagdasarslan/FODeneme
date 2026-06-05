@@ -153,22 +153,30 @@ function FoalCard({ foal, onFlash }) {
           <>
             <button
               style={{ ...SC.actionBtn, background: canFeed ? '#388e3c' : '#2a2a2a', opacity: canFeed ? 1 : 0.5 }}
-              disabled={!canFeed}
-              onClick={() => { const ok = feedFoal(foal.id); onFlash(ok ? `🥕 Beslendi! (${feedsToday+1}/${FEED_MAX_DAY})` : 'Yeterli havuç yok'); }}
+              onClick={() => {
+                if (carrots < 15) { onFlash('❌ Yetersiz havuç (15 gerekli)'); return; }
+                if (feedsToday >= FEED_MAX_DAY) { onFlash(`❌ Günlük limit doldu (${FEED_MAX_DAY}/${FEED_MAX_DAY})`); return; }
+                const ok = feedFoal(foal.id);
+                onFlash(ok ? `🥕 Beslendi! (${feedsToday+1}/${FEED_MAX_DAY})` : '❌ Beslenemedi');
+              }}
             >
               🥕 BESLE<br /><span style={{ fontSize: 8 }}>15 havuç</span>
             </button>
             <button
               style={{ ...SC.actionBtn, background: groomReady ? '#1565c0' : '#2a2a2a', opacity: groomReady ? 1 : 0.5 }}
-              disabled={!groomReady}
-              onClick={() => { const ok = groomFoal(foal.id); onFlash(ok ? '✨ Tımarlandı!' : 'Cooldown devam ediyor'); }}
+              onClick={() => {
+                if (!groomReady) { const h = Math.floor((GROOM_COOLDOWN_MS - (now - foal.lastGroomedAt)) / 3600_000); onFlash(`❌ ${h}s sonra tımarlanabilir`); return; }
+                const ok = groomFoal(foal.id); onFlash(ok ? '✨ Tımarlandı! +1BAĞ' : 'Cooldown devam ediyor');
+              }}
             >
               ✨ TIMARLA<br /><span style={{ fontSize: 8 }}>Ücretsiz</span>
             </button>
             <button
               style={{ ...SC.actionBtn, background: trainReady ? '#6a1b9a' : '#2a2a2a', opacity: trainReady ? 1 : 0.5 }}
-              disabled={!trainReady}
-              onClick={() => { const ok = trainFoal(foal.id); onFlash(ok ? '🏃 Antrenman yapıldı! +20BP +1BAĞ' : 'Bugün antrenman yapıldı'); }}
+              onClick={() => {
+                if (!trainReady) { onFlash('❌ Bugün antrenman yapıldı'); return; }
+                const ok = trainFoal(foal.id); onFlash(ok ? '🏃 Antrenman yapıldı! +20BP +1BAĞ' : 'Cooldown devam ediyor');
+              }}
             >
               🏃 ANTRENMAN<br /><span style={{ fontSize: 8 }}>Günde 1</span>
             </button>
