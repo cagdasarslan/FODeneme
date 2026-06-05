@@ -1,0 +1,47 @@
+export const HORSES = [
+  {
+    id: 'chestnut',
+    name: 'ANADOLU ALASI',
+    price: 0,
+    bodyColor: '#8d6e63',
+    maneColor: '#5d4037',
+    hoofColor: '#3e2723',
+    desc: 'Sağlam ve güvenilir',
+    accentColor: '#8d6e63',
+    baseSpeedMult: 1.0,
+    baseManeuvMult: 1.0,
+    baseJumpMult: 1.0,
+    baseMaxSpeed: 40,
+  },
+  {
+    id: 'black',
+    name: 'KARAYEL',
+    price: 250,
+    bodyColor: '#212121',
+    maneColor: '#111111',
+    hoofColor: '#0a0a0a',
+    desc: 'Siyah Fırtına',
+    accentColor: '#424242',
+    baseSpeedMult: 1.4,
+    baseManeuvMult: 0.9,
+    baseJumpMult: 1.1,
+    baseMaxSpeed: 60,
+  },
+  {
+    id: 'white',
+    name: 'AKKOR KÜHEYLAN',
+    price: 600,
+    bodyColor: '#EDE8D8',
+    maneColor: '#C0B898',
+    hoofColor: '#8a8070',
+    desc: 'Parlak ve efsanevi',
+    accentColor: '#ffecb3',
+    baseSpeedMult: 1.8,
+    baseManeuvMult: 1.3,
+    baseJumpMult: 1.5,
+    baseMaxSpeed: 80,
+  },
+];
+
+export const MAX_UPGRADE_LEVEL = 5;
+export const upgradeCost = (currentLevel) => (currentLevel + 1) * 75;
