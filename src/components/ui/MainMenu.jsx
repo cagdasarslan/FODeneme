@@ -3,6 +3,7 @@ import useGameStore from '@/store/useGameStore';
 import { CHARACTERS } from '@/constants/characters';
 import { HORSES } from '@/constants/horses';
 import Leaderboard from '@/components/ui/Leaderboard';
+import HowToPlay from '@/components/ui/HowToPlay';
 
 function StatRow({ label, value, color }) {
   return (
@@ -42,6 +43,7 @@ const isMobile = window.innerWidth < 500;
 
 export default function MainMenu() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   const {
     phase, sessionReady, sessionError, score, carrots,
@@ -225,9 +227,14 @@ export default function MainMenu() {
             🐣 AHIR
           </button>
         </div>
+
+        <button style={styles.guideBtn} onClick={() => setShowGuide(true)}>
+          📖 OYUN REHBERİ
+        </button>
       </div>
 
       {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
+      {showGuide && <HowToPlay onClose={() => setShowGuide(false)} />}
     </div>
   );
 }
@@ -379,5 +386,13 @@ const styles = {
     border: '1px solid rgba(255,215,0,0.25)',
     borderRadius: 6, cursor: 'pointer', color: '#ffd700',
     width: '100%', transition: 'background 0.15s',
+  },
+  guideBtn: {
+    padding: '9px 24px', fontSize: 12, fontFamily: 'monospace',
+    fontWeight: 700, letterSpacing: 2,
+    background: 'transparent',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 6, cursor: 'pointer', color: 'rgba(255,255,255,0.4)',
+    width: '100%', transition: 'color 0.15s, border-color 0.15s',
   },
 };
