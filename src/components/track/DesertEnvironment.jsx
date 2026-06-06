@@ -210,12 +210,12 @@ function SegmentContent({ segIdx }) {
 
 export default function DesertEnvironment() {
   const speed   = useGameStore((s) => s.speed);
-  const running = useGameStore((s) => s.running);
+  const phase   = useGameStore((s) => s.phase);
   const groupsRef = useRef([]);
   const posRef    = useRef(Array.from({ length: SEG_COUNT }, (_, i) => -i * SEG_LEN));
 
   useFrame((_, delta) => {
-    if (!running) return;
+    if (phase !== 'playing') return;
     const vel = (speed || 10) * delta;
     for (let i = 0; i < SEG_COUNT; i++) {
       posRef.current[i] += vel;
@@ -230,7 +230,7 @@ export default function DesertEnvironment() {
   return (
     <>
       {/* Mars sky */}
-      <color attach="background" args={['#0d0518']} />
+      <color attach="background" args={['#c0581a']} />
       <Stars />
       <Planet />
 

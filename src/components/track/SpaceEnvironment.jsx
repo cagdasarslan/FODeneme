@@ -158,12 +158,12 @@ function SegmentContent({ segIdx }) {
 
 export default function SpaceEnvironment() {
   const speed = useGameStore((s) => s.speed);
-  const running = useGameStore((s) => s.running);
+  const phase = useGameStore((s) => s.phase);
   const posRef = useRef(Array.from({ length: SEG_COUNT }, (_, i) => -i * SEG_LEN));
   const groupsRef = useRef([]);
 
   useFrame((_, delta) => {
-    if (!running) return;
+    if (phase !== 'playing') return;
     const vel = (speed || 10) * delta;
     for (let i = 0; i < SEG_COUNT; i++) {
       posRef.current[i] += vel;

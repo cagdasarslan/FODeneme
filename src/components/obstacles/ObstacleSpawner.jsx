@@ -224,7 +224,7 @@ export default function ObstacleSpawner() {
   const phase   = useGameStore((s) => s.phase);
   const runId   = useGameStore((s) => s.runId);
   const mapId   = useGameStore((s) => s.mapId);
-  const types   = mapId === 4 ? TYPES_SPACE : mapId === 3 ? TYPES_SPACE : mapId === 2 ? TYPES_CITY : TYPES_FARM;
+  const types   = mapId === 4 ? TYPES_SPACE : mapId === 3 ? TYPES_DESERT : mapId === 2 ? TYPES_CITY : TYPES_FARM;
   const poolRef = useRef(null);
   if (!poolRef.current) {
     poolRef.current = Array.from({ length: POOL }, (_, i) => ({

@@ -24,7 +24,7 @@ export default function App() {
 
   const isSpace  = mapId === 4;
   const isMars   = mapId === 3;
-  const fogColor = mapId === 4 ? '#0d0518' : mapId === 3 ? '#0d0518' : mapId === 2 ? '#88b8e0' : '#a8d4e8';
+  const fogColor = mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a' : mapId === 2 ? '#88b8e0' : '#a8d4e8';
   const hemiGround = mapId === 2 ? '#333333' : '#4e8040';
 
   function EnvLayer() {

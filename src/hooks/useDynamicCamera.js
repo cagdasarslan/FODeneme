@@ -9,6 +9,10 @@ const MAX_FOV     = 88;
 const BASE_Y      = 8;      // kamera yüksekliği
 const BASE_Z      = 14;     // kamera derinliği
 const LOOK_AT     = new THREE.Vector3(0, 0.5, -6); // kamera hedefi: piste doğru
+// City map uses a lower camera so street-level buildings are visible
+const CITY_BASE_Y = 5;
+const CITY_BASE_Z = 12;
+const CITY_LOOK_AT = new THREE.Vector3(0, 0, -30);
 const BOB_AMP     = 0.07;
 const BOB_FREQ    = 2.2;
 const SHAKE_DECAY = 6;
@@ -29,9 +33,6 @@ export function useDynamicCamera() {
   useFrame(({ camera }, delta) => {
     const { phase, speed, adrenaline, mapId } = useGameStore.getState();
 
-    // HipodromScene kamerayı kendisi yönetiyor
-    if (mapId === 3) return;
-
     // FOV hızla büyür
     const t        = (speed - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED);
     const targetFov = THREE.MathUtils.lerp(BASE_FOV, MAX_FOV, Math.pow(t, 0.55));
@@ -39,9 +40,14 @@ export function useDynamicCamera() {
     camera.fov      = fovRef.current;
     camera.updateProjectionMatrix();
 
+    const isCity = mapId === 2;
+    const camBaseY = isCity ? CITY_BASE_Y : BASE_Y;
+    const camBaseZ = isCity ? CITY_BASE_Z : BASE_Z;
+    const camLookAt = isCity ? CITY_LOOK_AT : LOOK_AT;
+
     if (phase !== 'playing') {
-      camera.position.lerp(new THREE.Vector3(0, BASE_Y, BASE_Z), 5 * delta);
-      camera.lookAt(LOOK_AT);
+      camera.position.lerp(new THREE.Vector3(0, camBaseY, camBaseZ), 5 * delta);
+      camera.lookAt(camLookAt);
       return;
     }
 
@@ -56,14 +62,14 @@ export function useDynamicCamera() {
 
     // Adrenalin'e göre kamera hafif öne eğilir (immersive)
     const adLean = (adrenaline / 100) * 0.5;
-    const targetY = BASE_Y + bob + sy - adLean * 0.4;
-    const targetZ = BASE_Z + sx - adLean * 0.8;
+    const targetY = camBaseY + bob + sy - adLean * 0.4;
+    const targetZ = camBaseZ + sx - adLean * 0.8;
 
     posRef.current.set(sx * 0.3, targetY, targetZ);
     camera.position.lerp(posRef.current, 12 * delta);
 
     // Kamera her zaman pistin önüne baksın
-    camera.lookAt(LOOK_AT);
+    camera.lookAt(camLookAt);
 
     // Hafif tilt (lookAt sonrası z-eksen dönüşü)
     const adTilt = (adrenaline / 100) * 0.03;
