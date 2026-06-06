@@ -9,10 +9,6 @@ const MAX_FOV     = 88;
 const BASE_Y      = 8;      // kamera yüksekliği
 const BASE_Z      = 14;     // kamera derinliği
 const LOOK_AT     = new THREE.Vector3(0, 0.5, -6); // kamera hedefi: piste doğru
-// City map uses a lower camera so street-level buildings are visible
-const CITY_BASE_Y = 5;
-const CITY_BASE_Z = 12;
-const CITY_LOOK_AT = new THREE.Vector3(0, 0, -30);
 const BOB_AMP     = 0.07;
 const BOB_FREQ    = 2.2;
 const SHAKE_DECAY = 6;
@@ -40,14 +36,9 @@ export function useDynamicCamera() {
     camera.fov      = fovRef.current;
     camera.updateProjectionMatrix();
 
-    const isCity = mapId === 2;
-    const camBaseY = isCity ? CITY_BASE_Y : BASE_Y;
-    const camBaseZ = isCity ? CITY_BASE_Z : BASE_Z;
-    const camLookAt = isCity ? CITY_LOOK_AT : LOOK_AT;
-
     if (phase !== 'playing') {
-      camera.position.lerp(new THREE.Vector3(0, camBaseY, camBaseZ), 5 * delta);
-      camera.lookAt(camLookAt);
+      camera.position.lerp(new THREE.Vector3(0, BASE_Y, BASE_Z), 5 * delta);
+      camera.lookAt(LOOK_AT);
       return;
     }
 
@@ -62,14 +53,14 @@ export function useDynamicCamera() {
 
     // Adrenalin'e göre kamera hafif öne eğilir (immersive)
     const adLean = (adrenaline / 100) * 0.5;
-    const targetY = camBaseY + bob + sy - adLean * 0.4;
-    const targetZ = camBaseZ + sx - adLean * 0.8;
+    const targetY = BASE_Y + bob + sy - adLean * 0.4;
+    const targetZ = BASE_Z + sx - adLean * 0.8;
 
     posRef.current.set(sx * 0.3, targetY, targetZ);
     camera.position.lerp(posRef.current, 12 * delta);
 
     // Kamera her zaman pistin önüne baksın
-    camera.lookAt(camLookAt);
+    camera.lookAt(LOOK_AT);
 
     // Hafif tilt (lookAt sonrası z-eksen dönüşü)
     const adTilt = (adrenaline / 100) * 0.03;
