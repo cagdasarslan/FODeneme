@@ -27,7 +27,49 @@ const edgeGeo   = new THREE.BoxGeometry(0.22, 0.01, TILE_LENGTH);
 const DASH_COUNT = 7;
 const DASH_SPACE = TILE_LENGTH / DASH_COUNT;
 
-function RoadTile() {
+// ── Yol detayları: çatlak, lastik izi, yama ───────────────────────────────────
+const crackMat = new THREE.MeshStandardMaterial({ color: '#101018', roughness: 1 });
+const tireMat  = new THREE.MeshStandardMaterial({ color: '#15151d', transparent: true, opacity: 0.55, roughness: 1 });
+const patchMat = new THREE.MeshStandardMaterial({ color: '#2a2a36', roughness: 0.9 });
+const crackGeo = new THREE.BoxGeometry(0.08, 0.012, 2.2);
+const tireGeo  = new THREE.BoxGeometry(0.35, 0.011, 7);
+const patchGeo = new THREE.BoxGeometry(1.6, 0.013, 2.4);
+
+function RoadDetails({ seed }) {
+  // tile başına deterministik "rastgele"
+  const h = n => ((seed * 7919 + n * 1013) % 1000) / 1000;
+  const half = TILE_LENGTH / 2;
+  return (
+    <group>
+      {/* çatlaklar */}
+      {Array.from({ length: 4 }, (_, i) => (
+        <mesh key={`c${i}`} geometry={crackGeo} material={crackMat}
+          position={[(h(i) - 0.5) * 10, 0.153, -half + h(i + 10) * TILE_LENGTH]}
+          rotation={[0, (h(i + 20) - 0.5) * 1.2, 0]} />
+      ))}
+      {/* lastik izleri — çift şerit */}
+      {Array.from({ length: 2 }, (_, i) => {
+        const x = (h(i + 30) - 0.5) * 8;
+        const z = -half + h(i + 40) * TILE_LENGTH;
+        const rot = (h(i + 50) - 0.5) * 0.4;
+        return (
+          <group key={`t${i}`} position={[x, 0.153, z]} rotation={[0, rot, 0]}>
+            <mesh geometry={tireGeo} material={tireMat} position={[-0.55, 0, 0]} />
+            <mesh geometry={tireGeo} material={tireMat} position={[ 0.55, 0, 0]} />
+          </group>
+        );
+      })}
+      {/* asfalt yamaları */}
+      {Array.from({ length: 2 }, (_, i) => (
+        <mesh key={`p${i}`} geometry={patchGeo} material={patchMat}
+          position={[(h(i + 60) - 0.5) * 9, 0.1515, -half + h(i + 70) * TILE_LENGTH]}
+          rotation={[0, (h(i + 80) - 0.5) * 0.5, 0]} />
+      ))}
+    </group>
+  );
+}
+
+function RoadTile({ seed = 0 }) {
   return (
     <group>
       <mesh receiveShadow geometry={groundGeo} material={groundMat} position={[0, -0.23, 0]} />
@@ -49,6 +91,7 @@ function RoadTile() {
           </group>
         );
       })}
+      <RoadDetails seed={seed} />
     </group>
   );
 }
@@ -87,7 +130,7 @@ export default function Track() {
     <>
       {posRef.current.map((z, i) => (
         <group key={i} ref={el => (grpRefs.current[i] = el)} position={[0, 0, z]}>
-          <RoadTile />
+          <RoadTile seed={i} />
         </group>
       ))}
       {posRef.current.map((z, i) => (

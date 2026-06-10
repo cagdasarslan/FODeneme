@@ -11,6 +11,7 @@ import DesertEnvironment from '@/components/track/DesertEnvironment';
 import SpaceEnvironment from '@/components/track/SpaceEnvironment';
 import ObstacleSpawner from '@/components/obstacles/ObstacleSpawner';
 import CarrotSpawner from '@/components/track/CarrotSpawner';
+import Weather from '@/components/track/Weather';
 import SuperNalSpawner from '@/components/track/SuperNalSpawner';
 import HUD from '@/components/ui/HUD';
 import MainMenu from '@/components/ui/MainMenu';
@@ -22,9 +23,15 @@ export default function App() {
   const mapId = useGameStore((s) => s.mapId);
   useEffect(() => { initSession(); }, [initSession]);
 
+  const nightMode = useGameStore((s) => s.nightMode);
+
   const isSpace  = mapId === 4;
   const isMars   = mapId === 3;
-  const fogColor = mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a' : mapId === 2 ? '#88b8e0' : '#a8d4e8';
+  // Gece modu yalnızca harita 1-2'de (mars/uzay zaten kendi atmosferine sahip)
+  const isNight  = nightMode && !isSpace && !isMars;
+  const fogColor = mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a'
+    : isNight ? '#0a0e1e'
+    : mapId === 2 ? '#88b8e0' : '#a8d4e8';
   const hemiGround = mapId === 2 ? '#333333' : '#4e8040';
 
   function EnvLayer() {
@@ -40,19 +47,24 @@ export default function App() {
         style={{ width:'100vw', height:'100vh' }}
         gl={{ antialias:true, powerPreference:'high-performance' }}
         dpr={[1,2]} performance={{ min:0.5 }}>
-        <fog attach="fog" args={[fogColor, (isSpace || isMars) ? 120 : 90, (isSpace || isMars) ? 500 : 420]} />
+        <fog attach="fog" args={[fogColor, (isSpace || isMars) ? 120 : isNight ? 60 : 90, (isSpace || isMars) ? 500 : isNight ? 280 : 420]} />
         <CameraRig />
         {!isSpace && !isMars && (
           <>
-            <ambientLight intensity={0.65} />
-            <directionalLight castShadow position={[-50,80,30]} intensity={2.0}
+            <ambientLight intensity={isNight ? 0.16 : 0.65} />
+            <directionalLight castShadow position={[-50,80,30]}
+              intensity={isNight ? 0.45 : 2.0}
+              color={isNight ? '#8fa8e0' : '#ffffff'}
               shadow-mapSize={[2048,2048]} shadow-camera-near={1} shadow-camera-far={280}
               shadow-camera-left={-60} shadow-camera-right={60}
               shadow-camera-top={60} shadow-camera-bottom={-60} />
-            <hemisphereLight skyColor="#87ceeb" groundColor={hemiGround} intensity={0.55} />
+            <hemisphereLight skyColor={isNight ? '#1a2244' : '#87ceeb'}
+              groundColor={isNight ? '#0a0a14' : hemiGround}
+              intensity={isNight ? 0.25 : 0.55} />
           </>
         )}
         <EnvLayer />
+        <Weather />
         <Physics gravity={[0,-20,0]}>
           <Track />
           <ObstacleSpawner />

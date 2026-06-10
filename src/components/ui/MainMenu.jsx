@@ -49,7 +49,7 @@ export default function MainMenu() {
     phase, sessionReady, sessionError, score, carrots,
     startRun, openGarage, selectedCharacterId, selectedHorseId,
     mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4,
-    horseLevels,
+    horseLevels, nightMode, toggleNightMode,
   } = useGameStore(s => ({
     phase:               s.phase,
     sessionReady:        s.sessionReady,
@@ -67,6 +67,8 @@ export default function MainMenu() {
     highScoreMap3:       s.highScoreMap3,
     highScoreMap4:       s.highScoreMap4,
     horseLevels:         s.horseLevels,
+    nightMode:           s.nightMode,
+    toggleNightMode:     s.toggleNightMode,
   }));
 
   const activeChar  = CHARACTERS.find(c => c.id === selectedCharacterId) ?? CHARACTERS[0];
@@ -195,6 +197,21 @@ export default function MainMenu() {
             </div>
           ))}
         </div>
+
+        {/* Gece modu (harita 1-2) */}
+        {(mapId === 1 || mapId === 2) && (
+          <button
+            style={{
+              ...styles.nightBtn,
+              borderColor: nightMode ? '#8fa8e0' : 'rgba(255,255,255,0.15)',
+              color: nightMode ? '#8fa8e0' : 'rgba(255,255,255,0.5)',
+              background: nightMode ? 'rgba(143,168,224,0.1)' : 'transparent',
+            }}
+            onClick={toggleNightMode}
+          >
+            {nightMode ? '🌙 GECE MODU: AÇIK' : '☀️ GECE MODU: KAPALI'}
+          </button>
+        )}
 
         {/* Aktif jokey + at göster */}
         <div style={styles.activeRow} onClick={openGarage}>
@@ -346,6 +363,12 @@ const styles = {
   mapName: { fontSize: 10, fontWeight: 700, letterSpacing: 2 },
   mapSub:  { color: 'rgba(255,255,255,0.35)', fontSize: 9, letterSpacing: 1 },
   mapHsChip: { fontSize: 10, fontWeight: 700, letterSpacing: 1, marginTop: 2 },
+  nightBtn: {
+    padding: '8px 24px', fontSize: 11, fontFamily: 'monospace',
+    fontWeight: 700, letterSpacing: 2,
+    border: '1px solid', borderRadius: 6, cursor: 'pointer',
+    width: '100%', transition: 'all 0.15s',
+  },
   activeRow: {
     display: 'flex', alignItems: 'center', gap: 10,
     background: 'rgba(255,255,255,0.06)',

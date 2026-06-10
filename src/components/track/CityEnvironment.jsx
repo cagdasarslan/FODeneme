@@ -60,6 +60,12 @@ const skyMidMat   = new THREE.MeshStandardMaterial({ color: '#5a90c8', side: THR
 const skyHorMat   = new THREE.MeshStandardMaterial({ color: '#88b8e0', side: THREE.BackSide });
 const sunMat      = new THREE.MeshStandardMaterial({ color: '#fffacc', emissive:'#ffd060', emissiveIntensity:1 });
 const cloudMat    = new THREE.MeshStandardMaterial({ color: '#f0f4ff', transparent:true, opacity:0.85, roughness:1 });
+// Gece varyantları
+const skyTopMatN  = new THREE.MeshBasicMaterial({ color: '#060a18', side: THREE.BackSide });
+const skyMidMatN  = new THREE.MeshBasicMaterial({ color: '#0a1028', side: THREE.BackSide });
+const skyHorMatN  = new THREE.MeshBasicMaterial({ color: '#141a38', side: THREE.BackSide });
+const moonMat     = new THREE.MeshStandardMaterial({ color: '#e8ecf4', emissive:'#c8d4f0', emissiveIntensity:0.9 });
+const cloudMatN   = new THREE.MeshStandardMaterial({ color: '#2a3048', transparent:true, opacity:0.7, roughness:1 });
 const groundMat   = new THREE.MeshStandardMaterial({ color: '#4a4a4a', roughness:0.95 });
 
 // Track.jsx already renders the visual road — no road tiles needed here.
@@ -219,22 +225,23 @@ function StreetProps({ seed }) {
 
 // ── City Sky ──────────────────────────────────────────────────────────────────
 function CitySky() {
+  const night = useGameStore((s) => s.nightMode);
   const clouds = [
     [-80,35,-180,1.2],[40,40,-220,0.9],[-30,38,-300,1.4],
     [130,36,-170,1.0],[-160,44,-250,1.1],
   ];
   return (
     <>
-      <mesh><sphereGeometry args={[500,16,12]} /><primitive object={skyTopMat} attach="material" /></mesh>
-      <mesh position={[0,-30,0]}><cylinderGeometry args={[500,500,80,16,1,true]} /><primitive object={skyMidMat} attach="material" /></mesh>
-      <mesh position={[0,-80,0]}><cylinderGeometry args={[500,500,80,16,1,true]} /><primitive object={skyHorMat} attach="material" /></mesh>
-      <mesh position={[-80,65,-260]}><sphereGeometry args={[12,12,10]} /><primitive object={sunMat} attach="material" /></mesh>
+      <mesh><sphereGeometry args={[500,16,12]} /><primitive object={night ? skyTopMatN : skyTopMat} attach="material" /></mesh>
+      <mesh position={[0,-30,0]}><cylinderGeometry args={[500,500,80,16,1,true]} /><primitive object={night ? skyMidMatN : skyMidMat} attach="material" /></mesh>
+      <mesh position={[0,-80,0]}><cylinderGeometry args={[500,500,80,16,1,true]} /><primitive object={night ? skyHorMatN : skyHorMat} attach="material" /></mesh>
+      <mesh position={[-80,65,-260]}><sphereGeometry args={[night ? 9 : 12,12,10]} /><primitive object={night ? moonMat : sunMat} attach="material" /></mesh>
       {clouds.map(([cx,cy,cz,cs],ci) => (
         <group key={ci} position={[cx,cy,cz]} scale={cs}>
           {[[0,0,0,7],[7,-1,0,5],[-6,-2,0,5],[2,2,0,4.5]].map(([px,py,pz,r],pi)=>(
             <mesh key={pi} position={[px,py,pz]}>
               <sphereGeometry args={[r,6,5]} />
-              <primitive object={cloudMat} attach="material" />
+              <primitive object={night ? cloudMatN : cloudMat} attach="material" />
             </mesh>
           ))}
         </group>

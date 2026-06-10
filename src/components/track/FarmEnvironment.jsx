@@ -85,6 +85,13 @@ M.skyTop    = new THREE.MeshStandardMaterial({ color: MC.skyTop,     side: THREE
 M.skyMid    = new THREE.MeshStandardMaterial({ color: MC.skyMid,     side: THREE.BackSide });
 M.skyHorizon= new THREE.MeshStandardMaterial({ color: MC.skyHorizon, side: THREE.BackSide });
 
+// Gece varyantları
+M.skyTopN     = new THREE.MeshBasicMaterial({ color: '#060a18', side: THREE.BackSide });
+M.skyMidN     = new THREE.MeshBasicMaterial({ color: '#0a1028', side: THREE.BackSide });
+M.skyHorizonN = new THREE.MeshBasicMaterial({ color: '#141a38', side: THREE.BackSide });
+M.moon        = new THREE.MeshStandardMaterial({ color: '#e8ecf4', emissive: '#c8d4f0', emissiveIntensity: 0.9 });
+M.cloudN      = new THREE.MeshStandardMaterial({ color: '#2a3048', transparent: true, opacity: 0.7, roughness: 1 });
+
 // ── Generic GLB with per-instance clone ──────────────────────────────────────
 function GLBInner({ path, position = [0,0,0], scale = 1, rotY = 0, rotX = 0 }) {
   const { scene } = useGLTF(path);
@@ -291,23 +298,47 @@ function Barn({ x = 0, z = 0 }) {
 }
 
 // ── Sky ───────────────────────────────────────────────────────────────────────
+function NightStars() {
+  const positions = (() => {
+    const arr = new Float32Array(400 * 3);
+    for (let i = 0; i < 400; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 350 + Math.random() * 100;
+      arr[i * 3]     = Math.cos(a) * r;
+      arr[i * 3 + 1] = Math.random() * 220 + 30;
+      arr[i * 3 + 2] = Math.sin(a) * r;
+    }
+    return arr;
+  })();
+  return (
+    <points>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial color="#ffffff" size={0.9} sizeAttenuation />
+    </points>
+  );
+}
+
 function Sky() {
+  const night = useGameStore((s) => s.nightMode);
   const clouds = [
     [-95,38,-200,1.3],[55,44,-240,1.0],[-20,42,-310,1.5],
     [120,37,-180,1.1],[-170,50,-260,1.2],[30,46,-160,0.9],
   ];
   return (
     <>
-      <mesh><sphereGeometry args={[500,16,12]} /><primitive object={M.skyTop} attach="material" /></mesh>
-      <mesh position={[0,-30,0]}><cylinderGeometry args={[500,500,80,16,1,true]} /><primitive object={M.skyMid} attach="material" /></mesh>
-      <mesh position={[0,-80,0]}><cylinderGeometry args={[500,500,80,16,1,true]} /><primitive object={M.skyHorizon} attach="material" /></mesh>
-      <mesh position={[-90,75,-280]}><sphereGeometry args={[14,14,12]} /><primitive object={M.sunCore} attach="material" /></mesh>
+      <mesh><sphereGeometry args={[500,16,12]} /><primitive object={night ? M.skyTopN : M.skyTop} attach="material" /></mesh>
+      <mesh position={[0,-30,0]}><cylinderGeometry args={[500,500,80,16,1,true]} /><primitive object={night ? M.skyMidN : M.skyMid} attach="material" /></mesh>
+      <mesh position={[0,-80,0]}><cylinderGeometry args={[500,500,80,16,1,true]} /><primitive object={night ? M.skyHorizonN : M.skyHorizon} attach="material" /></mesh>
+      <mesh position={[-90,75,-280]}><sphereGeometry args={[night ? 10 : 14,14,12]} /><primitive object={night ? M.moon : M.sunCore} attach="material" /></mesh>
+      {night && <NightStars />}
       {clouds.map(([cx,cy,cz,cs],ci) => (
         <group key={ci} position={[cx,cy,cz]} scale={cs}>
           {[[0,0,0,8],[8,-1,0,6],[-7,-2,0,5.5],[2,2.5,0,5],[-3,2,1,4.5]].map(([px,py,pz,r],pi)=>(
             <mesh key={pi} position={[px,py,pz]}>
               <sphereGeometry args={[r,7,6]} />
-              <primitive object={M.cloudW} attach="material" />
+              <primitive object={night ? M.cloudN : M.cloudW} attach="material" />
             </mesh>
           ))}
         </group>
