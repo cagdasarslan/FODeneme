@@ -20,21 +20,33 @@ CHARACTERS.forEach(c => useGLTF.preload(CHAR_BASE + c.file));
 function JockeyInner({ charFile }) {
   const { scene } = useGLTF(CHAR_BASE + charFile);
   const cloned = useRef(null);
+  const groupRef = useRef();
+  const t = useRef(0);
+
   if (!cloned.current) {
     cloned.current = scene.clone(true);
     cloned.current.traverse(o => {
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
     });
   }
-  // Scale: char height ~3.1 units → 0.30 gives ~0.93 units (good jockey size)
-  // Lean forward slightly (rotX) for riding pose
+
+  useFrame((_, delta) => {
+    const { phase, speed } = useGameStore.getState();
+    if (phase !== 'playing' || !groupRef.current) return;
+    t.current += delta * (speed / 12) * 3.5;
+    const s = t.current;
+    const bob = Math.abs(Math.sin(s * 2)) * 0.05;
+    const sway = Math.sin(s * 2) * 0.03;
+    const lean = 0.22 + Math.min(0.14, (speed - 12) / 180);
+    groupRef.current.position.y = 0.08 + bob;
+    groupRef.current.rotation.x = lean;
+    groupRef.current.rotation.z = sway;
+  });
+
   return (
-    <primitive
-      object={cloned.current}
-      scale={0.30}
-      position={[0, 0.08, 0.05]}
-      rotation={[0.22, Math.PI, 0]}
-    />
+    <group ref={groupRef} position={[0, 0.08, 0.05]} rotation={[0.22, Math.PI, 0]}>
+      <primitive object={cloned.current} scale={0.30} />
+    </group>
   );
 }
 
