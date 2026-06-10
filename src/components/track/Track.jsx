@@ -69,6 +69,57 @@ function RoadDetails({ seed }) {
   );
 }
 
+// ── Sokak lambası (gece modu) ─────────────────────────────────────────────────
+const poleGeo   = new THREE.CylinderGeometry(0.06, 0.08, 6.5, 6);
+const armGeo    = new THREE.BoxGeometry(0.06, 0.06, 1.4);
+const headGeo   = new THREE.BoxGeometry(0.55, 0.18, 0.32);
+const poleMat   = new THREE.MeshStandardMaterial({ color: '#4a4a5a', roughness: 0.7, metalness: 0.5 });
+const headMatOff= new THREE.MeshStandardMaterial({ color: '#888', roughness: 0.4, metalness: 0.6 });
+const headMatOn = new THREE.MeshStandardMaterial({ color: '#fffacc', emissive: '#ffe060', emissiveIntensity: 2.0, roughness: 0.3 });
+
+const LAMP_SPACING = 25;
+const LAMP_COUNT   = Math.floor(TILE_LENGTH / LAMP_SPACING); // 4
+const LAMP_X       = ROAD_WIDTH / 2 + 1.8;
+
+function StreetLamps({ seed }) {
+  const night = useGameStore(s => s.nightMode);
+  const mapId = useGameStore(s => s.mapId);
+  // Sokak lambası yalnızca harita 1-2'de mantıklı
+  if (mapId === 3 || mapId === 4) return null;
+
+  const half = TILE_LENGTH / 2;
+  return (
+    <group>
+      {Array.from({ length: LAMP_COUNT }, (_, i) => {
+        // Alternatif taraflar: çift indeks sol, tek indeks sağ
+        const side = ((seed * LAMP_COUNT + i) % 2 === 0) ? -1 : 1;
+        const x = side * LAMP_X;
+        const z = -half + LAMP_SPACING * i + LAMP_SPACING / 2;
+        return (
+          <group key={i} position={[x, 0, z]}>
+            {/* direk */}
+            <mesh geometry={poleGeo} material={poleMat} position={[0, 3.25, 0]} castShadow />
+            {/* kol — yola doğru uzanıyor */}
+            <mesh geometry={armGeo} material={poleMat}
+              position={[-side * 0.65, 6.5, 0]} rotation={[0, 0, side * 0.18]} />
+            {/* lamba kafası */}
+            <mesh geometry={headGeo} material={night ? headMatOn : headMatOff}
+              position={[-side * 1.35, 6.46, 0]} />
+            {/* ışık kaynağı — yalnızca gece modunda */}
+            {night && (
+              <pointLight
+                position={[-side * 1.35, 6.0, 0]}
+                distance={22} decay={1.8}
+                intensity={18} color="#ffe8a0"
+              />
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 function RoadTile({ seed = 0 }) {
   return (
     <group>
@@ -92,6 +143,7 @@ function RoadTile({ seed = 0 }) {
         );
       })}
       <RoadDetails seed={seed} />
+      <StreetLamps seed={seed} />
     </group>
   );
 }

@@ -429,34 +429,6 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       </HorseErrorBoundary>
 
       <Jockey />
-      <HeadLamp />
     </RigidBody>
-  );
-}
-
-// ── Gece modunda atın önünü aydınlatan fener ──────────────────────────────────
-function HeadLamp() {
-  const nightMode = useGameStore(s => s.nightMode);
-  const mapId     = useGameStore(s => s.mapId);
-  const lightRef  = useRef();
-  const targetRef = useRef();
-
-  useEffect(() => {
-    if (lightRef.current && targetRef.current) {
-      lightRef.current.target = targetRef.current;
-    }
-  }, [nightMode, mapId]);
-
-  if (!nightMode || mapId === 3 || mapId === 4) return null;
-  return (
-    <>
-      <spotLight ref={lightRef} position={[0, 0.8, -0.6]}
-        angle={0.5} penumbra={0.6} distance={45} decay={1.2}
-        intensity={60} color="#ffe9b0" />
-      <object3D ref={targetRef} position={[0, -0.5, -20]} />
-      {/* atın hemen çevresi için yumuşak dolgu ışığı */}
-      <pointLight position={[0, 1.2, 0]} distance={8} decay={1.6}
-        intensity={4} color="#ffd890" />
-    </>
   );
 }
