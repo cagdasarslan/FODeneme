@@ -26,7 +26,9 @@ export function useDynamicCamera() {
     }
   );
 
-  useFrame(({ camera }, delta) => {
+  useFrame(({ camera }, rawDelta) => {
+    // Düşük FPS'te lerp alpha > 1 olup kamera ıraksamasın diye delta sınırla
+    const delta = Math.min(rawDelta, 1 / 30);
     const { phase, speed, adrenaline, mapId } = useGameStore.getState();
 
     // FOV hızla büyür

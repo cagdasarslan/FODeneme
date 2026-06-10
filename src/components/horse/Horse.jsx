@@ -17,6 +17,9 @@ const CHAR_BASE = '/assets/models/characters/';
 CHARACTERS.forEach(c => useGLTF.preload(CHAR_BASE + c.file));
 
 // ── Jockey — selected character riding on top of the horse ────────────────────
+// At sırtı (eyer) hizası: RigidBody-lokal koordinatlarda
+const JOCKEY_Y = 0.55;
+const JOCKEY_Z = 0.18;
 function JockeyInner({ charFile }) {
   const { scene } = useGLTF(CHAR_BASE + charFile);
   const cloned = useRef(null);
@@ -38,13 +41,13 @@ function JockeyInner({ charFile }) {
     const bob = Math.abs(Math.sin(s * 2)) * 0.05;
     const sway = Math.sin(s * 2) * 0.03;
     const lean = 0.22 + Math.min(0.14, (speed - 12) / 180);
-    groupRef.current.position.y = 0.08 + bob;
+    groupRef.current.position.y = JOCKEY_Y + bob;
     groupRef.current.rotation.x = lean;
     groupRef.current.rotation.z = sway;
   });
 
   return (
-    <group ref={groupRef} position={[0, 0.08, 0.05]} rotation={[0.22, Math.PI, 0]}>
+    <group ref={groupRef} position={[0, JOCKEY_Y, JOCKEY_Z]} rotation={[0.22, Math.PI, 0]}>
       <primitive object={cloned.current} scale={0.30} />
     </group>
   );
