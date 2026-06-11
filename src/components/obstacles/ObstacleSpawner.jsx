@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, Suspense } from 'react';
+import { useRef, useCallback, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
@@ -222,37 +222,23 @@ function Obstacle({ data, onRef }) {
 // ── Spawner ───────────────────────────────────────────────────────────────────
 export default function ObstacleSpawner() {
   const phase   = useGameStore((s) => s.phase);
-  const runId   = useGameStore((s) => s.runId);
   const mapId   = useGameStore((s) => s.mapId);
   const types   = mapId === 4 ? TYPES_SPACE : mapId === 3 ? TYPES_DESERT : mapId === 2 ? TYPES_CITY : TYPES_FARM;
-  const poolRef = useRef(null);
-  if (!poolRef.current) {
-    poolRef.current = Array.from({ length: POOL }, (_, i) => ({
+  // Component is keyed by runId in App, so this always runs with current types.
+  const poolRef = useRef(
+    Array.from({ length: POOL }, (_, i) => ({
       id: i, x: LANES[i % 3], z: SPAWN_Z - i * 30,
       typeIdx: i % types.length,
       Type: types[i % types.length],
       TypeFn: types[i % types.length],
       active: false,
-    }));
-  }
+    }))
+  );
   const rbRefs   = useRef({});
   const timerRef = useRef(0);
   const waveIdx  = useRef(0);
 
   const onRef = useCallback((id, rb) => { rbRefs.current[id] = rb; }, []);
-
-  useEffect(() => {
-    timerRef.current = 0;
-    waveIdx.current  = 0;
-    poolRef.current.forEach((obs) => {
-      obs.active = false;
-      obs.z      = SPAWN_Z - obs.id * 30;
-      upsertObstacle(obs.id, obs.x, obs.z);  // clear stale position before deactivating
-      setObstacleActive(obs.id, false);
-      rbRefs.current[obs.id]?.setTranslation({ x: obs.x, y: -100, z: obs.z }, true);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId]);
 
   useFrame((_, delta) => {
     if (phase !== 'playing') return;

@@ -18,28 +18,31 @@ import MainMenu from '@/components/ui/MainMenu';
 import Garage from '@/components/ui/Garage';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 
+// ── EnvLayer MUST be defined outside App so React sees the same component
+// type across re-renders. Defining it inside App creates a new function
+// reference every render → React unmounts/remounts the entire environment
+// subtree, causing asset flickering and wrong-map assets appearing.
+function EnvLayer({ mapId }) {
+  if (mapId === 4) return <SpaceEnvironment />;
+  if (mapId === 3) return <DesertEnvironment />;
+  if (mapId === 2) return <CityEnvironment />;
+  return <FarmEnvironment />;
+}
+
 export default function App() {
   const initSession = useGameStore((s) => s.initSession);
-  const mapId = useGameStore((s) => s.mapId);
-  useEffect(() => { initSession(); }, [initSession]);
-
+  const mapId    = useGameStore((s) => s.mapId);
+  const runId    = useGameStore((s) => s.runId);
   const nightMode = useGameStore((s) => s.nightMode);
+  useEffect(() => { initSession(); }, [initSession]);
 
   const isSpace  = mapId === 4;
   const isMars   = mapId === 3;
-  // Gece modu yalnızca harita 1-2'de (mars/uzay zaten kendi atmosferine sahip)
   const isNight  = nightMode && !isSpace && !isMars;
   const fogColor = mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a'
     : isNight ? '#0a0e1e'
     : mapId === 2 ? '#88b8e0' : '#a8d4e8';
   const hemiGround = mapId === 2 ? '#333333' : '#4e8040';
-
-  function EnvLayer() {
-    if (mapId === 4) return <SpaceEnvironment />;
-    if (mapId === 3) return <DesertEnvironment />;
-    if (mapId === 2) return <CityEnvironment />;
-    return <FarmEnvironment />;
-  }
 
   return (
     <>
@@ -63,13 +66,18 @@ export default function App() {
               intensity={isNight ? 0.45 : 0.55} />
           </>
         )}
-        <EnvLayer />
+        {/* key=mapId: environment fully remounts when map changes, eliminating
+            stale segment groups from the previous map. */}
+        <EnvLayer mapId={mapId} key={mapId} />
         <Weather />
         <Physics gravity={[0,-20,0]}>
           <Track />
-          <ObstacleSpawner />
-          <CarrotSpawner />
-          <SuperNalSpawner />
+          {/* key=runId: spawners fully remount on every new run so pools are
+              re-created with the current map's obstacle/carrot types and no
+              stale state (active flags, timers) leaks across runs. */}
+          <ObstacleSpawner key={runId} />
+          <CarrotSpawner   key={runId} />
+          <SuperNalSpawner key={runId} />
           <Horse />
         </Physics>
       </Canvas>

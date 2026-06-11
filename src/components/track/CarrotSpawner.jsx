@@ -48,7 +48,6 @@ function CarrotMesh() {
 
 export default function CarrotSpawner() {
   const phase = useGameStore(s => s.phase);
-  const runId = useGameStore(s => s.runId);
   const magnetActive = useGameStore(s => s.magnetActive);
 
   const poolRef = useRef(
