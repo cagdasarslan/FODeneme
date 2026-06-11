@@ -14,3 +14,7 @@ export function setObstacleActive(id, active) {
   const entry = registry.get(id);
   if (entry) entry.active = active;
 }
+
+export function clearRegistry() {
+  registry.clear();
+}

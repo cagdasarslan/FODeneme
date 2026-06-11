@@ -1,10 +1,10 @@
-import { useRef, useCallback, Suspense } from 'react';
+import { useRef, useCallback, useEffect, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
-import { upsertObstacle, setObstacleActive } from '@/utils/obstacleRegistry';
+import { upsertObstacle, setObstacleActive, clearRegistry } from '@/utils/obstacleRegistry';
 import { LANES, OBSTACLE_SPAWN_Z as SPAWN_Z, OBSTACLE_RECYCLE_Z as RECYCLE_Z, OBSTACLE_MIN_GAP as MIN_GAP } from '@/constants/game';
 
 // ── KayKit city obstacle models ───────────────────────────────────────────────
@@ -239,6 +239,9 @@ export default function ObstacleSpawner() {
   const waveIdx  = useRef(0);
 
   const onRef = useCallback((id, rb) => { rbRefs.current[id] = rb; }, []);
+
+  // Clear stale registry entries from previous run so ghost collisions can't occur
+  useEffect(() => { clearRegistry(); }, []);
 
   useFrame((_, delta) => {
     if (phase !== 'playing') return;

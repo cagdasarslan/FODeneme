@@ -54,12 +54,6 @@ export const HORSES = [
     baseManeuvMult: 1.5,
     baseJumpMult: 1.3,
     baseMaxSpeed: 75,
-    // Farklı, statik low-poly model (CC0 Quaternius) — prosedürel koşu animasyonu
-    model: '/assets/models/pamuk_horse.glb',
-    animated: false,
-    modelScale: 0.85,
-    modelY: -0.05,
-    previewY: 0.2,
   },
 ];
 
