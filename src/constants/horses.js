@@ -45,9 +45,10 @@ export const HORSES = [
     id: 'pamuk',
     name: 'PAMUK',
     price: 1200,
-    bodyColor: '#fdfdfb',
-    maneColor: '#e6e6ea',
-    hoofColor: '#9a9aa2',
+    bodyColor: '#ffffff',
+    maneColor: '#f2f2f5',
+    hoofColor: '#d8d8de',
+    whiteWash: true, // dokuyu temizleyip bembeyaz yap
     desc: 'Bembeyaz, narin ve hızlı',
     accentColor: '#ffffff',
     baseSpeedMult: 1.6,

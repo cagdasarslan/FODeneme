@@ -74,6 +74,12 @@ function HorseModel3DInner({ variant }) {
       if (!o.isMesh) return;
       o.material = o.material.clone();
       o.material.color.set(meshIdx === 0 ? variant.bodyColor : variant.maneColor);
+      if (variant.whiteWash) {
+        o.material.map = null;
+        o.material.roughness = 0.55;
+        o.material.metalness = 0.0;
+        o.material.needsUpdate = true;
+      }
       meshIdx++;
     });
   }

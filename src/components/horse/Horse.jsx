@@ -253,6 +253,13 @@ function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
       obj.material = obj.material.clone();
       // horse.glb: mesh 0 = body, mesh 1 = mane/tail/hooves
       obj.material.color.set(meshIdx === 0 ? horseVariant.bodyColor : horseVariant.maneColor);
+      if (horseVariant.whiteWash) {
+        // Kahverengi dokuyu kaldır ki renk saf beyaz görünsün
+        obj.material.map = null;
+        obj.material.roughness = 0.55;
+        obj.material.metalness = 0.0;
+        obj.material.needsUpdate = true;
+      }
       meshIdx++;
     });
   }
