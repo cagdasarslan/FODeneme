@@ -41,6 +41,26 @@ export const HORSES = [
     baseJumpMult: 1.5,
     baseMaxSpeed: 80,
   },
+  {
+    id: 'pamuk',
+    name: 'PAMUK',
+    price: 1200,
+    bodyColor: '#fdfdfb',
+    maneColor: '#e6e6ea',
+    hoofColor: '#9a9aa2',
+    desc: 'Bembeyaz, narin ve hızlı',
+    accentColor: '#ffffff',
+    baseSpeedMult: 1.6,
+    baseManeuvMult: 1.5,
+    baseJumpMult: 1.3,
+    baseMaxSpeed: 75,
+    // Farklı, statik low-poly model (CC0 Quaternius) — prosedürel koşu animasyonu
+    model: '/assets/models/pamuk_horse.glb',
+    animated: false,
+    modelScale: 0.85,
+    modelY: -0.05,
+    previewY: 0.2,
+  },
 ];
 
 export const MAX_UPGRADE_LEVEL = 5;

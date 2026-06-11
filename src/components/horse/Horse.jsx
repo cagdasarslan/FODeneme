@@ -225,17 +225,39 @@ function HorsePlaceholder({ groupRef }) {
   );
 }
 
-// ── GLB model (Three.js Horse.glb — morph-target animation: 'horse_A_') ──────
+// Statik model materyallerini isimlerine göre renklendir (Quaternius "Pamuk")
+function colorByMaterialName(obj, variant) {
+  const n = (obj.material?.name ?? '').toLowerCase();
+  if (n.includes('hide') || n.includes('body')) {
+    obj.material.color.set(variant.bodyColor);
+  } else if (n.includes('hair') || n.includes('mane') || n.includes('tail')) {
+    obj.material.color.set(variant.maneColor);
+  } else if (n.includes('paw') || n.includes('hoof') || n.includes('leg')) {
+    obj.material.color.set(variant.hoofColor);
+  }
+  // göz / burun / ağız materyallerine dokunma (koyu kalsın)
+}
+
+// ── GLB model — animasyonlu (morph 'horse_A_') veya statik (prosedürel) ───────
 function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
-  const { scene, animations } = useGLTF(modelPath);
+  // Varyant kendi modelini taşıyabilir; yoksa varsayılan horse.glb
+  const path     = horseVariant?.model ?? modelPath;
+  const animated = horseVariant?.animated !== false;
+  const useScale = horseVariant?.modelScale ?? scale;
+  const useY     = horseVariant?.modelY ?? -1.05;
+
+  const { scene, animations } = useGLTF(path);
   const { actions, names }    = useAnimations(animations, groupRef);
   const clonedScene  = useRef(null);
+  const clonedPath   = useRef(null);
   const lastVariant  = useRef(null);
+  const procT        = useRef(0);
   const phase        = useGameStore((s) => s.phase);
-  const speed        = useGameStore((s) => s.speed);
 
-  // Clone once so Garage/preview instances don't share morph state
-  if (!clonedScene.current) {
+  // Model yolu değişince (farklı at seçilince) yeniden klonla
+  if (clonedPath.current !== path) {
+    clonedPath.current = path;
+    lastVariant.current = null; // renk yeniden uygulansın
     clonedScene.current = scene.clone(true);
     clonedScene.current.traverse((obj) => {
       if (obj.isMesh) {
@@ -246,25 +268,26 @@ function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
     });
   }
 
-  // Apply horse color variant whenever it changes
+  // Renk varyantını uygula
   if (horseVariant && horseVariant.id !== lastVariant.current) {
     lastVariant.current = horseVariant.id;
     let meshIdx = 0;
     clonedScene.current.traverse((obj) => {
       if (!obj.isMesh) return;
       obj.material = obj.material.clone();
-      // Horse.glb mesh 0 = body, mesh 1 = mane/tail/hooves
-      if (meshIdx === 0) {
-        obj.material.color.set(horseVariant.bodyColor);
+      if (animated) {
+        // horse.glb: mesh 0 = gövde, mesh 1 = yele/kuyruk/toynak
+        obj.material.color.set(meshIdx === 0 ? horseVariant.bodyColor : horseVariant.maneColor);
       } else {
-        obj.material.color.set(horseVariant.maneColor);
+        colorByMaterialName(obj, horseVariant);
       }
       meshIdx++;
     });
   }
 
-  // Play / pause the single morph animation; drive its time-scale with speed
+  // Animasyonlu model: tek morph klibini oynat, hıza göre tempoyu ayarla
   useEffect(() => {
+    if (!animated) return;
     const action = actions['horse_A_'] ?? actions[names[0]];
     if (!action) return;
 
@@ -274,17 +297,28 @@ function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
       action.fadeOut(0.25);
     }
     return () => action.stop();
-  }, [phase, actions, names]);
+  }, [phase, actions, names, animated]);
 
-  // Vary animation speed with game speed so the gallop matches the pace
-  useFrame(() => {
-    const action = actions['horse_A_'] ?? actions[names[0]];
-    if (action) action.timeScale = useGameStore.getState().speed / 14;
+  useFrame((_, delta) => {
+    if (animated) {
+      const action = actions['horse_A_'] ?? actions[names[0]];
+      if (action) action.timeScale = useGameStore.getState().speed / 14;
+      return;
+    }
+    // Statik model için prosedürel dörtnala animasyonu (gövde zıplaması + sallanma)
+    if (!groupRef.current) return;
+    const { phase: ph, speed } = useGameStore.getState();
+    if (ph !== 'playing') { groupRef.current.position.y = useY; return; }
+    procT.current += delta * (speed / 12) * 3.5;
+    const s = procT.current;
+    groupRef.current.position.y = useY + Math.abs(Math.sin(s * 2)) * 0.10;
+    groupRef.current.rotation.x = Math.sin(s * 2) * 0.05;     // hafif öne-arkaya rock
+    groupRef.current.rotation.z = Math.sin(s) * 0.03;          // yana salınım
   });
 
-  // Three.js Horse.glb faces +Z by default; rotate 180° to face camera (−Z)
+  // Modeller +Z'ye bakar; kamera yönüne (−Z) çevirmek için 180° döndür
   return (
-    <group ref={groupRef} scale={scale} rotation={[0, Math.PI, 0]} position={[0, -1.05, 0]}>
+    <group ref={groupRef} scale={useScale} rotation={[0, Math.PI, 0]} position={[0, useY, 0]}>
       <primitive object={clonedScene.current} />
     </group>
   );

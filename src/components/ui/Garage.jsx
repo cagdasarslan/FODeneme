@@ -52,15 +52,30 @@ function CharPreview3D({ charFile, accentColor }) {
   );
 }
 
+// Statik model materyallerini isimlerine göre renklendir
+function colorByMaterialName(o, variant) {
+  const n = (o.material?.name ?? '').toLowerCase();
+  if (n.includes('hide') || n.includes('body')) o.material.color.set(variant.bodyColor);
+  else if (n.includes('hair') || n.includes('mane') || n.includes('tail')) o.material.color.set(variant.maneColor);
+  else if (n.includes('paw') || n.includes('hoof') || n.includes('leg')) o.material.color.set(variant.hoofColor);
+}
+
 // ── 3D horse preview ──────────────────────────────────────────────────────────
 function HorseModel3DInner({ variant }) {
-  const { scene, animations } = useGLTF(MODEL_PATH);
+  const path     = variant?.model ?? MODEL_PATH;
+  const animated = variant?.animated !== false;
+  const useScale = variant?.modelScale ?? 0.013;
+  const useY     = variant?.previewY ?? variant?.modelY ?? -1.05;
+  const { scene, animations } = useGLTF(path);
   const groupRef = useRef();
   const { actions, names } = useAnimations(animations, groupRef);
   const cloned = useRef(null);
+  const clonedPath = useRef(null);
   const lastVariant = useRef(null);
 
-  if (!cloned.current) {
+  if (clonedPath.current !== path) {
+    clonedPath.current = path;
+    lastVariant.current = null;
     cloned.current = scene.clone(true);
     cloned.current.traverse(o => {
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
@@ -73,19 +88,21 @@ function HorseModel3DInner({ variant }) {
     cloned.current.traverse(o => {
       if (!o.isMesh) return;
       o.material = o.material.clone();
-      o.material.color.set(meshIdx === 0 ? variant.bodyColor : variant.maneColor);
+      if (animated) o.material.color.set(meshIdx === 0 ? variant.bodyColor : variant.maneColor);
+      else colorByMaterialName(o, variant);
       meshIdx++;
     });
   }
 
-  // Idle animation in preview
+  // Idle animation in preview (yalnızca animasyonlu modeller)
   useState(() => {
+    if (!animated) return;
     const action = actions['horse_A_'] ?? actions[names[0]];
     if (action) { action.reset().play(); action.timeScale = 0.5; }
   });
 
   return (
-    <group ref={groupRef} scale={0.013} rotation={[0, Math.PI, 0]} position={[0, -1.05, 0]}>
+    <group ref={groupRef} scale={useScale} rotation={[0, Math.PI, 0]} position={[0, useY, 0]}>
       <primitive object={cloned.current} />
     </group>
   );
