@@ -51,16 +51,16 @@ export default function App() {
         <CameraRig />
         {!isSpace && !isMars && (
           <>
-            <ambientLight intensity={isNight ? 0.16 : 0.65} />
+            <ambientLight intensity={isNight ? 0.34 : 0.65} />
             <directionalLight castShadow position={[-50,80,30]}
-              intensity={isNight ? 0.45 : 2.0}
-              color={isNight ? '#8fa8e0' : '#ffffff'}
+              intensity={isNight ? 0.85 : 2.0}
+              color={isNight ? '#aebfe8' : '#ffffff'}
               shadow-mapSize={[2048,2048]} shadow-camera-near={1} shadow-camera-far={280}
               shadow-camera-left={-60} shadow-camera-right={60}
               shadow-camera-top={60} shadow-camera-bottom={-60} />
-            <hemisphereLight skyColor={isNight ? '#1a2244' : '#87ceeb'}
-              groundColor={isNight ? '#0a0a14' : hemiGround}
-              intensity={isNight ? 0.25 : 0.55} />
+            <hemisphereLight skyColor={isNight ? '#26305a' : '#87ceeb'}
+              groundColor={isNight ? '#10121e' : hemiGround}
+              intensity={isNight ? 0.45 : 0.55} />
           </>
         )}
         <EnvLayer />

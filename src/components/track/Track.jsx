@@ -75,7 +75,7 @@ const armGeo    = new THREE.BoxGeometry(0.06, 0.06, 1.4);
 const headGeo   = new THREE.BoxGeometry(0.55, 0.18, 0.32);
 const poleMat   = new THREE.MeshStandardMaterial({ color: '#4a4a5a', roughness: 0.7, metalness: 0.5 });
 const headMatOff= new THREE.MeshStandardMaterial({ color: '#888', roughness: 0.4, metalness: 0.6 });
-const headMatOn = new THREE.MeshStandardMaterial({ color: '#fffacc', emissive: '#ffe060', emissiveIntensity: 2.0, roughness: 0.3 });
+const headMatOn = new THREE.MeshStandardMaterial({ color: '#fffacc', emissive: '#ffe879', emissiveIntensity: 3.5, roughness: 0.3 });
 
 const LAMP_SPACING = 25;
 const LAMP_COUNT   = Math.floor(TILE_LENGTH / LAMP_SPACING); // 4
@@ -109,8 +109,8 @@ function StreetLamps({ seed }) {
             {night && (
               <pointLight
                 position={[-side * 1.35, 6.0, 0]}
-                distance={22} decay={1.8}
-                intensity={18} color="#ffe8a0"
+                distance={32} decay={1.3}
+                intensity={45} color="#ffe8a0"
               />
             )}
           </group>
