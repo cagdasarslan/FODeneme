@@ -1,4 +1,4 @@
-import { useRef, useEffect, Suspense } from 'react';
+import { useRef, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
@@ -46,38 +46,41 @@ function CarrotMesh() {
   );
 }
 
-export default function CarrotSpawner() {
-  const phase = useGameStore(s => s.phase);
-  const magnetActive = useGameStore(s => s.magnetActive);
-  const runId = useGameStore(s => s.runId);
+function resetPool(pool, groupRefs) {
+  pool.forEach((c, i) => {
+    c.x = 0;
+    c.z = SPAWN_Z - i * 50;
+    c.active = false;
+    const grp = groupRefs[i];
+    if (grp) grp.visible = false;
+  });
+}
 
-  const poolRef = useRef(
+export default function CarrotSpawner() {
+  const poolRef    = useRef(
     Array.from({ length: POOL }, (_, i) => ({
       id: i, x: 0, z: SPAWN_Z - i * 50, active: false,
     }))
   );
-  const groupRefs = useRef(Array(POOL).fill(null));
-  const timerRef  = useRef(0);
-
-  // Hard reset on every new run — guarantees no stale carrots leak across runs,
-  // independent of remount/key behavior.
-  useEffect(() => {
-    timerRef.current = 0;
-    poolRef.current.forEach((c, i) => {
-      c.x = 0;
-      c.z = SPAWN_Z - i * 50;
-      c.active = false;
-      const grp = groupRefs.current[i];
-      if (grp) grp.visible = false;
-    });
-  }, [runId]);
+  const groupRefs  = useRef(Array(POOL).fill(null));
+  const timerRef   = useRef(0);
+  const lastRunRef = useRef(-1);
 
   useFrame((_, delta) => {
-    if (phase !== 'playing') return;
-    const speed = useGameStore.getState().speed;
-    const hx = horseRef.x;
-    const magnetOn = useGameStore.getState().magnetActive;
+    const { phase, speed, runId, magnetActive: magnetOn } = useGameStore.getState();
 
+    // Detect a new run and hard-reset the pool synchronously inside useFrame
+    // (doing this here avoids React effect / RAF ordering races)
+    if (runId !== lastRunRef.current) {
+      lastRunRef.current = runId;
+      timerRef.current = 0;
+      resetPool(poolRef.current, groupRefs.current);
+      return; // skip movement logic this frame
+    }
+
+    if (phase !== 'playing') return;
+
+    const hx = horseRef.x;
     timerRef.current += delta;
 
     // Move and collect
@@ -107,7 +110,7 @@ export default function CarrotSpawner() {
         return;
       }
 
-      // Collection check
+      // Collection check (horse is always at z≈0 in world space)
       const dx = Math.abs(c.x - hx);
       const dz = Math.abs(c.z);
       if (dx < COLLECT_DX && dz < COLLECT_DZ) {

@@ -156,6 +156,8 @@ export default function Track() {
   const phyRefs = useRef([]);
   const phase   = useGameStore((s) => s.phase);
   const runId   = useGameStore((s) => s.runId);
+  // Maps 3 (Desert) and 4 (Space) render their own road visuals; show farm road only on 1-2
+  const showRoad = useGameStore((s) => s.mapId <= 2);
 
   useEffect(() => {
     posRef.current = INIT_POS();
@@ -182,7 +184,7 @@ export default function Track() {
     <>
       {posRef.current.map((z, i) => (
         <group key={i} ref={el => (grpRefs.current[i] = el)} position={[0, 0, z]}>
-          <RoadTile seed={i} />
+          {showRoad && <RoadTile seed={i} />}
         </group>
       ))}
       {posRef.current.map((z, i) => (

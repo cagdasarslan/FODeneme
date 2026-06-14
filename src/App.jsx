@@ -76,7 +76,7 @@ export default function App() {
               re-created with the current map's obstacle/carrot types and no
               stale state (active flags, timers) leaks across runs. */}
           <ObstacleSpawner key={runId} />
-          <CarrotSpawner   key={runId} />
+          <CarrotSpawner />
           <SuperNalSpawner key={runId} />
           <Horse />
         </Physics>
