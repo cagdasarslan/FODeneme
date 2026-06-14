@@ -98,21 +98,21 @@ function ProceduralRocket({ position }) {
 function RoadSegment() {
   return (
     <group>
-      {/* Alien ground on sides */}
-      <mesh receiveShadow position={[-22, 0.05, 0]}>
+      {/* Alien ground on sides — starts after road edge at ±9 */}
+      <mesh receiveShadow position={[-31, 0.05, 0]}>
         <boxGeometry args={[44, 0.10, SEG_LEN]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
-      <mesh receiveShadow position={[22, 0.05, 0]}>
+      <mesh receiveShadow position={[31, 0.05, 0]}>
         <boxGeometry args={[44, 0.10, SEG_LEN]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
-      {/* Road - exactly 9 units wide, dark reddish-brown */}
+      {/* Road - 18 units wide so lanes at ±4 sit comfortably inside */}
       <mesh receiveShadow position={[0, 0.15, 0]}>
-        <boxGeometry args={[9, 0.30, SEG_LEN]} />
+        <boxGeometry args={[18, 0.30, SEG_LEN]} />
         <meshStandardMaterial color={ROAD_COLOR} roughness={0.9} />
       </mesh>
-      {/* Lane markings at x=-4 and x=4 */}
+      {/* Lane markings at outer-lane edges */}
       {[-4, 4].map((x) =>
         Array.from({ length: 8 }).map((_, i) => (
           <mesh key={`lm-${x}-${i}`} position={[x, 0.31, -SEG_LEN / 2 + 8 + i * 14]}>
@@ -130,8 +130,8 @@ function getSideProps(segIdx) {
   const pseudoRand = (n) => ((Math.sin(n * 127.1 + segIdx * 311.7) * 43758.5453) % 1 + 1) % 1;
   for (let i = 0; i < 6; i++) {
     const localZ = -SEG_LEN / 2 + pseudoRand(i * 3) * SEG_LEN;
-    const lx = -(6.5 + pseudoRand(i * 3 + 1) * 12);
-    const rx = 6.5 + pseudoRand(i * 3 + 2) * 12;
+    const lx = -(9.5 + pseudoRand(i * 3 + 1) * 12);
+    const rx = 9.5 + pseudoRand(i * 3 + 2) * 12;
     const r = pseudoRand(i * 5);
     const type = r < 0.3 ? 'crater' : r < 0.65 ? 'rock' : 'rocket';
     const scale = 0.5 + pseudoRand(i * 11) * 1.0;

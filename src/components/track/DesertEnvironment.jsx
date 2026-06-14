@@ -99,18 +99,18 @@ function Planet() {
 function RoadSegment() {
   return (
     <group>
-      {/* Mars terrain sides */}
-      <mesh receiveShadow position={[-22, 0.05, 0]}>
+      {/* Mars terrain sides — starts after road edge at ±9 */}
+      <mesh receiveShadow position={[-31, 0.05, 0]}>
         <boxGeometry args={[44, 0.10, SEG_LEN]} />
         <meshStandardMaterial color="#b84020" roughness={0.95} />
       </mesh>
-      <mesh receiveShadow position={[22, 0.05, 0]}>
+      <mesh receiveShadow position={[31, 0.05, 0]}>
         <boxGeometry args={[44, 0.10, SEG_LEN]} />
         <meshStandardMaterial color="#b84020" roughness={0.95} />
       </mesh>
-      {/* Road - exactly 9 units wide */}
+      {/* Road - 18 units wide so lanes at ±4 sit comfortably inside */}
       <mesh receiveShadow position={[0, 0.15, 0]}>
-        <boxGeometry args={[9, 0.30, SEG_LEN]} />
+        <boxGeometry args={[18, 0.30, SEG_LEN]} />
         <meshStandardMaterial color="#7a3018" roughness={0.85} />
       </mesh>
       {/* Lane markings */}
@@ -137,8 +137,8 @@ function getSideProps(segIdx) {
   // Near zone: craters + rocks (dx 7-14)
   for (let i = 0; i < 5; i++) {
     const z   = -SEG_LEN / 2 + pr(i, segIdx * 3 + 0) * SEG_LEN;
-    const dxL = -(7 + pr(i, segIdx * 3 + 1) * 7);
-    const dxR =   7 + pr(i, segIdx * 3 + 2) * 7;
+    const dxL = -(9.5 + pr(i, segIdx * 3 + 1) * 7);
+    const dxR =   9.5 + pr(i, segIdx * 3 + 2) * 7;
     const t   = pr(i + 10, segIdx) > 0.5 ? 'crater' : 'rock';
     props.push({ id: `nL${i}`, x: dxL, z, type: t });
     props.push({ id: `nR${i}`, x: dxR, z, type: t });
