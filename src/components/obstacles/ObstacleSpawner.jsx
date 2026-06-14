@@ -111,26 +111,26 @@ function CityDump()   { return <CityGLB path={M_DUMP}  scale={2.5} yOffset={0.0}
 function CityBoxA()   { return <CityGLB path={M_BOX_A} scale={4.0} yOffset={0.0}  />; }
 function CityBoxB()   { return <CityGLB path={M_BOX_B} scale={4.0} yOffset={0.0}  />; }
 
-// Center a cloned GLB scene so its bounding box midpoint sits at the origin.
-// This fixes models whose pivots are not at their geometric centre, preventing
-// the visual mesh from appearing offset from the obstacle's registry position.
-function centerClone(obj) {
-  const box = new THREE.Box3().setFromObject(obj);
-  const cx = (box.min.x + box.max.x) / 2;
-  const cz = (box.min.z + box.max.z) / 2;
-  obj.position.set(-cx, 0, -cz);
-}
-
 // ── Desert GLB obstacles ─────────────────────────────────────────────────────
+// Scale goes on a wrapper <group>; centering offset goes on the <primitive>
+// inside the group so the math is: (vertex_cx + (-cx)) * scale = 0. Putting
+// scale and offset on the same node would require offset = -cx * scale which
+// does not work because Box3 gives unscaled coordinates.
 function DesertGLB({ path, scale = 1 }) {
   const { scene } = useGLTF(path);
   const cloned = useRef(null);
+  const off    = useRef([0, 0]);
   if (!cloned.current) {
     cloned.current = scene.clone(true);
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    centerClone(cloned.current);
+    const box = new THREE.Box3().setFromObject(cloned.current);
+    off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
   }
-  return <primitive object={cloned.current} scale={scale} />;
+  return (
+    <group scale={scale}>
+      <primitive object={cloned.current} position={[-off.current[0], 0, -off.current[1]]} />
+    </group>
+  );
 }
 function DesertCactusShort() { return <DesertGLB path={M_CACTUS_S}   scale={2.5} />; }
 function DesertCactusTall()  { return <DesertGLB path={M_CACTUS_T}   scale={2.5} />; }
@@ -142,12 +142,18 @@ function DesertRockC()       { return <DesertGLB path={M_DES_ROCK_C} scale={2.5}
 function SpaceGLB({ path, scale = 1, yOffset = 0 }) {
   const { scene } = useGLTF(path);
   const cloned = useRef(null);
+  const off    = useRef([0, 0]);
   if (!cloned.current) {
     cloned.current = scene.clone(true);
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    centerClone(cloned.current);
+    const box = new THREE.Box3().setFromObject(cloned.current);
+    off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
   }
-  return <primitive object={cloned.current} scale={scale} position={[0, yOffset, 0]} />;
+  return (
+    <group scale={scale} position={[0, yOffset, 0]}>
+      <primitive object={cloned.current} position={[-off.current[0], 0, -off.current[1]]} />
+    </group>
+  );
 }
 function SpaceBarrels()   { return <SpaceGLB path={M_SP_BARRELS}    scale={3.0} />; }
 function SpaceRover()     { return <SpaceGLB path={M_SP_ROVER}      scale={2.2} />; }
