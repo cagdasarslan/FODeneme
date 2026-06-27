@@ -6,7 +6,7 @@ import TouchPad from '@/components/ui/TouchPad';
 const isMobile = 'ontouchstart' in window;
 
 // ── Close-call flash mesajları ────────────────────────────────────────────────
-const CLOSE_TEXTS = ['MAKAS!', 'SIKIŞ!', 'ADRENALIN!', 'YAKINDI!', 'ATEŞ!'];
+const CLOSE_TEXTS = ['MAKAS!', 'KIL PAYI!', 'ADRENALIN!', 'YAKINDI!', 'ATEŞ!'];
 
 function CloseCallFlash() {
   const [text, setText]     = useState('');

@@ -12,6 +12,11 @@ export const ADRENALINE_JUMP_GAIN       = 18; // engel üzerinden atlama ödül�
 export const ADRENALINE_DECAY_RATE      = 8;
 export const ADRENALINE_MAX             = 100;
 
+// Devam et (revive) — her kullanımda maliyet 3 katına çıkar
+export const CONTINUE_BASE_CARROTS = 200;
+export const CONTINUE_BASE_ADS     = 1;
+export const CONTINUE_MULTIPLIER   = 3;
+
 export const HORSE_LATERAL_SPEED = 10;
 
 export const SCORE_PER_METER   = 1;

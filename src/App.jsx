@@ -16,6 +16,7 @@ import Weather from '@/components/track/Weather';
 import SuperNalSpawner from '@/components/track/SuperNalSpawner';
 import HUD from '@/components/ui/HUD';
 import MainMenu from '@/components/ui/MainMenu';
+import ContinueOverlay from '@/components/ui/ContinueOverlay';
 import Garage from '@/components/ui/Garage';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { IS_MOBILE, MAX_DPR, SHADOW_MAP } from '@/utils/device';
@@ -89,6 +90,7 @@ export default function App() {
       </Canvas>
       <LoadingScreen />
       <HUD />
+      <ContinueOverlay />
       <MainMenu />
       <Garage />
     </>

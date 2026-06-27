@@ -310,7 +310,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   const customHorses    = useGameStore((s) => s.customHorses ?? []);
   const horseVariant    = [...HORSES, ...customHorses].find(h => h.id === selectedHorseId) ?? HORSES[0];
   const horseUps        = horseUpgrades?.[selectedHorseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
-  const { phase, tick, registerCloseCall, registerCollision, registerJumpOver, runId } = useGameStore(
+  const { phase, tick, registerCloseCall, registerCollision, registerJumpOver, runId, reviveId } = useGameStore(
     (s) => ({
       phase: s.phase,
       tick: s.tick,
@@ -318,6 +318,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       registerCollision: s.registerCollision,
       registerJumpOver: s.registerJumpOver,
       runId: s.runId,
+      reviveId: s.reviveId,
     })
   );
   const jumpedRef = useRef(new Set()); // bu zıplamada üzerinden atlanan engeller
@@ -336,6 +337,22 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     prevRightRef.current = false;
     jumpedRef.current.clear();
   }, [runId]);
+
+  // Devam et (revive): skoru koruyarak atı diriltir — pozisyon sıfırlanır ve
+  // ekrandaki engeller geçene kadar uzun bir dokunulmazlık (grace) verilir.
+  useEffect(() => {
+    if (reviveId === 0 || !rigidBodyRef.current) return;
+    rigidBodyRef.current.setTranslation({ x: 0, y: GROUND_Y, z: 0 }, true);
+    velYRef.current      = 0;
+    onGroundRef.current  = true;
+    tiltRef.current      = 0;
+    closeCoolRef.current = 0;
+    graceRef.current     = 2.5; // ekrandaki engeller güvenle geçsin
+    laneRef.current      = 1;
+    prevLeftRef.current  = false;
+    prevRightRef.current = false;
+    jumpedRef.current.clear();
+  }, [reviveId]);
 
   useFrame((_, delta) => {
     if (phase !== 'playing' || !rigidBodyRef.current) return;

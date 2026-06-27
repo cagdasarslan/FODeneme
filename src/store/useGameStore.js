@@ -10,6 +10,9 @@ import {
   ADRENALINE_JUMP_GAIN,
   ADRENALINE_MAX,
   SCORE_PER_METER,
+  CONTINUE_BASE_CARROTS,
+  CONTINUE_BASE_ADS,
+  CONTINUE_MULTIPLIER,
 } from '@/constants/game';
 import {
   startGuestSession,
@@ -53,6 +56,8 @@ const useGameStore = create(
     adrenaline: 0,
     distance: 0,
     runId: 0,
+    reviveId: 0,        // her devam-et (revive) işleminde artar → at sıfırlanır
+    reviveCount: 0,     // bu koşuda kaç kez devam edildi (maliyet 3^reviveCount)
     magnetActive: false,
     magnetTimer: 0,
     adrenalinBoosting: false,
@@ -132,6 +137,7 @@ const useGameStore = create(
         adrenaline: 0,
         distance: 0,
         runId: s.runId + 1,
+        reviveCount: 0,
         magnetActive: false,
         magnetTimer: 0,
         adrenalinBoosting: false,
@@ -237,9 +243,56 @@ const useGameStore = create(
       });
     },
 
+    // Çarpışma → önce "devam et" teklifi göster (gameover'ı ertele)
     registerCollision: () => {
       const { phase } = get();
-      if (phase === 'playing') get().endRun();
+      if (phase === 'playing') set({ phase: 'crashed' });
+    },
+
+    // Mevcut devam-et maliyetleri (reviveCount'a göre kümülatif 3 kat)
+    continueCost: () => {
+      const n = get().reviveCount;
+      return {
+        carrots: CONTINUE_BASE_CARROTS * Math.pow(CONTINUE_MULTIPLIER, n),
+        ads:     CONTINUE_BASE_ADS     * Math.pow(CONTINUE_MULTIPLIER, n),
+      };
+    },
+
+    _doRevive: () => {
+      set((s) => ({
+        phase: 'playing',
+        reviveCount: s.reviveCount + 1,
+        reviveId: s.reviveId + 1,
+        adrenaline: 0,
+        speed: INITIAL_SPEED,
+        adrenalinBoosting: false,
+        adrenalinBoostTimer: 0,
+      }));
+    },
+
+    continueWithCarrots: () => {
+      const { phase, carrots } = get();
+      if (phase !== 'crashed') return false;
+      const cost = get().continueCost().carrots;
+      if (carrots < cost) return false;
+      const newCarrots = carrots - cost;
+      localStorage.setItem('carrots', String(newCarrots));
+      set({ carrots: newCarrots });
+      get()._doRevive();
+      return true;
+    },
+
+    // Reklam izleyerek devam et (gerçek reklam SDK'sı entegre edilene kadar
+    // tıklama doğrudan devam ettirir; gereken reklam sayısı UI'da gösterilir)
+    continueWithAd: () => {
+      const { phase } = get();
+      if (phase !== 'crashed') return;
+      get()._doRevive();
+    },
+
+    giveUp: () => {
+      const { phase } = get();
+      if (phase === 'crashed') get().endRun();
     },
 
     // =========================================================================
