@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useLayoutEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -90,10 +90,68 @@ function Clouds() {
   );
 }
 
-// ── Yol parçası — 18 birim taş yol, yeşil çayır kenarlar ──────────────────────
-const ROAD_COLOR   = '#6f6a60';
+// ── Yol parçası — parke taşı (cobblestone) yol, yeşil çayır kenarlar ───────────
 const GROUND_COLOR = '#4e8040';
-function RoadSegment() {
+const ROAD_W   = 18;
+
+// Deterministik pseudo-random
+function pr(a, b = 0) {
+  return (((Math.sin(a * 127.1 + b * 311.7) * 43758.5453) % 1) + 1) % 1;
+}
+
+// Parke taşı geometri/materyali (paylaşılan) + renk paleti
+const cobbleGeo = new THREE.BoxGeometry(0.92, 0.22, 0.92);
+const cobbleMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 });
+const COBBLE_COLORS = ['#6f6a60', '#7d776c', '#5e594f', '#857f72', '#666158', '#736d62'].map(c => new THREE.Color(c));
+
+// InstancedMesh ile binlerce taş tek draw call'da — segIdx'e göre deterministik
+function CobbleRoad({ segIdx }) {
+  const ref = useRef();
+  const { count, matrices, colors } = useMemo(() => {
+    const dummy = new THREE.Object3D();
+    const STEP = 1.0;                        // taş aralığı
+    const cols = Math.floor(ROAD_W / STEP);  // ~18 sütun
+    const rows = Math.floor(SEG_LEN / STEP); // 120 sıra
+    const mats = [];
+    const cols_ = [];
+    let n = 0;
+    for (let r = 0; r < rows; r++) {
+      const z = -SEG_LEN / 2 + r * STEP + STEP / 2;
+      const rowOffset = (r % 2) * 0.5;       // tuğla deseni — sıralar kaydırılır
+      for (let c = 0; c < cols; c++) {
+        let x = -ROAD_W / 2 + c * STEP + STEP / 2 + rowOffset;
+        if (x > ROAD_W / 2 - 0.3) continue;  // kenardan taşmasın
+        const jx = (pr(n, segIdx) - 0.5) * 0.12;
+        const jz = (pr(n + 1, segIdx) - 0.5) * 0.12;
+        const sy = 0.7 + pr(n + 2, segIdx) * 0.6;       // yükseklik varyasyonu
+        const sxz = 0.9 + pr(n + 3, segIdx) * 0.14;
+        dummy.position.set(x + jx, 0.16, z + jz);
+        dummy.rotation.set(0, (pr(n + 4, segIdx) - 0.5) * 0.5, 0);
+        dummy.scale.set(sxz, sy, sxz);
+        dummy.updateMatrix();
+        mats.push(dummy.matrix.clone());
+        cols_.push(COBBLE_COLORS[Math.floor(pr(n + 5, segIdx) * COBBLE_COLORS.length) % COBBLE_COLORS.length]);
+        n++;
+      }
+    }
+    return { count: n, matrices: mats, colors: cols_ };
+  }, [segIdx]);
+
+  useLayoutEffect(() => {
+    const m = ref.current;
+    if (!m) return;
+    for (let i = 0; i < matrices.length; i++) {
+      m.setMatrixAt(i, matrices[i]);
+      m.setColorAt(i, colors[i]);
+    }
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }, [matrices, colors]);
+
+  return <instancedMesh ref={ref} args={[cobbleGeo, cobbleMat, count]} receiveShadow />;
+}
+
+function RoadSegment({ segIdx = 0 }) {
   return (
     <group>
       {/* Çayır kenarlar — geniş, harita dışını kapatır */}
@@ -105,27 +163,15 @@ function RoadSegment() {
         <boxGeometry args={[200, 0.10, SEG_LEN]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
-      {/* Taş yol — 18 birim geniş */}
-      <mesh receiveShadow position={[0, 0.15, 0]}>
-        <boxGeometry args={[18, 0.30, SEG_LEN]} />
-        <meshStandardMaterial color={ROAD_COLOR} roughness={1} />
+      {/* Koyu harç tabanı — taşların arasındaki derzler */}
+      <mesh receiveShadow position={[0, 0.12, 0]}>
+        <boxGeometry args={[ROAD_W, 0.24, SEG_LEN]} />
+        <meshStandardMaterial color="#33302b" roughness={1} />
       </mesh>
-      {/* Açık taş şerit izleri */}
-      {[-4, 4].map((x) =>
-        Array.from({ length: 8 }).map((_, i) => (
-          <mesh key={`lm-${x}-${i}`} position={[x, 0.31, -SEG_LEN / 2 + 8 + i * 14]}>
-            <boxGeometry args={[0.18, 0.02, 5]} />
-            <meshStandardMaterial color="#9a9388" roughness={1} />
-          </mesh>
-        ))
-      )}
+      {/* Parke taşları */}
+      <CobbleRoad segIdx={segIdx} />
     </group>
   );
-}
-
-// Deterministik pseudo-random
-function pr(a, b = 0) {
-  return (((Math.sin(a * 127.1 + b * 311.7) * 43758.5453) % 1) + 1) % 1;
 }
 
 // Yol kenarına SIK YERLEŞTİRİLMİŞ, iç içe köy yapıları + doğa
@@ -182,7 +228,7 @@ function SegmentContent({ segIdx }) {
   const props = useMemo(() => getSideProps(segIdx), [segIdx]);
   return (
     <>
-      <RoadSegment />
+      <RoadSegment segIdx={segIdx} />
       {props.map((p) => (
         <Model key={p.id} path={p.m} position={[p.x, 0, p.z]} scale={p.scale} rotation={[0, p.ry ?? 0, 0]} />
       ))}
