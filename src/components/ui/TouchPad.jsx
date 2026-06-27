@@ -1,124 +1,73 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { controlsState } from '@/hooks/useHorseControls';
 import useGameStore from '@/store/useGameStore';
 
-// Prevent ghost clicks / double-fire
-function bindTouch(el, onStart, onEnd) {
-  if (!el) return () => {};
-  const ts = (e) => { e.preventDefault(); onStart(); };
-  const te = (e) => { e.preventDefault(); onEnd(); };
-  el.addEventListener('touchstart', ts, { passive: false });
-  el.addEventListener('touchend',   te, { passive: false });
-  el.addEventListener('touchcancel',te, { passive: false });
-  return () => {
-    el.removeEventListener('touchstart', ts);
-    el.removeEventListener('touchend',   te);
-    el.removeEventListener('touchcancel',te);
-  };
+// Kaydırma kontrolü: sağa/sola kaydır → şerit değiştir, yukarı kaydır → zıpla.
+// Şerit değişimi ve zıplama "kenar tetikli" olduğundan, her kaydırmada
+// ilgili kontrolü kısa bir darbe (pulse) olarak true→false yapıyoruz.
+const SWIPE_THRESH = 34; // px — bu mesafeyi geçince kaydırma sayılır
+const PULSE_MS     = 100;
+
+function pulse(dir) {
+  controlsState[dir] = true;
+  setTimeout(() => { controlsState[dir] = false; }, PULSE_MS);
 }
 
 export default function TouchPad() {
   const phase = useGameStore(s => s.phase);
-  const leftRef  = useRef();
-  const rightRef = useRef();
-  const jumpRef  = useRef();
 
-  // Re-bind whenever the buttons (re)mount. The buttons only exist while
-  // phase==='playing', so this MUST depend on phase — otherwise the refs are
-  // still null on first mount (phase idle) and touch never gets wired up.
   useEffect(() => {
     if (phase !== 'playing') return;
-    const cleanL = bindTouch(leftRef.current,
-      () => { controlsState.left  = true;  },
-      () => { controlsState.left  = false; }
-    );
-    const cleanR = bindTouch(rightRef.current,
-      () => { controlsState.right = true;  },
-      () => { controlsState.right = false; }
-    );
-    const cleanJ = bindTouch(jumpRef.current,
-      () => { controlsState.jump  = true;  },
-      () => { controlsState.jump  = false; }
-    );
-    return () => { cleanL(); cleanR(); cleanJ(); };
-  }, [phase]);
+    let sx = 0, sy = 0, tracking = false;
 
-  // Reset all controls when game stops so horse doesn't keep moving
-  useEffect(() => {
-    if (phase !== 'playing') {
-      controlsState.left = false;
-      controlsState.right = false;
-      controlsState.jump = false;
-    }
+    const onStart = (e) => {
+      const t = e.touches[0];
+      if (!t) return;
+      sx = t.clientX; sy = t.clientY; tracking = true;
+    };
+    const onMove = (e) => {
+      if (!tracking) return;
+      const t = e.touches[0];
+      if (!t) return;
+      const dx = t.clientX - sx;
+      const dy = t.clientY - sy;
+      if (Math.abs(dx) >= SWIPE_THRESH && Math.abs(dx) > Math.abs(dy)) {
+        pulse(dx > 0 ? 'right' : 'left');
+        sx = t.clientX; sy = t.clientY; // tek dokunuşta peş peşe kaydırmaya izin ver
+      } else if (-dy >= SWIPE_THRESH && Math.abs(dy) > Math.abs(dx)) {
+        pulse('jump');
+        sx = t.clientX; sy = t.clientY;
+      }
+    };
+    const onEnd = () => { tracking = false; };
+
+    window.addEventListener('touchstart',  onStart, { passive: true });
+    window.addEventListener('touchmove',   onMove,  { passive: true });
+    window.addEventListener('touchend',    onEnd,   { passive: true });
+    window.addEventListener('touchcancel', onEnd,   { passive: true });
+    return () => {
+      window.removeEventListener('touchstart',  onStart);
+      window.removeEventListener('touchmove',   onMove);
+      window.removeEventListener('touchend',    onEnd);
+      window.removeEventListener('touchcancel', onEnd);
+      controlsState.left = controlsState.right = controlsState.jump = false;
+    };
   }, [phase]);
 
   if (phase !== 'playing') return null;
-
-  return (
-    <div style={S.wrap}>
-      {/* Left button */}
-      <div ref={leftRef} style={{ ...S.btn, left: 16, bottom: 24 }}>
-        <span style={S.arrow}>◄</span>
-      </div>
-
-      {/* Right button */}
-      <div ref={rightRef} style={{ ...S.btn, left: 112, bottom: 24 }}>
-        <span style={S.arrow}>►</span>
-      </div>
-
-      {/* Jump button — right side */}
-      <div ref={jumpRef} style={{ ...S.btn, ...S.jumpBtn, right: 16, bottom: 24 }}>
-        <span style={{ ...S.arrow, fontSize: 22 }}>▲</span>
-        <span style={S.jumpLabel}>ZIPLA</span>
-      </div>
-    </div>
-  );
+  return <div style={hint}>← → şerit&nbsp;&nbsp;·&nbsp;&nbsp;↑ zıpla</div>;
 }
 
-const BTN_SIZE = 80;
-const S = {
-  wrap: {
-    position: 'fixed',
-    inset: 0,
-    pointerEvents: 'none',
-    zIndex: 5000,
-  },
-  btn: {
-    position: 'absolute',
-    width: BTN_SIZE,
-    height: BTN_SIZE,
-    borderRadius: BTN_SIZE / 2,
-    background: 'rgba(255,255,255,0.12)',
-    border: '2px solid rgba(255,255,255,0.25)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'auto',
-    cursor: 'pointer',
-    WebkitTapHighlightColor: 'transparent',
-    // env() for safe area (notch/home bar)
-    marginBottom: 'env(safe-area-inset-bottom, 0px)',
-  },
-  jumpBtn: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    background: 'rgba(255,165,0,0.18)',
-    border: '2px solid rgba(255,165,0,0.4)',
-  },
-  arrow: {
-    color: '#fff',
-    fontSize: 28,
-    lineHeight: 1,
-    pointerEvents: 'none',
-  },
-  jumpLabel: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 8,
-    letterSpacing: 1,
-    fontFamily: 'monospace',
-    marginTop: 2,
-    pointerEvents: 'none',
-  },
+const hint = {
+  position: 'fixed',
+  bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  color: 'rgba(255,255,255,0.5)',
+  fontFamily: 'monospace',
+  fontSize: 12,
+  letterSpacing: 1,
+  pointerEvents: 'none',
+  userSelect: 'none',
+  zIndex: 5000,
 };
