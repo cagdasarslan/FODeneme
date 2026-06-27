@@ -310,15 +310,17 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   const customHorses    = useGameStore((s) => s.customHorses ?? []);
   const horseVariant    = [...HORSES, ...customHorses].find(h => h.id === selectedHorseId) ?? HORSES[0];
   const horseUps        = horseUpgrades?.[selectedHorseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
-  const { phase, tick, registerCloseCall, registerCollision, runId } = useGameStore(
+  const { phase, tick, registerCloseCall, registerCollision, registerJumpOver, runId } = useGameStore(
     (s) => ({
       phase: s.phase,
       tick: s.tick,
       registerCloseCall: s.registerCloseCall,
       registerCollision: s.registerCollision,
+      registerJumpOver: s.registerJumpOver,
       runId: s.runId,
     })
   );
+  const jumpedRef = useRef(new Set()); // bu zıplamada üzerinden atlanan engeller
 
   // Yeni koşu başlayınca ata başlangıç pozisyonuna dön
   useEffect(() => {
@@ -332,6 +334,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     laneRef.current      = 1;
     prevLeftRef.current  = false;
     prevRightRef.current = false;
+    jumpedRef.current.clear();
   }, [runId]);
 
   useFrame((_, delta) => {
@@ -387,6 +390,23 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       ref.rotation.z = tiltRef.current;
       // Zıplarken hafif öne eğim
       ref.rotation.x = onGroundRef.current ? 0 : THREE.MathUtils.clamp(-velYRef.current * 0.015, -0.25, 0.2);
+    }
+
+    // ── Engel üzerinden atlama → adrenalin ödülü ───────────────────────────
+    // Yalnızca engeli temizleyecek kadar yüksekteyken say (alçak hop ödüllenmez)
+    if (!onGroundRef.current && newY > GROUND_Y + 1.0) {
+      for (const [id, obs] of obstacleRegistry) {
+        if (!obs.active || jumpedRef.current.has(id)) continue;
+        const [hbDx, hbDz] = getHitbox(obs.TypeFn);
+        // At havadayken bir engelin tam üzerinden geçiyorsa (x ve z hizalı)
+        if (Math.abs(pos.x - obs.x) < hbDx && Math.abs(pos.z - obs.z) < hbDz) {
+          jumpedRef.current.add(id);
+          registerJumpOver();
+        }
+      }
+    } else if (onGroundRef.current && jumpedRef.current.size) {
+      // Yere inince sayaç sıfırlanır (sonraki zıplamada tekrar ödül verilebilir)
+      jumpedRef.current.clear();
     }
 
     // ── Çarpışma — havadayken atla ─────────────────────────────────────────

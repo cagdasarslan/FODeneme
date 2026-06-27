@@ -8,6 +8,7 @@ export const MAX_SPEED        = 55;
 export const SPEED_INCREMENT  = 1.5;  // birim/s² — delta ile çarpılır
 
 export const ADRENALINE_CLOSE_CALL_GAIN = 20;
+export const ADRENALINE_JUMP_GAIN       = 18; // engel üzerinden atlama ödülü
 export const ADRENALINE_DECAY_RATE      = 8;
 export const ADRENALINE_MAX             = 100;
 

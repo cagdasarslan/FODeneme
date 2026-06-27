@@ -7,6 +7,7 @@ import {
   SPEED_INCREMENT,
   ADRENALINE_DECAY_RATE,
   ADRENALINE_CLOSE_CALL_GAIN,
+  ADRENALINE_JUMP_GAIN,
   ADRENALINE_MAX,
   SCORE_PER_METER,
 } from '@/constants/game';
@@ -225,6 +226,14 @@ const useGameStore = create(
 
       set({
         adrenaline: Math.min(adrenaline + ADRENALINE_CLOSE_CALL_GAIN, ADRENALINE_MAX),
+      });
+    },
+
+    registerJumpOver: () => {
+      const { phase, adrenaline } = get();
+      if (phase !== 'playing') return;
+      set({
+        adrenaline: Math.min(adrenaline + ADRENALINE_JUMP_GAIN, ADRENALINE_MAX),
       });
     },
 
