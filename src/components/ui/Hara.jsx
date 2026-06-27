@@ -6,6 +6,12 @@ import { STAGE_CONFIG, BREED_COST, SHOP_TIER1_COST, SHOP_TIER2_COST, EXTRA_SLOT_
 const STAGE_LABELS = { TAY: 'TAY', YAVRU: 'YAVRU', GENC: 'GENÇ', YETISKIN: 'YETİŞKİN' };
 const STAGE_COLORS = { TAY: '#81c784', YAVRU: '#64b5f6', GENC: '#ffb74d', YETISKIN: '#ffd700' };
 
+const nameBtn = {
+  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+  borderRadius: 5, color: '#fff', cursor: 'pointer', fontSize: 11,
+  padding: '2px 6px', lineHeight: 1,
+};
+
 function MeterBar({ label, value, color }) {
   return (
     <div style={{ marginBottom: 6 }}>
@@ -86,7 +92,16 @@ function FoalCard({ foal, onFlash }) {
   const trainFoal = useGameStore(s => s.trainFoal);
   const advanceStageIfReady = useGameStore(s => s.advanceStageIfReady);
   const matureFoal = useGameStore(s => s.matureFoal);
+  const renameFoal = useGameStore(s => s.renameFoal);
   const carrots = useGameStore(s => s.carrots);
+
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const saveName = () => {
+    const res = renameFoal(foal.id, nameInput);
+    if (res.ok) { setEditingName(false); onFlash('✏️ İsim güncellendi'); }
+    else onFlash(`❌ ${res.reason}`);
+  };
 
   const [, forceUpdate] = useState(0);
   useEffect(() => {
@@ -113,8 +128,34 @@ function FoalCard({ foal, onFlash }) {
     <div style={SC.card}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: stageColor }}>{foal.name}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {editingName ? (
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <input
+                autoFocus
+                value={nameInput}
+                maxLength={20}
+                onChange={e => setNameInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
+                style={{
+                  flex: 1, minWidth: 0, fontSize: 12, fontWeight: 700, padding: '3px 6px',
+                  background: 'rgba(0,0,0,0.4)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.3)', borderRadius: 5, fontFamily: 'inherit',
+                }}
+              />
+              <button onClick={saveName} style={nameBtn}>✓</button>
+              <button onClick={() => setEditingName(false)} style={nameBtn}>✕</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: stageColor }}>{foal.name}</div>
+              <button
+                onClick={() => { setNameInput(foal.name); setEditingName(true); }}
+                style={{ ...nameBtn, opacity: 0.7 }}
+                title="İsmi değiştir"
+              >✏️</button>
+            </div>
+          )}
           <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)' }}>
             {foal.source === 'breed' ? '🧬 Çiftleştirme' : '🏪 Mağaza'}
             {foal.genes.trait && <span style={{ marginLeft: 6, color: '#ffd700' }}>{TRAITS[foal.genes.trait]?.label}</span>}

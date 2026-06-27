@@ -473,6 +473,25 @@ const useGameStore = create(
       return { ok: true, foal };
     },
 
+    // Tay/at ismini değiştir — en fazla 20 karakter, benzersiz olmalı
+    renameFoal: (id, rawName) => {
+      const name = (rawName ?? '').trim();
+      if (!name) return { ok: false, reason: 'İsim boş olamaz' };
+      if (name.length > 20) return { ok: false, reason: 'En fazla 20 karakter' };
+      const { foals, customHorses } = get();
+      const lower = name.toLowerCase();
+      const taken = [
+        ...HORSES.map(h => h.name),
+        ...(customHorses ?? []).map(c => c.name),
+        ...foals.filter(f => f.id !== id).map(f => f.name),
+      ].some(n => (n ?? '').toLowerCase() === lower);
+      if (taken) return { ok: false, reason: 'Bu isim zaten kullanılıyor' };
+      const newFoals = foals.map(f => (f.id === id ? { ...f, name } : f));
+      localStorage.setItem('foals', JSON.stringify(newFoals));
+      set({ foals: newFoals });
+      return { ok: true };
+    },
+
     feedFoal: (id) => {
       const { carrots, foals } = get();
       const idx = foals.findIndex(f => f.id === id);
