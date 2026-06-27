@@ -5,7 +5,7 @@ import useGameStore from '@/store/useGameStore';
 // Kaydırma kontrolü: sağa/sola kaydır → şerit değiştir, yukarı kaydır → zıpla.
 // Şerit değişimi ve zıplama "kenar tetikli" olduğundan, her kaydırmada
 // ilgili kontrolü kısa bir darbe (pulse) olarak true→false yapıyoruz.
-const SWIPE_THRESH = 34; // px — bu mesafeyi geçince kaydırma sayılır
+const SWIPE_THRESH = 26; // px — bu mesafeyi geçince kaydırma sayılır (daha hassas)
 const PULSE_MS     = 100;
 
 function pulse(dir) {

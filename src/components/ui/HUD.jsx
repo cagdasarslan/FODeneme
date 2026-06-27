@@ -36,35 +36,6 @@ function CloseCallFlash() {
   );
 }
 
-// ── Speedometer agulası ───────────────────────────────────────────────────────
-function SpeedGauge({ speed }) {
-  const pct = Math.min(1, (speed - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED));
-  const color = pct < 0.4 ? '#33ff99' : pct < 0.75 ? '#ffcc00' : '#ff4422';
-
-  return (
-    <div style={styles.gaugeWrap}>
-      <svg width={70} height={70} viewBox="0 0 70 70">
-        {/* Arka yay */}
-        <path d="M10,55 A30,30 0 0,1 60,55" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={5} strokeLinecap="round" />
-        {/* Dolu yay */}
-        <path
-          d="M10,55 A30,30 0 0,1 60,55"
-          fill="none"
-          stroke={color}
-          strokeWidth={5}
-          strokeLinecap="round"
-          strokeDasharray={`${pct * 94} 94`}
-          style={{ transition: 'stroke-dasharray 0.1s, stroke 0.3s' }}
-        />
-      </svg>
-      <div style={{ ...styles.gaugeText, color }}>
-        {Math.floor(speed)}<br />
-        <span style={{ fontSize: 9, opacity: 0.8 }}>km/h</span>
-      </div>
-    </div>
-  );
-}
-
 // ── Ana HUD ───────────────────────────────────────────────────────────────────
 export default function HUD() {
   const { score, highScore, carrots, adrenaline, speed, phase, magnetActive, adrenalinBoosting } = useGameStore(
@@ -85,6 +56,9 @@ export default function HUD() {
   const adrColor = adrenaline > 75 ? '#ff3333' : adrenaline > 40 ? '#ff9900' : '#33aaff';
   const isMaxAdr = adrenaline > 90;
 
+  const spct = Math.min(1, (speed - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED));
+  const speedColor = spct < 0.4 ? '#33ff99' : spct < 0.75 ? '#ffcc00' : '#ff4422';
+
   return (
     <>
       {/* Üst bar */}
@@ -92,6 +66,10 @@ export default function HUD() {
         <div style={styles.statBlock}>
           <span style={styles.label}>SKOR</span>
           <span style={styles.value}>{Math.floor(score).toLocaleString()}</span>
+          {/* Hız — skorun tam altında */}
+          <span style={{ ...styles.speedLine, color: speedColor }}>
+            🏇 {Math.floor(speed)} km/h
+          </span>
         </div>
         <div style={styles.statBlock}>
           <span style={styles.label}>EN YÜKSEK</span>
@@ -135,11 +113,6 @@ export default function HUD() {
             <div style={{ ...styles.adrGlow, width: `${adrenaline}%`, background: adrColor }} />
           )}
         </div>
-      </div>
-
-      {/* Hız göstergesi (sağ alt) */}
-      <div style={styles.gaugeCorner}>
-        <SpeedGauge speed={speed} />
       </div>
 
       {/* Kontrol ipuçları (sol alt) */}
@@ -197,6 +170,14 @@ const styles = {
     fontWeight: 700,
     textShadow: '0 0 8px rgba(255,255,255,0.4)',
   },
+  speedLine: {
+    fontFamily: 'monospace',
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: 1,
+    marginTop: 3,
+    textShadow: '0 0 8px currentColor',
+  },
   adrWrap: {
     position: 'fixed',
     bottom: 28,
@@ -246,30 +227,6 @@ const styles = {
     userSelect: 'none',
     pointerEvents: 'none',
     textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-  },
-  gaugeCorner: {
-    position: 'fixed',
-    bottom: 16,
-    right: 20,
-    userSelect: 'none',
-    pointerEvents: 'none',
-  },
-  gaugeWrap: {
-    position: 'relative',
-    width: 70,
-    height: 70,
-  },
-  gaugeText: {
-    position: 'absolute',
-    bottom: 6,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    fontFamily: 'monospace',
-    fontSize: 14,
-    fontWeight: 700,
-    textAlign: 'center',
-    lineHeight: 1.1,
-    textShadow: '0 0 8px currentColor',
   },
   flash: {
     position: 'fixed',
