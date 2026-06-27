@@ -157,11 +157,9 @@ function MeteorShower() {
 
 export default function Weather() {
   const mapId = useGameStore((s) => s.mapId);
-  const runId = useGameStore((s) => s.runId);
 
   if (mapId === 4) return <MeteorShower />;
   if (mapId === 3) return <SandStorm />;
-  // Harita 1-2: koşu bazında ~%50 ihtimalle yağmur
-  const rainy = ((runId * 2654435761) >>> 0) % 2 === 0;
-  return rainy ? <Rain /> : null;
+  // Harita 1-2: yağmur kaldırıldı
+  return null;
 }
