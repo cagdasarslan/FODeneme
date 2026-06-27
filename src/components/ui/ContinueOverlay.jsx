@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import useGameStore from '@/store/useGameStore';
+import { showRewardedAds } from '@/services/AdService';
 
 // Çarpışma sonrası "devam et" ekranı:
 //  - Havuçla devam et (maliyet her seferinde 3 kat artar)
@@ -13,10 +15,20 @@ export default function ContinueOverlay() {
   const continueWithAd      = useGameStore(s => s.continueWithAd);
   const giveUp              = useGameStore(s => s.giveUp);
 
+  const [watching, setWatching] = useState(false);
+
   if (phase !== 'crashed') return null;
 
   const cost = continueCost();
   const canAfford = carrots >= cost.carrots;
+
+  const handleAd = async () => {
+    if (watching) return;
+    setWatching(true);
+    const ok = await showRewardedAds(cost.ads);
+    setWatching(false);
+    if (ok) continueWithAd();
+  };
 
   return (
     <div style={S.backdrop}>
@@ -35,14 +47,14 @@ export default function ContinueOverlay() {
         </button>
 
         <button
-          style={{ ...S.btn, ...S.adBtn }}
-          onClick={() => continueWithAd()}
+          style={{ ...S.btn, ...S.adBtn, ...(watching ? S.disabled : {}) }}
+          onClick={handleAd}
         >
           <span style={S.btnMain}>📺 Reklam izle ({cost.ads} reklam)</span>
-          <span style={S.btnSubText}>İzleyerek ücretsiz devam et</span>
+          <span style={S.btnSubText}>{watching ? 'Reklam yükleniyor…' : 'İzleyerek ücretsiz devam et'}</span>
         </button>
 
-        <button style={S.giveUp} onClick={() => giveUp()}>
+        <button style={S.giveUp} onClick={() => giveUp()} disabled={watching}>
           VAZGEÇ
         </button>
 
