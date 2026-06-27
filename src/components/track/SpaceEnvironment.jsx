@@ -2,6 +2,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
+import { SHADOW_MAP } from '@/utils/device';
 
 const SEG_LEN = 120;
 const SEG_COUNT = 6;
@@ -186,7 +187,7 @@ export default function SpaceEnvironment() {
         position={[80, 60, -150]}
         intensity={2.6}
         color="#ff8844"
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[SHADOW_MAP, SHADOW_MAP]}
         shadow-camera-near={1}
         shadow-camera-far={350}
         shadow-camera-left={-80}

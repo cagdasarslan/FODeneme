@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
+import { SHADOW_MAP, IS_MOBILE } from '@/utils/device';
 
 const SEG_LEN = 120;
 const SEG_COUNT = 6;
@@ -52,7 +53,8 @@ function Model({ path, position, scale = 1, rotation = [0, 0, 0] }) {
   const off    = useRef([0, 0]);
   if (!cloned.current) {
     cloned.current = scene.clone(true);
-    cloned.current.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+    // Mobilde yan dekorların gölge üretmesi en büyük performans yükü → kapat
+    cloned.current.traverse((n) => { if (n.isMesh) { n.castShadow = !IS_MOBILE; n.receiveShadow = !IS_MOBILE; } });
     const box = new THREE.Box3().setFromObject(cloned.current);
     off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
   }
@@ -187,9 +189,10 @@ function getSideProps(segIdx) {
     { m: M_ARCHERY, s: 6.5 }, { m: M_LUMBER, s: 6.5 }, { m: M_WELL, s: 6 },
     { m: M_FARM, s: 6.5 }, { m: M_CASTLE, s: 8 }, { m: M_MINE, s: 6.5 },
   ];
-  // Her segmentte yol boyunca ~12 yapı, küçük z-aralıklarla (iç içe)
-  for (let i = 0; i < 12; i++) {
-    const z    = -half + 6 + i * (SEG_LEN / 12) + (pr(i, segIdx) - 0.5) * 4;
+  // Her segmentte yol boyunca yapılar (mobilde daha az → performans)
+  const buildingCount = IS_MOBILE ? 7 : 12;
+  for (let i = 0; i < buildingCount; i++) {
+    const z    = -half + 6 + i * (SEG_LEN / buildingCount) + (pr(i, segIdx) - 0.5) * 4;
     const side = i % 2 === 0 ? -1 : 1;
     const dx   = side * (19 + pr(i + 5, segIdx) * 5); // büyük yapılar yoldan uzak
     const b    = buildings[Math.floor(pr(i + 20, segIdx * 3) * buildings.length) % buildings.length];
@@ -204,8 +207,9 @@ function getSideProps(segIdx) {
     { m: M_ROCKS, s: 5 }, { m: M_ROCKS_SM, s: 5.5 }, { m: M_FORESTA, s: 5.5 },
     { m: M_FORESTB, s: 5.5 }, { m: M_HILL, s: 6 },
   ];
-  for (let i = 0; i < 22; i++) {
-    const z    = -half + i * (SEG_LEN / 22) + (pr(i + 40, segIdx) - 0.5) * 3;
+  const fillerCount = IS_MOBILE ? 12 : 22;
+  for (let i = 0; i < fillerCount; i++) {
+    const z    = -half + i * (SEG_LEN / fillerCount) + (pr(i + 40, segIdx) - 0.5) * 3;
     const side = pr(i + 60, segIdx) > 0.5 ? 1 : -1;
     const dx   = side * (12 + pr(i + 70, segIdx) * 6); // yol kenarına yakın
     const f    = fillers[Math.floor(pr(i + 80, segIdx * 5) * fillers.length) % fillers.length];
@@ -213,7 +217,8 @@ function getSideProps(segIdx) {
   }
 
   // Uzak DEV doğa duvarı — dağ/orman silüeti, harita dışını tamamen kapatır
-  for (let i = 0; i < 8; i++) {
+  const bgCount = IS_MOBILE ? 5 : 8;
+  for (let i = 0; i < bgCount; i++) {
     const z    = -half + pr(i + 110, segIdx) * SEG_LEN;
     const side = i % 2 === 0 ? -1 : 1;
     const dx   = side * (42 + pr(i + 120, segIdx) * 26);
@@ -268,7 +273,7 @@ export default function MedievalEnvironment() {
         position={[-40, 70, 40]}
         intensity={2.0}
         color="#fff2d8"
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[SHADOW_MAP, SHADOW_MAP]}
         shadow-camera-near={1}
         shadow-camera-far={300}
         shadow-camera-left={-80}

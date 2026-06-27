@@ -23,7 +23,11 @@ export default function TouchPad() {
   const rightRef = useRef();
   const jumpRef  = useRef();
 
+  // Re-bind whenever the buttons (re)mount. The buttons only exist while
+  // phase==='playing', so this MUST depend on phase — otherwise the refs are
+  // still null on first mount (phase idle) and touch never gets wired up.
   useEffect(() => {
+    if (phase !== 'playing') return;
     const cleanL = bindTouch(leftRef.current,
       () => { controlsState.left  = true;  },
       () => { controlsState.left  = false; }
@@ -37,7 +41,7 @@ export default function TouchPad() {
       () => { controlsState.jump  = false; }
     );
     return () => { cleanL(); cleanR(); cleanJ(); };
-  }, []);
+  }, [phase]);
 
   // Reset all controls when game stops so horse doesn't keep moving
   useEffect(() => {

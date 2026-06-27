@@ -18,6 +18,7 @@ import HUD from '@/components/ui/HUD';
 import MainMenu from '@/components/ui/MainMenu';
 import Garage from '@/components/ui/Garage';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import { IS_MOBILE, MAX_DPR, SHADOW_MAP } from '@/utils/device';
 
 // ── EnvLayer MUST be defined outside App so React sees the same component
 // type across re-renders. Defining it inside App creates a new function
@@ -53,8 +54,8 @@ export default function App() {
     <>
       <Canvas shadows camera={{ position: [0,8,14], fov:68, near:0.1, far:600 }}
         style={{ width:'100vw', height:'100vh' }}
-        gl={{ antialias:true, powerPreference:'high-performance' }}
-        dpr={[1,2]} performance={{ min:0.5 }}>
+        gl={{ antialias:!IS_MOBILE, powerPreference:'high-performance' }}
+        dpr={[1,MAX_DPR]} performance={{ min:0.5 }}>
         <fog attach="fog" args={[fogColor, selfLit ? 120 : isNight ? 60 : 90, selfLit ? 500 : isNight ? 280 : 420]} />
         <CameraRig />
         {!selfLit && (
@@ -63,7 +64,7 @@ export default function App() {
             <directionalLight castShadow position={[-50,80,30]}
               intensity={isNight ? 0.85 : 2.0}
               color={isNight ? '#aebfe8' : '#ffffff'}
-              shadow-mapSize={[2048,2048]} shadow-camera-near={1} shadow-camera-far={280}
+              shadow-mapSize={[SHADOW_MAP,SHADOW_MAP]} shadow-camera-near={1} shadow-camera-far={280}
               shadow-camera-left={-60} shadow-camera-right={60}
               shadow-camera-top={60} shadow-camera-bottom={-60} />
             <hemisphereLight skyColor={isNight ? '#26305a' : '#87ceeb'}
