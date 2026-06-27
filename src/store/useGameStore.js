@@ -76,6 +76,7 @@ const useGameStore = create(
     highScoreMap2: parseInt(localStorage.getItem('hs_map2') ?? '0', 10),
     highScoreMap3: parseInt(localStorage.getItem('hs_map3') ?? '0', 10),
     highScoreMap4: parseInt(localStorage.getItem('hs_map4') ?? '0', 10),
+    highScoreMap5: parseInt(localStorage.getItem('hs_map5') ?? '0', 10),
 
     // ── Character (jockey) config ─────────────────────────────────────────────
     selectedCharacterId: localStorage.getItem('selectedCharId') ?? 'cowboy',
@@ -140,13 +141,15 @@ const useGameStore = create(
     resumeRun: () => set({ phase: 'playing' }),
 
     endRun: async () => {
-      const { score, highScore, mapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, sessionReady } = get();
+      const { score, highScore, mapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5, sessionReady } = get();
       const newHighScore = Math.max(score, highScore);
-      const hsKey = mapId === 4 ? 'hs_map4' : mapId === 3 ? 'hs_map3' : mapId === 2 ? 'hs_map2' : 'hs_map1';
-      const currentMapHs = mapId === 4 ? highScoreMap4 : mapId === 3 ? highScoreMap3 : mapId === 2 ? highScoreMap2 : highScoreMap1;
+      const hsKey = mapId === 5 ? 'hs_map5' : mapId === 4 ? 'hs_map4' : mapId === 3 ? 'hs_map3' : mapId === 2 ? 'hs_map2' : 'hs_map1';
+      const currentMapHs = mapId === 5 ? highScoreMap5 : mapId === 4 ? highScoreMap4 : mapId === 3 ? highScoreMap3 : mapId === 2 ? highScoreMap2 : highScoreMap1;
       const newMapHs = Math.max(score, currentMapHs);
       localStorage.setItem(hsKey, String(Math.floor(newMapHs)));
-      const mapHsUpdate = mapId === 4
+      const mapHsUpdate = mapId === 5
+        ? { highScoreMap5: newMapHs }
+        : mapId === 4
         ? { highScoreMap4: newMapHs }
         : mapId === 3
           ? { highScoreMap3: newMapHs }

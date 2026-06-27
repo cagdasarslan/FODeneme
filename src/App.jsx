@@ -9,6 +9,7 @@ import FarmEnvironment from '@/components/track/FarmEnvironment';
 import CityEnvironment from '@/components/track/CityEnvironment';
 import DesertEnvironment from '@/components/track/DesertEnvironment';
 import SpaceEnvironment from '@/components/track/SpaceEnvironment';
+import MedievalEnvironment from '@/components/track/MedievalEnvironment';
 import ObstacleSpawner from '@/components/obstacles/ObstacleSpawner';
 import CarrotSpawner from '@/components/track/CarrotSpawner';
 import Weather from '@/components/track/Weather';
@@ -23,6 +24,7 @@ import LoadingScreen from '@/components/ui/LoadingScreen';
 // reference every render → React unmounts/remounts the entire environment
 // subtree, causing asset flickering and wrong-map assets appearing.
 function EnvLayer({ mapId }) {
+  if (mapId === 5) return <MedievalEnvironment />;
   if (mapId === 4) return <SpaceEnvironment />;
   if (mapId === 3) return <DesertEnvironment />;
   if (mapId === 2) return <CityEnvironment />;
@@ -38,8 +40,11 @@ export default function App() {
 
   const isSpace  = mapId === 4;
   const isMars   = mapId === 3;
-  const isNight  = nightMode && !isSpace && !isMars;
+  const isMedieval = mapId === 5;
+  const selfLit  = isSpace || isMars || isMedieval; // env yönetir kendi ışığını
+  const isNight  = nightMode && !selfLit;
   const fogColor = mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a'
+    : mapId === 5 ? '#9fd0e8'
     : isNight ? '#0a0e1e'
     : mapId === 2 ? '#88b8e0' : '#a8d4e8';
   const hemiGround = mapId === 2 ? '#333333' : '#4e8040';
@@ -50,9 +55,9 @@ export default function App() {
         style={{ width:'100vw', height:'100vh' }}
         gl={{ antialias:true, powerPreference:'high-performance' }}
         dpr={[1,2]} performance={{ min:0.5 }}>
-        <fog attach="fog" args={[fogColor, (isSpace || isMars) ? 120 : isNight ? 60 : 90, (isSpace || isMars) ? 500 : isNight ? 280 : 420]} />
+        <fog attach="fog" args={[fogColor, selfLit ? 120 : isNight ? 60 : 90, selfLit ? 500 : isNight ? 280 : 420]} />
         <CameraRig />
-        {!isSpace && !isMars && (
+        {!selfLit && (
           <>
             <ambientLight intensity={isNight ? 0.34 : 0.65} />
             <directionalLight castShadow position={[-50,80,30]}

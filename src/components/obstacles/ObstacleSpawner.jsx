@@ -38,6 +38,16 @@ const M_SP_ROCK_B     = SPC + 'rock_largeB.glb';
 [M_SP_BARRELS, M_SP_ROVER, M_SP_METEOR, M_SP_METEOR_DET,
  M_SP_PLAT_LOW, M_SP_ROCK_A, M_SP_ROCK_B].forEach(p => useGLTF.preload(p));
 
+// ── Medieval obstacle models ──────────────────────────────────────────────────
+const MED = '/assets/models/medieval/';
+const M_MED_WELL    = MED + 'well.glb';
+const M_MED_ROCKS   = MED + 'detail_rocks.glb';
+const M_MED_ROCKS_S = MED + 'detail_rocks_small.glb';
+const M_MED_TREE_A  = MED + 'detail_treeA.glb';
+const M_MED_TREE_B  = MED + 'detail_treeB.glb';
+const M_MED_FARM    = MED + 'farm_plot.glb';
+[M_MED_WELL, M_MED_ROCKS, M_MED_ROCKS_S, M_MED_TREE_A, M_MED_TREE_B, M_MED_FARM].forEach(p => useGLTF.preload(p));
+
 const BASE_TIMER = 2.0;
 const POOL       = 18;
 
@@ -163,6 +173,30 @@ function SpacePlatLow()   { return <SpaceGLB path={M_SP_PLAT_LOW}   scale={3.5} 
 function SpaceRockA()     { return <SpaceGLB path={M_SP_ROCK_A}     scale={2.8} />; }
 function SpaceRockB()     { return <SpaceGLB path={M_SP_ROCK_B}     scale={2.8} />; }
 
+// ── Medieval GLB obstacles ────────────────────────────────────────────────────
+function MedievalGLB({ path, scale = 1, yOffset = 0 }) {
+  const { scene } = useGLTF(path);
+  const cloned = useRef(null);
+  const off    = useRef([0, 0]);
+  if (!cloned.current) {
+    cloned.current = scene.clone(true);
+    cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    const box = new THREE.Box3().setFromObject(cloned.current);
+    off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
+  }
+  return (
+    <group scale={scale} position={[0, yOffset, 0]}>
+      <primitive object={cloned.current} position={[-off.current[0], 0, -off.current[1]]} />
+    </group>
+  );
+}
+function MedWell()    { return <MedievalGLB path={M_MED_WELL}    scale={1.8} />; }
+function MedRocks()   { return <MedievalGLB path={M_MED_ROCKS}   scale={2.0} />; }
+function MedRocksSm() { return <MedievalGLB path={M_MED_ROCKS_S} scale={2.2} />; }
+function MedTreeA()   { return <MedievalGLB path={M_MED_TREE_A}  scale={1.8} />; }
+function MedTreeB()   { return <MedievalGLB path={M_MED_TREE_B}  scale={1.8} />; }
+function MedFarm()    { return <MedievalGLB path={M_MED_FARM}    scale={2.0} />; }
+
 // ── Engel tipi listeleri ──────────────────────────────────────────────────────
 const TYPES_FARM = [
   Barrel, HayBale, LogPile,
@@ -181,6 +215,10 @@ const TYPES_SPACE = [
   SpaceBarrels, SpaceRover, SpaceMeteor, SpaceMeteorDet,
   SpacePlatLow, SpaceRockA, SpaceRockB,
   SpaceBarrels, SpaceRover, SpaceMeteor,
+];
+const TYPES_MEDIEVAL = [
+  MedWell, MedRocks, MedRocksSm, MedTreeA, MedTreeB, MedFarm,
+  MedRocks, MedTreeA, MedRocksSm, MedTreeB,
 ];
 
 // ── Tip → hitbox [dx, dz] eşlemesi (function ref, minification-safe) ──────────
@@ -214,7 +252,15 @@ const _setSpace = () => {
   HITBOX_MAP.set(SpaceRockA,     [1.20, 1.20]);
   HITBOX_MAP.set(SpaceRockB,     [1.20, 1.20]);
 };
-_setFarm(); _setCity(); _setDesert(); _setSpace();
+const _setMedieval = () => {
+  HITBOX_MAP.set(MedWell,    [0.85, 0.85]);
+  HITBOX_MAP.set(MedRocks,   [0.95, 0.95]);
+  HITBOX_MAP.set(MedRocksSm, [0.80, 0.80]);
+  HITBOX_MAP.set(MedTreeA,   [0.60, 0.60]);
+  HITBOX_MAP.set(MedTreeB,   [0.60, 0.60]);
+  HITBOX_MAP.set(MedFarm,    [1.10, 1.10]);
+};
+_setFarm(); _setCity(); _setDesert(); _setSpace(); _setMedieval();
 export function getHitbox(TypeFnOrName) {
   if (typeof TypeFnOrName === 'function') return HITBOX_MAP.get(TypeFnOrName) ?? [1.00, 1.00];
   return [1.00, 1.00];
@@ -241,7 +287,7 @@ function Obstacle({ data, onRef }) {
 export default function ObstacleSpawner() {
   const phase   = useGameStore((s) => s.phase);
   const mapId   = useGameStore((s) => s.mapId);
-  const types   = mapId === 4 ? TYPES_SPACE : mapId === 3 ? TYPES_DESERT : mapId === 2 ? TYPES_CITY : TYPES_FARM;
+  const types   = mapId === 5 ? TYPES_MEDIEVAL : mapId === 4 ? TYPES_SPACE : mapId === 3 ? TYPES_DESERT : mapId === 2 ? TYPES_CITY : TYPES_FARM;
   // Component is keyed by runId in App, so this always runs with current types.
   const poolRef = useRef(
     Array.from({ length: POOL }, (_, i) => ({

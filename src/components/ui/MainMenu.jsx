@@ -17,8 +17,9 @@ function StatRow({ label, value, color }) {
 const MAP_INFO = {
   1: { emoji: '🌿', name: 'AT YARIŞI',  color: '#6aaa44' },
   2: { emoji: '🏙️', name: 'ŞEHİR',     color: '#4a90d9' },
-  3: { emoji: '🌆', name: 'ŞEHİR-2',   color: '#d4a020' },
+  3: { emoji: '🌵', name: 'ÇÖLLER',     color: '#d4a020' },
   4: { emoji: '🚀', name: 'UZAY',       color: '#aa44ff' },
+  5: { emoji: '🏰', name: 'ORTAÇAĞ',    color: '#c8843c' },
 };
 
 function getDailyChallenge() {
@@ -48,7 +49,7 @@ export default function MainMenu() {
   const {
     phase, sessionReady, sessionError, score, carrots,
     startRun, openGarage, selectedCharacterId, selectedHorseId,
-    mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4,
+    mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5,
     horseLevels, nightMode, toggleNightMode,
   } = useGameStore(s => ({
     phase:               s.phase,
@@ -66,6 +67,7 @@ export default function MainMenu() {
     highScoreMap2:       s.highScoreMap2,
     highScoreMap3:       s.highScoreMap3,
     highScoreMap4:       s.highScoreMap4,
+    highScoreMap5:       s.highScoreMap5,
     horseLevels:         s.horseLevels,
     nightMode:           s.nightMode,
     toggleNightMode:     s.toggleNightMode,
@@ -73,7 +75,7 @@ export default function MainMenu() {
 
   const activeChar  = CHARACTERS.find(c => c.id === selectedCharacterId) ?? CHARACTERS[0];
   const activeHorse = HORSES.find(h => h.id === selectedHorseId) ?? HORSES[0];
-  const mapHs       = mapId === 4 ? (highScoreMap4 ?? 0) : mapId === 3 ? highScoreMap3 : mapId === 2 ? highScoreMap2 : highScoreMap1;
+  const mapHs       = mapId === 5 ? (highScoreMap5 ?? 0) : mapId === 4 ? (highScoreMap4 ?? 0) : mapId === 3 ? highScoreMap3 : mapId === 2 ? highScoreMap2 : highScoreMap1;
   const mapInfo     = MAP_INFO[mapId] ?? MAP_INFO[1];
   const horseLevel  = (horseLevels && horseLevels[selectedHorseId]) ?? 1;
 
@@ -121,6 +123,7 @@ export default function MainMenu() {
               <StatRow label="HARİTA 2 REKORU"   value={Math.floor(highScoreMap2).toLocaleString()} color="#4a90d9" />
               <StatRow label="ÇÖLLER REKORU"      value={Math.floor(highScoreMap3).toLocaleString()}         color="#d4a020" />
               <StatRow label="UZAY REKORU"       value={Math.floor(highScoreMap4 ?? 0).toLocaleString()}   color="#aa44ff" />
+              <StatRow label="ORTAÇAĞ REKORU"    value={Math.floor(highScoreMap5 ?? 0).toLocaleString()}   color="#c8843c" />
               <StatRow label="HAVUÇ"             value={`🥕 ${carrots}`}                                    color="#ffd700" />
             </div>
           </div>
@@ -177,6 +180,7 @@ export default function MainMenu() {
             { id: 2, emoji: '🏙️', name: 'ŞEHİR',        sub: 'Kent Sokakları',    color: '#4a90d9', rgb: '74,144,217', hs: highScoreMap2 },
             { id: 3, emoji: '🌵', name: 'ÇÖLLER',        sub: 'Çöl Koşusu',        color: '#d4a020', rgb: '212,160,32', hs: highScoreMap3 },
             { id: 4, emoji: '🚀', name: 'UZAY KOLONİSİ', sub: "Mars'ta At Yarışı", color: '#aa44ff', rgb: '170,68,255', hs: highScoreMap4 ?? 0 },
+            { id: 5, emoji: '🏰', name: 'ORTAÇAĞ KÖYÜ',  sub: 'Köy Yolu',          color: '#c8843c', rgb: '200,132,60',  hs: highScoreMap5 ?? 0 },
           ].map(m => (
             <div
               key={m.id}
