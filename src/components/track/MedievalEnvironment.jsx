@@ -96,13 +96,13 @@ const GROUND_COLOR = '#4e8040';
 function RoadSegment() {
   return (
     <group>
-      {/* Çayır kenarlar */}
-      <mesh receiveShadow position={[-31, 0.05, 0]}>
-        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+      {/* Çayır kenarlar — geniş, harita dışını kapatır */}
+      <mesh receiveShadow position={[-109, 0.05, 0]}>
+        <boxGeometry args={[200, 0.10, SEG_LEN]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
-      <mesh receiveShadow position={[31, 0.05, 0]}>
-        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+      <mesh receiveShadow position={[109, 0.05, 0]}>
+        <boxGeometry args={[200, 0.10, SEG_LEN]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
       {/* Taş yol — 18 birim geniş */}
@@ -129,49 +129,50 @@ function pr(a, b = 0) {
 }
 
 // Yol kenarına SIK YERLEŞTİRİLMİŞ, iç içe köy yapıları + doğa
+// Asset'ler 5-10 kat büyütüldü; yolu kapatmamaları için x dışarı kaydırıldı
 function getSideProps(segIdx) {
   const props = [];
   const half = SEG_LEN / 2;
 
-  // Büyük yapılar — yola yakın (x ~10-15), yola dönük
+  // Büyük yapılar — büyütülmüş (6-8x), yol kenarının hemen dışında
   const buildings = [
-    { m: M_HOUSE, s: 2.4 }, { m: M_MARKET, s: 2.4 }, { m: M_MILL, s: 2.2 },
-    { m: M_WATERMILL, s: 2.2 }, { m: M_WATCHTOWER, s: 2.4 }, { m: M_BARRACKS, s: 2.2 },
-    { m: M_ARCHERY, s: 2.2 }, { m: M_LUMBER, s: 2.2 }, { m: M_WELL, s: 2.0 },
-    { m: M_FARM, s: 2.2 }, { m: M_CASTLE, s: 2.4 }, { m: M_MINE, s: 2.2 },
+    { m: M_HOUSE, s: 7 }, { m: M_MARKET, s: 7 }, { m: M_MILL, s: 6.5 },
+    { m: M_WATERMILL, s: 6.5 }, { m: M_WATCHTOWER, s: 7 }, { m: M_BARRACKS, s: 6.5 },
+    { m: M_ARCHERY, s: 6.5 }, { m: M_LUMBER, s: 6.5 }, { m: M_WELL, s: 6 },
+    { m: M_FARM, s: 6.5 }, { m: M_CASTLE, s: 8 }, { m: M_MINE, s: 6.5 },
   ];
   // Her segmentte yol boyunca ~12 yapı, küçük z-aralıklarla (iç içe)
   for (let i = 0; i < 12; i++) {
     const z    = -half + 6 + i * (SEG_LEN / 12) + (pr(i, segIdx) - 0.5) * 4;
     const side = i % 2 === 0 ? -1 : 1;
-    const dx   = side * (10 + pr(i + 5, segIdx) * 3);
+    const dx   = side * (19 + pr(i + 5, segIdx) * 5); // büyük yapılar yoldan uzak
     const b    = buildings[Math.floor(pr(i + 20, segIdx * 3) * buildings.length) % buildings.length];
     // Yapı yola dönük (yan taraf yolun ortasına bakar)
     const ry   = side < 0 ? Math.PI / 2 : -Math.PI / 2;
     props.push({ id: `b${i}`, x: dx, z, m: b.m, scale: b.s, ry: ry + (pr(i + 30, segIdx) - 0.5) * 0.3 });
   }
 
-  // Ağaç / kaya dolgu — yapıların hemen önünde ve aralarında (sık)
+  // Ağaç / kaya dolgu — büyütülmüş (5-6x), yol kenarına yakın ama yolu kapatmaz
   const fillers = [
-    { m: M_TREE_A, s: 1.8 }, { m: M_TREE_B, s: 1.8 }, { m: M_TREE_C, s: 1.8 },
-    { m: M_ROCKS, s: 1.6 }, { m: M_ROCKS_SM, s: 1.6 }, { m: M_FORESTA, s: 1.6 },
-    { m: M_FORESTB, s: 1.6 }, { m: M_HILL, s: 1.8 },
+    { m: M_TREE_A, s: 6 }, { m: M_TREE_B, s: 6 }, { m: M_TREE_C, s: 6 },
+    { m: M_ROCKS, s: 5 }, { m: M_ROCKS_SM, s: 5.5 }, { m: M_FORESTA, s: 5.5 },
+    { m: M_FORESTB, s: 5.5 }, { m: M_HILL, s: 6 },
   ];
-  for (let i = 0; i < 20; i++) {
-    const z    = -half + i * (SEG_LEN / 20) + (pr(i + 40, segIdx) - 0.5) * 3;
+  for (let i = 0; i < 22; i++) {
+    const z    = -half + i * (SEG_LEN / 22) + (pr(i + 40, segIdx) - 0.5) * 3;
     const side = pr(i + 60, segIdx) > 0.5 ? 1 : -1;
-    const dx   = side * (9.6 + pr(i + 70, segIdx) * 6); // yol kenarına çok yakın
+    const dx   = side * (12 + pr(i + 70, segIdx) * 6); // yol kenarına yakın
     const f    = fillers[Math.floor(pr(i + 80, segIdx * 5) * fillers.length) % fillers.length];
     props.push({ id: `f${i}`, x: dx, z, m: f.m, scale: f.s, ry: pr(i + 90, segIdx) * Math.PI * 2 });
   }
 
-  // Uzak büyük doğa — dağ/orman silüeti
-  for (let i = 0; i < 4; i++) {
+  // Uzak DEV doğa duvarı — dağ/orman silüeti, harita dışını tamamen kapatır
+  for (let i = 0; i < 8; i++) {
     const z    = -half + pr(i + 110, segIdx) * SEG_LEN;
     const side = i % 2 === 0 ? -1 : 1;
-    const dx   = side * (34 + pr(i + 120, segIdx) * 18);
+    const dx   = side * (42 + pr(i + 120, segIdx) * 26);
     const m    = pr(i + 130, segIdx) > 0.5 ? M_MOUNTAIN : M_FOREST;
-    props.push({ id: `bg${i}`, x: dx, z, m, scale: 3.2, ry: pr(i + 140, segIdx) * Math.PI * 2 });
+    props.push({ id: `bg${i}`, x: dx, z, m, scale: 9 + pr(i + 135, segIdx) * 3, ry: pr(i + 140, segIdx) * Math.PI * 2 });
   }
 
   return props;
