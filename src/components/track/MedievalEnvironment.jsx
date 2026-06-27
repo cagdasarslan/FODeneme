@@ -102,7 +102,7 @@ function pr(a, b = 0) {
 // Parke taşı geometri/materyali (paylaşılan) + renk paleti
 const cobbleGeo = new THREE.BoxGeometry(0.92, 0.22, 0.92);
 const cobbleMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 });
-const COBBLE_COLORS = ['#6f6a60', '#7d776c', '#5e594f', '#857f72', '#666158', '#736d62'].map(c => new THREE.Color(c));
+const COBBLE_COLORS = ['#4a463f', '#534e46', '#3e3a34', '#5a544b', '#423e38', '#4f4942'].map(c => new THREE.Color(c));
 
 // InstancedMesh ile binlerce taş tek draw call'da — segIdx'e göre deterministik
 function CobbleRoad({ segIdx }) {

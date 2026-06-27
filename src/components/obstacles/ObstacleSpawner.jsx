@@ -190,12 +190,12 @@ function MedievalGLB({ path, scale = 1, yOffset = 0 }) {
     </group>
   );
 }
-function MedWell()    { return <MedievalGLB path={M_MED_WELL}    scale={1.8} />; }
-function MedRocks()   { return <MedievalGLB path={M_MED_ROCKS}   scale={2.0} />; }
-function MedRocksSm() { return <MedievalGLB path={M_MED_ROCKS_S} scale={2.2} />; }
-function MedTreeA()   { return <MedievalGLB path={M_MED_TREE_A}  scale={1.8} />; }
-function MedTreeB()   { return <MedievalGLB path={M_MED_TREE_B}  scale={1.8} />; }
-function MedFarm()    { return <MedievalGLB path={M_MED_FARM}    scale={2.0} />; }
+function MedWell()    { return <MedievalGLB path={M_MED_WELL}    scale={3.0} />; }
+function MedRocks()   { return <MedievalGLB path={M_MED_ROCKS}   scale={2.4} />; }
+function MedRocksSm() { return <MedievalGLB path={M_MED_ROCKS_S} scale={3.4} />; }
+function MedTreeA()   { return <MedievalGLB path={M_MED_TREE_A}  scale={3.0} />; }
+function MedTreeB()   { return <MedievalGLB path={M_MED_TREE_B}  scale={3.0} />; }
+function MedFarm()    { return <MedievalGLB path={M_MED_FARM}    scale={2.4} />; }
 
 // ── Engel tipi listeleri ──────────────────────────────────────────────────────
 const TYPES_FARM = [
@@ -253,12 +253,12 @@ const _setSpace = () => {
   HITBOX_MAP.set(SpaceRockB,     [1.20, 1.20]);
 };
 const _setMedieval = () => {
-  HITBOX_MAP.set(MedWell,    [0.85, 0.85]);
-  HITBOX_MAP.set(MedRocks,   [0.95, 0.95]);
-  HITBOX_MAP.set(MedRocksSm, [0.80, 0.80]);
-  HITBOX_MAP.set(MedTreeA,   [0.60, 0.60]);
-  HITBOX_MAP.set(MedTreeB,   [0.60, 0.60]);
-  HITBOX_MAP.set(MedFarm,    [1.10, 1.10]);
+  HITBOX_MAP.set(MedWell,    [1.10, 1.10]);
+  HITBOX_MAP.set(MedRocks,   [1.10, 1.10]);
+  HITBOX_MAP.set(MedRocksSm, [0.95, 0.95]);
+  HITBOX_MAP.set(MedTreeA,   [0.75, 0.75]);
+  HITBOX_MAP.set(MedTreeB,   [0.75, 0.75]);
+  HITBOX_MAP.set(MedFarm,    [1.20, 1.20]);
 };
 _setFarm(); _setCity(); _setDesert(); _setSpace(); _setMedieval();
 export function getHitbox(TypeFnOrName) {
