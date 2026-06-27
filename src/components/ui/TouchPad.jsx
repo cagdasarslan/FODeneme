@@ -2,11 +2,12 @@ import { useEffect } from 'react';
 import { controlsState } from '@/hooks/useHorseControls';
 import useGameStore from '@/store/useGameStore';
 
-// Kaydırma kontrolü: sağa/sola kaydır → şerit değiştir, yukarı kaydır → zıpla.
-// Şerit değişimi ve zıplama "kenar tetikli" olduğundan, her kaydırmada
-// ilgili kontrolü kısa bir darbe (pulse) olarak true→false yapıyoruz.
-const SWIPE_THRESH = 26; // px — bu mesafeyi geçince kaydırma sayılır (daha hassas)
-const PULSE_MS     = 100;
+// Sürükleyerek yönlendirme: ekranın HERHANGİ bir yerine parmağını koyup
+// yatay sürükle → at şerit takip eder (geri sürüklersen geri döner).
+// Yukarı sürükle → zıpla. Parmağı kaldırmaya gerek yok.
+const LANE_DRAG_PX = 48;  // bir şerit değiştirmek için yatay sürükleme mesafesi
+const JUMP_DRAG_PX = 44;  // zıplamak için yukarı sürükleme mesafesi
+const PULSE_MS     = 90;
 
 function pulse(dir) {
   controlsState[dir] = true;
@@ -18,28 +19,43 @@ export default function TouchPad() {
 
   useEffect(() => {
     if (phase !== 'playing') return;
-    let sx = 0, sy = 0, tracking = false;
+    let startX = 0, startY = 0;
+    let laneStep = 0;     // bu dokunuşta uygulanan net şerit kayması
+    let jumped = false;   // bu dokunuşta zıplandı mı
+    let tracking = false;
 
     const onStart = (e) => {
       const t = e.touches[0];
       if (!t) return;
-      sx = t.clientX; sy = t.clientY; tracking = true;
+      startX = t.clientX; startY = t.clientY;
+      laneStep = 0; jumped = false; tracking = true;
     };
     const onMove = (e) => {
       if (!tracking) return;
       const t = e.touches[0];
       if (!t) return;
-      const dx = t.clientX - sx;
-      const dy = t.clientY - sy;
-      if (Math.abs(dx) >= SWIPE_THRESH && Math.abs(dx) > Math.abs(dy)) {
-        pulse(dx > 0 ? 'right' : 'left');
-        sx = t.clientX; sy = t.clientY; // tek dokunuşta peş peşe kaydırmaya izin ver
-      } else if (-dy >= SWIPE_THRESH && Math.abs(dy) > Math.abs(dx)) {
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+
+      // Yatay sürükleme → şerit (mutlak: parmağın net konumuna göre)
+      const desired = Math.round(dx / LANE_DRAG_PX);
+      if (desired !== laneStep) {
+        const diff = desired - laneStep;
+        const dir = diff > 0 ? 'right' : 'left';
+        for (let i = 0; i < Math.abs(diff); i++) pulse(dir);
+        laneStep = desired;
+      }
+
+      // Yukarı sürükleme → zıpla (dokunuş başına bir kez)
+      if (!jumped && -dy >= JUMP_DRAG_PX) {
         pulse('jump');
-        sx = t.clientX; sy = t.clientY;
+        jumped = true;
       }
     };
-    const onEnd = () => { tracking = false; };
+    const onEnd = () => {
+      tracking = false;
+      controlsState.left = controlsState.right = controlsState.jump = false;
+    };
 
     window.addEventListener('touchstart',  onStart, { passive: true });
     window.addEventListener('touchmove',   onMove,  { passive: true });
@@ -55,7 +71,7 @@ export default function TouchPad() {
   }, [phase]);
 
   if (phase !== 'playing') return null;
-  return <div style={hint}>← → şerit&nbsp;&nbsp;·&nbsp;&nbsp;↑ zıpla</div>;
+  return <div style={hint}>parmağını sürükle: ← → şerit&nbsp;&nbsp;·&nbsp;&nbsp;↑ zıpla</div>;
 }
 
 const hint = {
