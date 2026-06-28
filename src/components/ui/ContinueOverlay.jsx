@@ -16,6 +16,7 @@ export default function ContinueOverlay() {
   const giveUp              = useGameStore(s => s.giveUp);
 
   const [watching, setWatching] = useState(false);
+  const [adProg, setAdProg] = useState({ c: 0, t: 0 });
   const [countdown, setCountdown] = useState(0);
   const pendingRef = useRef(null);
 
@@ -39,10 +40,24 @@ export default function ContinueOverlay() {
   const handleAd = async () => {
     if (watching || countdown > 0) return;
     setWatching(true);
-    const ok = await showRewardedAds(cost.ads);
+    setAdProg({ c: 1, t: cost.ads });
+    const ok = await showRewardedAds(cost.ads, (c, t) => setAdProg({ c, t }));
     setWatching(false);
     if (ok) startCountdown(() => continueWithAd());
   };
+
+  // Reklam izleme ekranı — tüm reklamlar bitene kadar kalır
+  if (watching) {
+    return (
+      <div style={S.backdrop}>
+        <div style={S.countWrap}>
+          <div style={{ fontSize: 56 }}>📺</div>
+          <div style={S.countText}>Reklam izleniyor</div>
+          <div style={S.countNum}>{adProg.c} / {adProg.t}</div>
+        </div>
+      </div>
+    );
+  }
 
   // Geri sayım ekranı
   if (countdown > 0) {

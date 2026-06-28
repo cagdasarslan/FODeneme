@@ -24,9 +24,10 @@ async function ensureInit() {
 }
 
 // Tek bir ödüllü reklam göster. Ödül kazanılırsa true, aksi halde false döner.
-// Web/native olmayan ortamda (geliştirme) anında true döner (placeholder).
+// Web/native olmayan ortamda (geliştirme) ~5sn bekleyip true döner (placeholder)
+// ki reklam ekranı erken kapanmasın (3 reklam ≈ 15sn+ simülasyonda).
 export async function showRewardedAd() {
-  if (!isNative) return true;
+  if (!isNative) { await new Promise(r => setTimeout(r, 5000)); return true; }
   await ensureInit();
 
   return new Promise((resolve) => {
@@ -52,9 +53,11 @@ export async function showRewardedAd() {
   });
 }
 
-// Gereken sayıda ödüllü reklamı sırayla göster; hepsi ödüllendirilirse true.
-export async function showRewardedAds(count) {
+// Gereken sayıda ödüllü reklamı SIRAYLA göster; hepsi bitmeden ödül verilmez.
+// onProgress(cur, total) her reklam başlamadan önce çağrılır (ilerleme UI'si için).
+export async function showRewardedAds(count, onProgress) {
   for (let i = 0; i < count; i++) {
+    onProgress?.(i + 1, count);
     const ok = await showRewardedAd();
     if (!ok) return false; // biri iptal/başarısız olursa devam etme
   }

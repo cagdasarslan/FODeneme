@@ -439,7 +439,8 @@ export default function Hara() {
       {foals.length >= totalSlots && (
         <AdButton
           label="Geçici +1 ahır slotu"
-          sub="Reklam izle → bu oturum için ekstra slot"
+          sub="Bu oturum için ekstra slot (1000 havuç değerinde)"
+          ads={5}
           color="#c8a0ff"
           compact
           onReward={() => { addTempStableSlot(); doFlash('🏠 Geçici slot eklendi'); }}

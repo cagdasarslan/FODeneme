@@ -17,8 +17,9 @@ export const CONTINUE_BASE_CARROTS = 200;
 export const CONTINUE_BASE_ADS     = 1;
 export const CONTINUE_MULTIPLIER   = 3;
 
-// Ödüllü reklam ödülleri
-export const AD_DAILY_CARROTS    = 50;   // günlük bedava havuç (reklam başına)
+// Ödüllü reklam ödülleri — 1 reklam ≈ 200 havuç değerinde olacak şekilde
+export const AD_CARROT_VALUE     = 200;  // 1 reklamın havuç karşılığı
+export const AD_DAILY_CARROTS    = 200;  // günlük bedava havuç (1 reklam = 200)
 export const AD_DAILY_MAX        = 5;    // günde en fazla kaç kez
 export const AD_UPGRADE_DISCOUNT = 0.5;  // yükseltmede %50 indirim
 
