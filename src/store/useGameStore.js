@@ -357,6 +357,14 @@ const useGameStore = create(
     // Reklamla geçici ekstra ahır slotu (sayfa yenilenince sıfırlanır)
     addTempStableSlot: () => set({ bonusSlots: get().bonusSlots + 1 }),
 
+    // Gerçek para ile satın alınan havuçları ekle (IAP)
+    addCarrots: (amount) => {
+      if (!amount || amount <= 0) return;
+      const c = get().carrots + amount;
+      localStorage.setItem('carrots', String(c));
+      set({ carrots: c });
+    },
+
     // =========================================================================
     // Garage / inventory actions
     // =========================================================================

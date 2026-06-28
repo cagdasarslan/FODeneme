@@ -4,6 +4,7 @@ import { CHARACTERS } from '@/constants/characters';
 import { HORSES } from '@/constants/horses';
 import Leaderboard from '@/components/ui/Leaderboard';
 import HowToPlay from '@/components/ui/HowToPlay';
+import CarrotShop from '@/components/ui/CarrotShop';
 import AdButton from '@/components/ui/AdButton';
 import { showBanner, hideBanner } from '@/services/AdService';
 import { AD_DAILY_CARROTS, AD_DAILY_MAX } from '@/constants/game';
@@ -51,6 +52,7 @@ const isMobile = window.innerWidth < 500;
 export default function MainMenu() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [showShop, setShowShop] = useState(false);
 
   const {
     phase, sessionReady, sessionError, score, carrots,
@@ -119,9 +121,10 @@ export default function MainMenu() {
           <div style={styles.titleSubline}>SONSUZ AT KOŞUSU</div>
         </div>
 
-        {/* Carrot count pill */}
-        <div style={styles.carrotPill}>
+        {/* Carrot count pill — tıklayınca havuç mağazası açılır */}
+        <div style={{ ...styles.carrotPill, cursor: 'pointer' }} onClick={() => setShowShop(true)}>
           🥕 <span style={styles.carrotNum}>{carrots.toLocaleString()}</span> <span style={styles.carrotLabel}>havuç</span>
+          <span style={styles.carrotPlus}>＋</span>
         </div>
 
         {/* Oyun bitti ekranı */}
@@ -312,6 +315,7 @@ export default function MainMenu() {
 
       {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
       {showGuide && <HowToPlay onClose={() => setShowGuide(false)} />}
+      {showShop && <CarrotShop onClose={() => setShowShop(false)} />}
     </div>
   );
 }
@@ -366,6 +370,11 @@ const styles = {
   },
   carrotNum: { color: '#ffd700', fontWeight: 700, fontSize: 18 },
   carrotLabel: { color: 'rgba(255,215,0,0.6)', fontSize: 11 },
+  carrotPlus: {
+    marginLeft: 8, width: 20, height: 20, borderRadius: '50%',
+    background: '#ffd700', color: '#0a0a14', fontWeight: 900, fontSize: 14,
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+  },
   gameOverText: {
     fontSize: 24, color: '#ff4444', letterSpacing: 4,
     fontWeight: 700, textAlign: 'center', textShadow: '0 0 12px #ff2200',

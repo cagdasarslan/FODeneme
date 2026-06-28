@@ -10,6 +10,7 @@
     "@react-three/fiber": "^8.16.0",
     "@react-three/rapier": "^1.4.0",
     "axios": "^1.7.0",
+    "cordova-plugin-purchase": "^13.17.2",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "three": "^0.165.0",
