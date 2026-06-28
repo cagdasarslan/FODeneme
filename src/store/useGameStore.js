@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { setSoundEnabled, sfx } from '@/utils/audio';
+import { setSfxEnabled, setMusicEnabled, sfx, startMusic, startGallop } from '@/utils/audio';
 import { HORSES } from '@/constants/horses';
 import {
   INITIAL_SPEED,
@@ -105,7 +105,8 @@ const useGameStore = create(
     nightMode: localStorage.getItem('nightMode') === '1',
 
     // ── Ayarlar ───────────────────────────────────────────────────────────────
-    soundOn: localStorage.getItem('soundOn') !== '0',          // varsayılan açık
+    soundOn: localStorage.getItem('soundOn') !== '0',          // oyun sesleri (SFX + nal)
+    musicOn: localStorage.getItem('musicOn') !== '0',          // harita müziği
     graphics: localStorage.getItem('graphics') || 'high',       // 'low' | 'high'
 
     // ── UI phase ──────────────────────────────────────────────────────────────
@@ -437,8 +438,16 @@ const useGameStore = create(
 
     setSoundOn: (on) => {
       localStorage.setItem('soundOn', on ? '1' : '0');
-      setSoundEnabled(on);
+      setSfxEnabled(on);
+      if (on && get().phase === 'playing') startGallop();
       set({ soundOn: on });
+    },
+
+    setMusicOn: (on) => {
+      localStorage.setItem('musicOn', on ? '1' : '0');
+      setMusicEnabled(on);
+      if (on && get().phase === 'playing') startMusic(get().mapId);
+      set({ musicOn: on });
     },
 
     setGraphics: (q) => {

@@ -4,8 +4,10 @@ import { sfx } from '@/utils/audio';
 // Ayarlar: ses aç/kapat + görüntü kalitesi (DÜŞÜK / YÜKSEK)
 export default function Settings({ onClose }) {
   const soundOn   = useGameStore(s => s.soundOn);
+  const musicOn   = useGameStore(s => s.musicOn);
   const graphics  = useGameStore(s => s.graphics);
   const setSoundOn = useGameStore(s => s.setSoundOn);
+  const setMusicOn = useGameStore(s => s.setMusicOn);
   const setGraphics = useGameStore(s => s.setGraphics);
 
   return (
@@ -16,15 +18,29 @@ export default function Settings({ onClose }) {
           <button style={S.close} onClick={onClose}>✕</button>
         </div>
 
-        {/* Ses */}
+        {/* Oyun sesleri (SFX + nal) */}
         <div style={S.row}>
-          <span style={S.label}>🔊 Ses</span>
+          <span style={S.label}>🔊 Oyun Sesleri</span>
           <div style={S.seg}>
             {[['AÇIK', true], ['KAPALI', false]].map(([txt, val]) => (
               <button
                 key={txt}
                 style={{ ...S.segBtn, ...(soundOn === val ? S.segOn : {}) }}
                 onClick={() => { setSoundOn(val); if (val) sfx.click(); }}
+              >{txt}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Harita müziği */}
+        <div style={S.row}>
+          <span style={S.label}>🎵 Harita Müziği</span>
+          <div style={S.seg}>
+            {[['AÇIK', true], ['KAPALI', false]].map(([txt, val]) => (
+              <button
+                key={txt}
+                style={{ ...S.segBtn, ...(musicOn === val ? S.segOn : {}) }}
+                onClick={() => setMusicOn(val)}
               >{txt}</button>
             ))}
           </div>

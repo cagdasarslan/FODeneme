@@ -1,6 +1,6 @@
 import { useRef, useEffect, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { sfx } from '@/utils/audio';
+import { sfx, setGallopSpeed } from '@/utils/audio';
 import { useGLTF, useAnimations } from '@react-three/drei';
 import { RigidBody, CapsuleCollider } from '@react-three/rapier';
 import * as THREE from 'three';
@@ -359,6 +359,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   useFrame((_, delta) => {
     if (phase !== 'playing' || !rigidBodyRef.current) return;
     tick(delta);
+    setGallopSpeed(useGameStore.getState().speed); // nal sesi temposu
 
     const rb  = rigidBodyRef.current;
     const pos = rb.translation();

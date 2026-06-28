@@ -20,6 +20,7 @@ import ContinueOverlay from '@/components/ui/ContinueOverlay';
 import Garage from '@/components/ui/Garage';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { IS_MOBILE, MAX_DPR, SHADOW_MAP } from '@/utils/device';
+import { startMusic, stopMusic, startGallop, stopGallop } from '@/utils/audio';
 
 // ── EnvLayer MUST be defined outside App so React sees the same component
 // type across re-renders. Defining it inside App creates a new function
@@ -39,7 +40,14 @@ export default function App() {
   const runId    = useGameStore((s) => s.runId);
   const nightMode = useGameStore((s) => s.nightMode);
   const graphics  = useGameStore((s) => s.graphics);
+  const phase = useGameStore((s) => s.phase);
   useEffect(() => { initSession(); }, [initSession]);
+
+  // Müzik + nal sesi: yalnızca oyun oynanırken
+  useEffect(() => {
+    if (phase === 'playing') { startMusic(mapId); startGallop(); }
+    else { stopMusic(); stopGallop(); }
+  }, [phase, mapId]);
 
   // Görüntü kalitesi (Ayarlar): low = gölgesiz + düşük dpr, high = tam
   const lowGfx     = graphics === 'low';
