@@ -301,6 +301,7 @@ export default function ObstacleSpawner() {
   const rbRefs   = useRef({});
   const timerRef = useRef(0);
   const waveIdx  = useRef(0);
+  const lastReviveRef = useRef(useGameStore.getState().reviveId);
 
   const onRef = useCallback((id, rb) => { rbRefs.current[id] = rb; }, []);
 
@@ -308,6 +309,19 @@ export default function ObstacleSpawner() {
   useEffect(() => { clearRegistry(); }, []);
 
   useFrame((_, delta) => {
+    // Devam et (revive) olunca öndeki tüm engelleri temizle (ikilenme/çarpma olmasın)
+    const reviveId = useGameStore.getState().reviveId;
+    if (reviveId !== lastReviveRef.current) {
+      lastReviveRef.current = reviveId;
+      poolRef.current.forEach((obs) => {
+        obs.active = false;
+        setObstacleActive(obs.id, false);
+        rbRefs.current[obs.id]?.setTranslation({ x: obs.x, y: -100, z: obs.z }, true);
+      });
+      clearRegistry();
+      timerRef.current = 0;
+    }
+
     if (phase !== 'playing') return;
     const speed = useGameStore.getState().speed;
     const spawnInterval = Math.max(0.8, BASE_TIMER - speed * 0.022);

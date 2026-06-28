@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { showRewardedAds } from '@/services/AdService';
 
@@ -16,19 +16,45 @@ export default function ContinueOverlay() {
   const giveUp              = useGameStore(s => s.giveUp);
 
   const [watching, setWatching] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const pendingRef = useRef(null);
+
+  // 3-2-1 geri sayım; 0'a inince devam (revive) işlemini tetikler
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setTimeout(() => {
+      if (countdown === 1) pendingRef.current?.();
+      setCountdown((c) => c - 1);
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
 
   if (phase !== 'crashed') return null;
 
   const cost = continueCost();
   const canAfford = carrots >= cost.carrots;
 
+  const startCountdown = (action) => { pendingRef.current = action; setCountdown(3); };
+
   const handleAd = async () => {
-    if (watching) return;
+    if (watching || countdown > 0) return;
     setWatching(true);
     const ok = await showRewardedAds(cost.ads);
     setWatching(false);
-    if (ok) continueWithAd();
+    if (ok) startCountdown(() => continueWithAd());
   };
+
+  // Geri sayım ekranı
+  if (countdown > 0) {
+    return (
+      <div style={S.backdrop}>
+        <div style={S.countWrap}>
+          <div style={S.countNum}>{countdown}</div>
+          <div style={S.countText}>Hazır ol…</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={S.backdrop}>
@@ -38,7 +64,7 @@ export default function ContinueOverlay() {
 
         <button
           style={{ ...S.btn, ...S.carrotBtn, ...(canAfford ? {} : S.disabled) }}
-          onClick={() => { if (canAfford) continueWithCarrots(); }}
+          onClick={() => { if (canAfford) startCountdown(() => continueWithCarrots()); }}
         >
           <span style={S.btnMain}>🥕 {cost.carrots.toLocaleString()} havuçla devam et</span>
           <span style={S.btnSubText}>
@@ -73,6 +99,9 @@ const S = {
     background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)',
     padding: 16,
   },
+  countWrap: { textAlign: 'center', fontFamily: 'monospace' },
+  countNum: { fontSize: 96, fontWeight: 900, color: '#ffd54a', textShadow: '0 0 30px rgba(255,200,50,0.7)', lineHeight: 1 },
+  countText: { fontSize: 14, letterSpacing: 3, color: 'rgba(255,255,255,0.7)', marginTop: 8 },
   panel: {
     width: '100%', maxWidth: 360,
     background: 'linear-gradient(160deg, rgba(18,18,34,0.97), rgba(10,10,20,0.98))',

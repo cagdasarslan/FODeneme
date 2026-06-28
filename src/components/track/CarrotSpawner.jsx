@@ -65,14 +65,15 @@ export default function CarrotSpawner() {
   const groupRefs  = useRef(Array(POOL).fill(null));
   const timerRef   = useRef(0);
   const lastRunRef = useRef(-1);
+  const lastReviveRef = useRef(-1);
 
   useFrame((_, delta) => {
-    const { phase, speed, runId, magnetActive: magnetOn } = useGameStore.getState();
+    const { phase, speed, runId, reviveId, magnetActive: magnetOn } = useGameStore.getState();
 
-    // Detect a new run and hard-reset the pool synchronously inside useFrame
-    // (doing this here avoids React effect / RAF ordering races)
-    if (runId !== lastRunRef.current) {
+    // Yeni koşu VEYA devam et (revive) → havuç havuzunu temizle (ikilenme olmasın)
+    if (runId !== lastRunRef.current || reviveId !== lastReviveRef.current) {
       lastRunRef.current = runId;
+      lastReviveRef.current = reviveId;
       timerRef.current = 0;
       resetPool(poolRef.current, groupRefs.current);
       return; // skip movement logic this frame

@@ -235,13 +235,13 @@ export default function DesertEnvironment() {
       <Stars />
       <Planet />
 
-      {/* Mars lighting */}
-      <ambientLight intensity={0.3} color="#220a00" />
+      {/* Mars lighting — telefonda yeterince aydınlık olsun diye artırıldı */}
+      <ambientLight intensity={0.7} color="#5a2a10" />
       <directionalLight
         castShadow
         position={[60, 80, -100]}
-        intensity={1.8}
-        color="#ff7733"
+        intensity={2.8}
+        color="#ffa066"
         shadow-mapSize={[SHADOW_MAP, SHADOW_MAP]}
         shadow-camera-near={1}
         shadow-camera-far={300}
@@ -250,7 +250,7 @@ export default function DesertEnvironment() {
         shadow-camera-top={80}
         shadow-camera-bottom={-80}
       />
-      <hemisphereLight skyColor="#ff5500" groundColor="#1a0800" intensity={0.5} />
+      <hemisphereLight skyColor="#ff7a33" groundColor="#3a1505" intensity={0.9} />
 
       {Array.from({ length: SEG_COUNT }, (_, i) => (
         <group

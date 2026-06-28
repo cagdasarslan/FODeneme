@@ -272,12 +272,12 @@ const useGameStore = create(
     },
 
     _doRevive: () => {
+      // Son hızdan devam et (speed sıfırlanmaz); engeller spawner'larda temizlenir
       set((s) => ({
         phase: 'playing',
         reviveCount: s.reviveCount + 1,
         reviveId: s.reviveId + 1,
         adrenaline: 0,
-        speed: INITIAL_SPEED,
         adrenalinBoosting: false,
         adrenalinBoostTimer: 0,
       }));

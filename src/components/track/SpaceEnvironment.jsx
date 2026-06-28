@@ -227,8 +227,8 @@ export default function SpaceEnvironment() {
       <directionalLight
         castShadow
         position={[80, 60, -150]}
-        intensity={3.0}
-        color="#ffb488"
+        intensity={3.6}
+        color="#ffd0b0"
         shadow-mapSize={[SHADOW_MAP, SHADOW_MAP]}
         shadow-camera-near={1}
         shadow-camera-far={350}
@@ -238,9 +238,9 @@ export default function SpaceEnvironment() {
         shadow-camera-bottom={-80}
       />
       {/* karşı dolgu ışığı — modeller karanlıkta silüet kalmasın */}
-      <directionalLight position={[-60, 40, 60]} intensity={1.1} color="#88aaff" />
-      <hemisphereLight skyColor="#8877cc" groundColor="#221133" intensity={0.8} />
-      <ambientLight intensity={0.7} color="#9988cc" />
+      <directionalLight position={[-60, 40, 60]} intensity={1.6} color="#a0c0ff" />
+      <hemisphereLight skyColor="#aa99dd" groundColor="#332244" intensity={1.1} />
+      <ambientLight intensity={1.0} color="#b0a0d0" />
       <Stars />
       <BigPlanet />
       {Array.from({ length: SEG_COUNT }, (_, i) => (
