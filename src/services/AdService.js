@@ -1,10 +1,14 @@
 import { Capacitor } from '@capacitor/core';
-import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob';
+import {
+  AdMob, RewardAdPluginEvents,
+  BannerAdSize, BannerAdPosition,
+} from '@capacitor-community/admob';
 
-// ⚠️ TEST kimlikleri (Google örnek). Yayına almadan önce kendi AdMob ödüllü
-// reklam birim kimliğinizle değiştirin; ayrıca AndroidManifest.xml içindeki
-// AdMob App ID'yi de kendi uygulamanızınkiyle güncelleyin.
+// ⚠️ TEST kimlikleri (Google örnek). Yayına almadan önce kendi AdMob
+// reklam birim kimliklerinizle değiştirin; ayrıca AndroidManifest.xml
+// içindeki AdMob App ID'yi de kendi uygulamanızınkiyle güncelleyin.
 const REWARD_AD_ID = 'ca-app-pub-3940256099942544/5224354917';
+const BANNER_AD_ID = 'ca-app-pub-3940256099942544/6300978111';
 
 const isNative = Capacitor.getPlatform() !== 'web';
 let initialized = false;
@@ -55,4 +59,33 @@ export async function showRewardedAds(count) {
     if (!ok) return false; // biri iptal/başarısız olursa devam etme
   }
   return true;
+}
+
+// ── Banner reklam (yalnızca ana menüde) ───────────────────────────────────────
+let bannerShown = false;
+
+export async function showBanner() {
+  if (!isNative || bannerShown) return;
+  await ensureInit();
+  try {
+    await AdMob.showBanner({
+      adId: BANNER_AD_ID,
+      adSize: BannerAdSize.ADAPTIVE_BANNER,
+      position: BannerAdPosition.BOTTOM_CENTER,
+      margin: 0,
+    });
+    bannerShown = true;
+  } catch (e) {
+    console.warn('[AdService] showBanner failed:', e);
+  }
+}
+
+export async function hideBanner() {
+  if (!isNative || !bannerShown) return;
+  try {
+    await AdMob.removeBanner();
+    bannerShown = false;
+  } catch (e) {
+    console.warn('[AdService] hideBanner failed:', e);
+  }
 }

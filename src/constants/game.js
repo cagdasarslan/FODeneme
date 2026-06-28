@@ -17,6 +17,11 @@ export const CONTINUE_BASE_CARROTS = 200;
 export const CONTINUE_BASE_ADS     = 1;
 export const CONTINUE_MULTIPLIER   = 3;
 
+// Ödüllü reklam ödülleri
+export const AD_DAILY_CARROTS    = 50;   // günlük bedava havuç (reklam başına)
+export const AD_DAILY_MAX        = 5;    // günde en fazla kaç kez
+export const AD_UPGRADE_DISCOUNT = 0.5;  // yükseltmede %50 indirim
+
 export const HORSE_LATERAL_SPEED = 10;
 
 export const SCORE_PER_METER   = 1;

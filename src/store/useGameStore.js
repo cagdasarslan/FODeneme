@@ -13,6 +13,9 @@ import {
   CONTINUE_BASE_CARROTS,
   CONTINUE_BASE_ADS,
   CONTINUE_MULTIPLIER,
+  AD_DAILY_CARROTS,
+  AD_DAILY_MAX,
+  AD_UPGRADE_DISCOUNT,
 } from '@/constants/game';
 import {
   startGuestSession,
@@ -58,6 +61,12 @@ const useGameStore = create(
     runId: 0,
     reviveId: 0,        // her devam-et (revive) işleminde artar → at sıfırlanır
     reviveCount: 0,     // bu koşuda kaç kez devam edildi (maliyet 3^reviveCount)
+    runCarrots: 0,      // bu koşuda toplanan havuç (oyun sonu 2x için)
+    carrotsDoubled: false, // oyun sonu havuç katlama kullanıldı mı
+    startBoost: false,  // sonraki koşuya boost (mıknatıs) ile başla
+    upgradeDiscount: false, // sonraki yükseltme indirimli
+    bonusSlots: 0,      // reklamla kazanılan geçici ahır slotu (kalıcı değil)
+    adBonusToday: parseInt(localStorage.getItem(`ad_bonus_${new Date().toDateString()}`) ?? '0', 10),
     magnetActive: false,
     magnetTimer: 0,
     adrenalinBoosting: false,
@@ -138,8 +147,12 @@ const useGameStore = create(
         distance: 0,
         runId: s.runId + 1,
         reviveCount: 0,
-        magnetActive: false,
-        magnetTimer: 0,
+        runCarrots: 0,
+        carrotsDoubled: false,
+        // Reklam boost'u alındıysa mıknatısla başla
+        magnetActive: s.startBoost,
+        magnetTimer: s.startBoost ? 12 : 0,
+        startBoost: false,
         adrenalinBoosting: false,
         adrenalinBoostTimer: 0,
       })),
@@ -296,6 +309,55 @@ const useGameStore = create(
     },
 
     // =========================================================================
+    // Ödüllü reklam ödülleri (reklam izlendikten SONRA çağrılır)
+    // =========================================================================
+
+    // Oyun sonu: bu koşuda toplanan havuçları bir kez daha ekle (2x)
+    doubleRunCarrots: () => {
+      const { runCarrots, carrots, carrotsDoubled } = get();
+      if (carrotsDoubled || runCarrots <= 0) return 0;
+      const c = carrots + runCarrots;
+      localStorage.setItem('carrots', String(c));
+      set({ carrots: c, carrotsDoubled: true });
+      return runCarrots;
+    },
+
+    // Günlük bedava havuç (reklam başına), günde AD_DAILY_MAX kez
+    adBonusLeft: () => Math.max(0, AD_DAILY_MAX - get().adBonusToday),
+    claimAdCarrots: () => {
+      const { carrots, adBonusToday } = get();
+      if (adBonusToday >= AD_DAILY_MAX) return 0;
+      const c = carrots + AD_DAILY_CARROTS;
+      const n = adBonusToday + 1;
+      localStorage.setItem('carrots', String(c));
+      localStorage.setItem(`ad_bonus_${new Date().toDateString()}`, String(n));
+      set({ carrots: c, adBonusToday: n });
+      return AD_DAILY_CARROTS;
+    },
+
+    // Sonraki koşuya boost (mıknatıs) ile başla
+    armStartBoost: () => set({ startBoost: true }),
+
+    // Sonraki yükseltmede indirim
+    armUpgradeDiscount: () => set({ upgradeDiscount: true }),
+
+    // Tay bekleme süresini (cooldown) sıfırla: 'groom' | 'train' | 'breed'
+    skipFoalCooldown: (id, type) => {
+      if (type === 'breed') { localStorage.setItem('lastBreedAt', '0'); set({ lastBreedAt: 0 }); return true; }
+      const { foals } = get();
+      const idx = foals.findIndex(f => f.id === id);
+      if (idx === -1) return false;
+      const key = type === 'train' ? 'lastTrainedAt' : 'lastGroomedAt';
+      const newFoals = foals.map((f, i) => (i === idx ? { ...f, [key]: 0 } : f));
+      localStorage.setItem('foals', JSON.stringify(newFoals));
+      set({ foals: newFoals });
+      return true;
+    },
+
+    // Reklamla geçici ekstra ahır slotu (sayfa yenilenince sıfırlanır)
+    addTempStableSlot: () => set({ bonusSlots: get().bonusSlots + 1 }),
+
+    // =========================================================================
     // Garage / inventory actions
     // =========================================================================
 
@@ -318,17 +380,19 @@ const useGameStore = create(
     },
 
     upgradeHorseStat: (horseId, stat) => {
-      const { carrots, horseUpgrades } = get();
+      const { carrots, horseUpgrades, upgradeDiscount } = get();
       const ups = horseUpgrades[horseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
       const currentLevel = ups[stat] ?? 0;
       if (currentLevel >= 5) return false;
-      const cost = (currentLevel + 1) * 75;
+      let cost = (currentLevel + 1) * 75;
+      if (upgradeDiscount) cost = Math.ceil(cost * (1 - AD_UPGRADE_DISCOUNT));
       if (carrots < cost) return false;
       const newUps = { ...horseUpgrades, [horseId]: { ...ups, [stat]: currentLevel + 1 } };
       localStorage.setItem('horseUpgrades', JSON.stringify(newUps));
       const newCarrots = carrots - cost;
       localStorage.setItem('carrots', String(newCarrots));
-      set({ carrots: newCarrots, horseUpgrades: newUps });
+      // indirim tek seferlik — kullanıldıktan sonra sıfırla
+      set({ carrots: newCarrots, horseUpgrades: newUps, upgradeDiscount: false });
       return true;
     },
 
@@ -367,7 +431,7 @@ const useGameStore = create(
       const dateKey = `daily_carrots_${new Date().toDateString()}`;
       const dailyC = (parseInt(localStorage.getItem(dateKey) ?? '0') + count);
       localStorage.setItem(dateKey, String(dailyC));
-      set({ carrots: c, dailyCarrots: dailyC });
+      set({ carrots: c, dailyCarrots: dailyC, runCarrots: get().runCarrots + count });
     },
 
     activateMagnet: () => {
@@ -377,10 +441,10 @@ const useGameStore = create(
     // ── Hara actions ──────────────────────────────────────────────────────────
 
     breedFoal: (parentAId, parentBId) => {
-      const { carrots, foals, stableSlots, ownedHorseIds, lastBreedAt } = get();
+      const { carrots, foals, stableSlots, bonusSlots, ownedHorseIds, lastBreedAt } = get();
       if (!ownedHorseIds.includes(parentAId) || !ownedHorseIds.includes(parentBId)) return { ok: false, reason: 'Atlar sahiplenilmemiş' };
       if (parentAId === parentBId) return { ok: false, reason: 'Aynı at seçildi' };
-      if (foals.length >= stableSlots) return { ok: false, reason: 'Ahır dolu' };
+      if (foals.length >= stableSlots + bonusSlots) return { ok: false, reason: 'Ahır dolu' };
       if (carrots < BREED_COST) return { ok: false, reason: 'Yetersiz havuç' };
       const now = Date.now();
       if (now - lastBreedAt < BREED_COOLDOWN_MS) return { ok: false, reason: 'Cooldown devam ediyor' };
@@ -437,10 +501,10 @@ const useGameStore = create(
     },
 
     buyFoal: (tier) => {
-      const { carrots, foals, stableSlots } = get();
+      const { carrots, foals, stableSlots, bonusSlots } = get();
       const cost = tier === 2 ? SHOP_TIER2_COST : SHOP_TIER1_COST;
       if (carrots < cost) return { ok: false, reason: 'Yetersiz havuç' };
-      if (foals.length >= stableSlots) return { ok: false, reason: 'Ahır dolu' };
+      if (foals.length >= stableSlots + bonusSlots) return { ok: false, reason: 'Ahır dolu' };
 
       const tierRanges = tier === 2
         ? { speed: [1.2, 1.8], maneuv: [0.9, 1.5], jump: [1.0, 1.6], maxSpeed: [50, 75] }
@@ -470,6 +534,40 @@ const useGameStore = create(
       localStorage.setItem('foals', JSON.stringify(newFoals));
       localStorage.setItem('carrots', String(newCarrots));
       set({ foals: newFoals, carrots: newCarrots });
+      return { ok: true, foal };
+    },
+
+    // Reklamla şanslı tay (reroll): havuçsuz, istatistikler 3 denemenin en iyisi
+    buyFoalLucky: (tier) => {
+      const { foals, stableSlots, bonusSlots } = get();
+      if (foals.length >= stableSlots + bonusSlots) return { ok: false, reason: 'Ahır dolu' };
+      const tierRanges = tier === 2
+        ? { speed: [1.2, 1.8], maneuv: [0.9, 1.5], jump: [1.0, 1.6], maxSpeed: [50, 75] }
+        : { speed: [0.8, 1.3], maneuv: [0.8, 1.2], jump: [0.8, 1.2], maxSpeed: [35, 55] };
+      const best = (min, max) => Math.max(rr3(min, max), rr3(min, max), rr3(min, max));
+      function rr3(min, max) { return min + Math.random() * (max - min); }
+      const COLORS = ['#8d6e63','#5d4037','#212121','#424242','#EDE8D8','#C0B898','#bf8040','#795548'];
+      const genes = {
+        speedMult:  best(...tierRanges.speed),
+        maneuvMult: best(...tierRanges.maneuv),
+        jumpMult:   best(...tierRanges.jump),
+        maxSpeed:   best(...tierRanges.maxSpeed),
+        bodyColor:  COLORS[Math.floor(Math.random()*COLORS.length)],
+        maneColor:  COLORS[Math.floor(Math.random()*COLORS.length)],
+        trait: null,
+      };
+      const now = Date.now();
+      const foal = {
+        id: `foal_${now}`, source: 'shop', parentA: null, parentB: null,
+        bornAt: now, stage: 'TAY', stageStartedAt: now,
+        bp: 0, tokluk: 80, mutluluk: 80, bag: 0,
+        lastFedAt: 0, lastGroomedAt: 0, lastTrainedAt: 0,
+        genes, name: `Şanslı Tay ${Math.floor(Math.random()*9000)+1000}`,
+        feedsToday: 0, feedDayKey: new Date().toDateString(),
+      };
+      const newFoals = [...foals, foal];
+      localStorage.setItem('foals', JSON.stringify(newFoals));
+      set({ foals: newFoals });
       return { ok: true, foal };
     },
 

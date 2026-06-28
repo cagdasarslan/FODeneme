@@ -1,9 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { CHARACTERS } from '@/constants/characters';
 import { HORSES } from '@/constants/horses';
 import Leaderboard from '@/components/ui/Leaderboard';
 import HowToPlay from '@/components/ui/HowToPlay';
+import AdButton from '@/components/ui/AdButton';
+import { showBanner, hideBanner } from '@/services/AdService';
+import { AD_DAILY_CARROTS, AD_DAILY_MAX } from '@/constants/game';
+import { Capacitor } from '@capacitor/core';
+
+const isNative = Capacitor.getPlatform() !== 'web';
 
 function StatRow({ label, value, color }) {
   return (
@@ -51,6 +57,7 @@ export default function MainMenu() {
     startRun, openGarage, selectedCharacterId, selectedHorseId,
     mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5,
     horseLevels, nightMode, toggleNightMode,
+    runCarrots, carrotsDoubled, doubleRunCarrots, claimAdCarrots, adBonusToday, armStartBoost,
   } = useGameStore(s => ({
     phase:               s.phase,
     sessionReady:        s.sessionReady,
@@ -71,7 +78,19 @@ export default function MainMenu() {
     horseLevels:         s.horseLevels,
     nightMode:           s.nightMode,
     toggleNightMode:     s.toggleNightMode,
+    runCarrots:          s.runCarrots,
+    carrotsDoubled:      s.carrotsDoubled,
+    doubleRunCarrots:    s.doubleRunCarrots,
+    claimAdCarrots:      s.claimAdCarrots,
+    adBonusToday:        s.adBonusToday,
+    armStartBoost:       s.armStartBoost,
   }));
+
+  // Banner reklam — yalnızca ana menü/oyun sonu ekranında
+  useEffect(() => {
+    if (phase === 'idle' || phase === 'gameover') showBanner();
+    else hideBanner();
+  }, [phase]);
 
   const activeChar  = CHARACTERS.find(c => c.id === selectedCharacterId) ?? CHARACTERS[0];
   const activeHorse = HORSES.find(h => h.id === selectedHorseId) ?? HORSES[0];
@@ -126,6 +145,18 @@ export default function MainMenu() {
               <StatRow label="ORTAÇAĞ REKORU"    value={Math.floor(highScoreMap5 ?? 0).toLocaleString()}   color="#c8843c" />
               <StatRow label="HAVUÇ"             value={`🥕 ${carrots}`}                                    color="#ffd700" />
             </div>
+
+            {/* Reklam izle → bu koşunun havuçlarını 2 katına çıkar */}
+            {runCarrots > 0 && !carrotsDoubled && (
+              <div style={{ marginTop: 10 }}>
+                <AdButton
+                  label={`Havuçları 2 KATINA çıkar (+${runCarrots})`}
+                  sub={`Bu koşuda ${runCarrots} havuç topladın`}
+                  color="#ffcf66"
+                  onReward={() => doubleRunCarrots()}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -232,6 +263,28 @@ export default function MainMenu() {
           <span style={styles.changeHint}>DEĞİŞTİR →</span>
         </div>
 
+        {/* Ödüllü reklam alanları */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+          {(AD_DAILY_MAX - adBonusToday) > 0 && (
+            <AdButton
+              label={`Bedava ${AD_DAILY_CARROTS} havuç`}
+              sub={`Bugün ${AD_DAILY_MAX - adBonusToday} hakkın kaldı`}
+              color="#ffd700"
+              compact
+              onReward={() => claimAdCarrots()}
+            />
+          )}
+          {!isGameOver && (
+            <AdButton
+              label="Süper Nal ile başla"
+              sub="Bu koşuya mıknatıs boost'u ile başla"
+              color="#00cfff"
+              compact
+              onReward={() => { armStartBoost(); startRun(); }}
+            />
+          )}
+        </div>
+
         <button style={styles.btn} onClick={startRun}>
           {isGameOver ? 'TEKRAR OYNA' : 'OYNA'}
         </button>
@@ -252,6 +305,9 @@ export default function MainMenu() {
         <button style={styles.guideBtn} onClick={() => setShowGuide(true)}>
           📖 OYUN REHBERİ
         </button>
+
+        {/* Alt banner reklamı menüyü kapatmasın diye boşluk (yalnızca native) */}
+        {isNative && <div style={{ height: 64, flexShrink: 0 }} />}
       </div>
 
       {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}

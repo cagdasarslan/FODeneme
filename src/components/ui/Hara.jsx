@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { HORSES } from '@/constants/horses';
-import { STAGE_CONFIG, BREED_COST, SHOP_TIER1_COST, SHOP_TIER2_COST, EXTRA_SLOT_COST, TRAITS, GROOM_COOLDOWN_MS, TRAIN_COOLDOWN_MS, FEED_MAX_DAY } from '@/constants/foals';
+import { STAGE_CONFIG, BREED_COST, BREED_COOLDOWN_MS, SHOP_TIER1_COST, SHOP_TIER2_COST, EXTRA_SLOT_COST, TRAITS, GROOM_COOLDOWN_MS, TRAIN_COOLDOWN_MS, FEED_MAX_DAY } from '@/constants/foals';
+import AdButton from '@/components/ui/AdButton';
 
 const STAGE_LABELS = { TAY: 'TAY', YAVRU: 'YAVRU', GENC: 'GENÇ', YETISKIN: 'YETİŞKİN' };
 const STAGE_COLORS = { TAY: '#81c784', YAVRU: '#64b5f6', GENC: '#ffb74d', YETISKIN: '#ffd700' };
@@ -93,6 +94,7 @@ function FoalCard({ foal, onFlash }) {
   const advanceStageIfReady = useGameStore(s => s.advanceStageIfReady);
   const matureFoal = useGameStore(s => s.matureFoal);
   const renameFoal = useGameStore(s => s.renameFoal);
+  const skipFoalCooldown = useGameStore(s => s.skipFoalCooldown);
   const carrots = useGameStore(s => s.carrots);
 
   const [editingName, setEditingName] = useState(false);
@@ -240,6 +242,23 @@ function FoalCard({ foal, onFlash }) {
           </button>
         )}
       </div>
+
+      {/* Reklam izle → bekleme süresini atla (tımar / antrenman) */}
+      {!isMature && (!groomReady || !trainReady) && (
+        <div style={{ marginTop: 8 }}>
+          <AdButton
+            label={!groomReady && !trainReady ? 'Bekleme sürelerini atla' : !groomReady ? 'Tımar beklemesini atla' : 'Antrenman beklemesini atla'}
+            sub="Reklam izle → hemen tekrar bakım yap"
+            color="#9ad0ff"
+            compact
+            onReward={() => {
+              if (!groomReady) skipFoalCooldown(foal.id, 'groom');
+              if (!trainReady) skipFoalCooldown(foal.id, 'train');
+              onFlash('⏩ Bekleme süresi atlandı');
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -248,7 +267,10 @@ function BreedModal({ onClose, onDone }) {
   const ownedHorseIds = useGameStore(s => s.ownedHorseIds);
   const carrots = useGameStore(s => s.carrots);
   const breedFoal = useGameStore(s => s.breedFoal);
+  const lastBreedAt = useGameStore(s => s.lastBreedAt);
+  const skipFoalCooldown = useGameStore(s => s.skipFoalCooldown);
   const customHorses = useGameStore(s => s.customHorses ?? []);
+  const breedCooldownActive = Date.now() - lastBreedAt < BREED_COOLDOWN_MS;
 
   const allHorses = [...HORSES, ...customHorses];
   const available = allHorses.filter(h => ownedHorseIds.includes(h.id));
@@ -302,6 +324,19 @@ function BreedModal({ onClose, onDone }) {
         )}
 
         {err && <div style={{ color: '#ef5350', fontSize: 11, marginBottom: 8 }}>{err}</div>}
+
+        {/* Reklam izle → çiftleştirme bekleme süresini atla */}
+        {breedCooldownActive && (
+          <div style={{ marginBottom: 10 }}>
+            <AdButton
+              label="Çiftleştirme beklemesini atla"
+              sub="Reklam izle → hemen çiftleştir"
+              color="#ce93d8"
+              compact
+              onReward={() => { skipFoalCooldown(null, 'breed'); setErr(''); }}
+            />
+          </div>
+        )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: canBreed ? '#ffd700' : '#ff6666', fontWeight: 700 }}>🥕 {BREED_COST} havuç</span>
@@ -361,8 +396,13 @@ function ShopModal({ onClose, onDone }) {
 export default function Hara() {
   const foals = useGameStore(s => s.foals);
   const stableSlots = useGameStore(s => s.stableSlots);
+  const bonusSlots = useGameStore(s => s.bonusSlots);
   const carrots = useGameStore(s => s.carrots);
   const buyStableSlot = useGameStore(s => s.buyStableSlot);
+  const addTempStableSlot = useGameStore(s => s.addTempStableSlot);
+  const buyFoalLucky = useGameStore(s => s.buyFoalLucky);
+
+  const totalSlots = stableSlots + bonusSlots;
 
   const [flash, setFlash] = useState('');
   const [modal, setModal] = useState(null); // null | 'breed' | 'shop'
@@ -381,8 +421,10 @@ export default function Hara() {
 
       {/* Slot info */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Ahır: {foals.length}/{stableSlots} slot</span>
-        {foals.length >= stableSlots && (
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+          Ahır: {foals.length}/{totalSlots} slot{bonusSlots > 0 ? ` (+${bonusSlots} geçici)` : ''}
+        </span>
+        {foals.length >= totalSlots && (
           <button
             style={{ ...SC.actionBtn, padding: '6px 14px', fontSize: 10, background: carrots >= 1000 ? 'linear-gradient(135deg,#c8a000,#a07800)' : '#3a2a2a', opacity: carrots >= 1000 ? 1 : 0.5 }}
             disabled={carrots < 1000}
@@ -393,13 +435,24 @@ export default function Hara() {
         )}
       </div>
 
+      {/* Ahır dolu → reklamla geçici slot */}
+      {foals.length >= totalSlots && (
+        <AdButton
+          label="Geçici +1 ahır slotu"
+          sub="Reklam izle → bu oturum için ekstra slot"
+          color="#c8a0ff"
+          compact
+          onReward={() => { addTempStableSlot(); doFlash('🏠 Geçici slot eklendi'); }}
+        />
+      )}
+
       {/* Foal cards */}
       {foals.map(foal => (
         <FoalCard key={foal.id} foal={foal} onFlash={doFlash} />
       ))}
 
       {/* Empty slots */}
-      {foals.length < stableSlots && (
+      {foals.length < totalSlots && (
         <div style={SC.emptySlot}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>🐣</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>Ahır boş</div>
@@ -410,6 +463,16 @@ export default function Hara() {
             <button style={{ ...SC.actionBtn, background: 'linear-gradient(135deg,#1565c0,#0d47a1)', padding: '10px 20px' }} onClick={() => setModal('shop')}>
               🏪 SATIN AL
             </button>
+          </div>
+          {/* Reklam izle → bedava şanslı tay (yüksek istatistik) */}
+          <div style={{ width: '100%', marginTop: 10 }}>
+            <AdButton
+              label="Şanslı tay (bedava)"
+              sub="Reklam izle → yüksek istatistikli tay"
+              color="#ffd700"
+              compact
+              onReward={() => { const r = buyFoalLucky(1); doFlash(r.ok ? `🍀 ${r.foal.name} geldi!` : `❌ ${r.reason}`); }}
+            />
           </div>
         </div>
       )}

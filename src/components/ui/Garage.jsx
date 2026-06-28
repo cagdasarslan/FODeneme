@@ -6,6 +6,8 @@ import { CHARACTERS } from '@/constants/characters';
 import { HORSES } from '@/constants/horses';
 import * as THREE from 'three';
 import Hara from './Hara';
+import AdButton from '@/components/ui/AdButton';
+import { AD_UPGRADE_DISCOUNT } from '@/constants/game';
 
 const CHAR_BASE = '/assets/models/characters/';
 const MODEL_PATH = '/assets/models/horse.glb';
@@ -135,6 +137,8 @@ export default function Garage() {
   const purchaseHorse       = useGameStore(s => s.purchaseHorse);
   const horseUpgrades       = useGameStore(s => s.horseUpgrades);
   const upgradeHorseStat    = useGameStore(s => s.upgradeHorseStat);
+  const upgradeDiscount     = useGameStore(s => s.upgradeDiscount);
+  const armUpgradeDiscount  = useGameStore(s => s.armUpgradeDiscount);
   const customHorses        = useGameStore(s => s.customHorses ?? []);
   const tickFoals           = useGameStore(s => s.tickFoals);
 
@@ -317,10 +321,25 @@ export default function Garage() {
                 ];
                 return (
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {/* Reklam izle → sonraki yükseltme %50 indirimli */}
+                    {upgradeDiscount ? (
+                      <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#33ff99', letterSpacing: 1, padding: '6px', border: '1px solid #33ff9955', borderRadius: 8 }}>
+                        ✓ İNDİRİM AKTİF — sonraki yükseltme %50
+                      </div>
+                    ) : (
+                      <AdButton
+                        label="Yükseltmede %50 indirim"
+                        sub="Reklam izle → sonraki yükseltme yarı fiyat"
+                        color="#33ff99"
+                        compact
+                        onReward={() => armUpgradeDiscount()}
+                      />
+                    )}
                     {STATS.map(({ key, label, sub, icon, color }) => {
                       const lvl = ups[key] ?? 0;
                       const maxed = lvl >= 5;
-                      const cost = (lvl + 1) * 75;
+                      const baseCost = (lvl + 1) * 75;
+                      const cost = upgradeDiscount ? Math.ceil(baseCost * (1 - AD_UPGRADE_DISCOUNT)) : baseCost;
                       const canAfford = !maxed && carrots >= cost;
                       return (
                         <div key={key} style={{ ...S.statBox, borderColor: `${color}44` }}>
