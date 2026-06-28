@@ -39,7 +39,7 @@ function CharPreview3D({ charFile, accentColor }) {
         <directionalLight position={[3, 6, 4]} intensity={1.8} castShadow />
         <hemisphereLight skyColor="#aaaaff" groundColor="#443322" intensity={0.5} />
         <Suspense fallback={null}>
-          <CharModel3DInner file={charFile} />
+          <CharModel3DInner key={charFile} file={charFile} />
         </Suspense>
         <OrbitControls
           enableZoom={false}

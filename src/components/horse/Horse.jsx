@@ -59,7 +59,8 @@ function Jockey() {
   const char = CHARACTERS.find(c => c.id === selectedCharacterId) ?? CHARACTERS[0];
   return (
     <Suspense fallback={null}>
-      <JockeyInner charFile={char.file} />
+      {/* key=char.file: karakter değişince yeniden klonlansın (hep aynı jokey bug'ı) */}
+      <JockeyInner key={char.file} charFile={char.file} />
     </Suspense>
   );
 }
