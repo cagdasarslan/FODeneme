@@ -1,5 +1,6 @@
 import { useRef, useEffect, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { sfx } from '@/utils/audio';
 import { useGLTF, useAnimations } from '@react-three/drei';
 import { RigidBody, CapsuleCollider } from '@react-three/rapier';
 import * as THREE from 'three';
@@ -381,6 +382,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     if (wantsJump && !jumpPressedRef.current && onGroundRef.current) {
       velYRef.current     = JUMP_FORCE * jumpMult;
       onGroundRef.current = false;
+      sfx.jump();
     }
     jumpPressedRef.current = wantsJump;
 

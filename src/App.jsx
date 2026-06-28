@@ -38,7 +38,14 @@ export default function App() {
   const mapId    = useGameStore((s) => s.mapId);
   const runId    = useGameStore((s) => s.runId);
   const nightMode = useGameStore((s) => s.nightMode);
+  const graphics  = useGameStore((s) => s.graphics);
   useEffect(() => { initSession(); }, [initSession]);
+
+  // Görüntü kalitesi (Ayarlar): low = gölgesiz + düşük dpr, high = tam
+  const lowGfx     = graphics === 'low';
+  const shadowsOn  = !lowGfx;
+  const dprMax     = lowGfx ? 1 : MAX_DPR;
+  const antialias  = !lowGfx && !IS_MOBILE;
 
   const isSpace  = mapId === 4;
   const isMars   = mapId === 3;
@@ -53,10 +60,10 @@ export default function App() {
 
   return (
     <>
-      <Canvas shadows camera={{ position: [0,8,14], fov:68, near:0.1, far:600 }}
+      <Canvas key={graphics} shadows={shadowsOn} camera={{ position: [0,8,14], fov:68, near:0.1, far:600 }}
         style={{ width:'100vw', height:'100vh' }}
-        gl={{ antialias:!IS_MOBILE, powerPreference:'high-performance' }}
-        dpr={[1,MAX_DPR]} performance={{ min:0.5 }}>
+        gl={{ antialias, powerPreference:'high-performance' }}
+        dpr={[1,dprMax]} performance={{ min:0.5 }}>
         <fog attach="fog" args={[fogColor, selfLit ? 120 : isNight ? 60 : 90, selfLit ? 500 : isNight ? 280 : 420]} />
         <CameraRig />
         {!selfLit && (

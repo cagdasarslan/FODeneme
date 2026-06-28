@@ -5,6 +5,7 @@ import { HORSES } from '@/constants/horses';
 import Leaderboard from '@/components/ui/Leaderboard';
 import HowToPlay from '@/components/ui/HowToPlay';
 import CarrotShop from '@/components/ui/CarrotShop';
+import Settings from '@/components/ui/Settings';
 import AdButton from '@/components/ui/AdButton';
 import { showBanner, hideBanner } from '@/services/AdService';
 import { AD_DAILY_CARROTS, AD_DAILY_MAX } from '@/constants/game';
@@ -53,6 +54,7 @@ export default function MainMenu() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showShop, setShowShop] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const {
     phase, sessionReady, sessionError, score, carrots,
@@ -305,9 +307,14 @@ export default function MainMenu() {
           </button>
         </div>
 
-        <button style={styles.guideBtn} onClick={() => setShowGuide(true)}>
-          📖 OYUN REHBERİ
-        </button>
+        <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+          <button style={{ ...styles.guideBtn, flex: 1 }} onClick={() => setShowGuide(true)}>
+            📖 REHBER
+          </button>
+          <button style={{ ...styles.guideBtn, flex: 1 }} onClick={() => setShowSettings(true)}>
+            ⚙️ AYARLAR
+          </button>
+        </div>
 
         {/* Alt banner reklamı menüyü kapatmasın diye boşluk (yalnızca native) */}
         {isNative && <div style={{ height: 64, flexShrink: 0 }} />}
@@ -316,6 +323,7 @@ export default function MainMenu() {
       {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
       {showGuide && <HowToPlay onClose={() => setShowGuide(false)} />}
       {showShop && <CarrotShop onClose={() => setShowShop(false)} />}
+      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

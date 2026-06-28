@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import { setSoundEnabled, sfx } from '@/utils/audio';
 import { HORSES } from '@/constants/horses';
 import {
   INITIAL_SPEED,
@@ -102,6 +103,10 @@ const useGameStore = create(
 
     // ── Night mode (maps 1-2; mars/space have their own atmosphere) ──────────
     nightMode: localStorage.getItem('nightMode') === '1',
+
+    // ── Ayarlar ───────────────────────────────────────────────────────────────
+    soundOn: localStorage.getItem('soundOn') !== '0',          // varsayılan açık
+    graphics: localStorage.getItem('graphics') || 'high',       // 'low' | 'high'
 
     // ── UI phase ──────────────────────────────────────────────────────────────
     showGarage: false,
@@ -259,7 +264,7 @@ const useGameStore = create(
     // Çarpışma → önce "devam et" teklifi göster (gameover'ı ertele)
     registerCollision: () => {
       const { phase } = get();
-      if (phase === 'playing') set({ phase: 'crashed' });
+      if (phase === 'playing') { sfx.crash(); set({ phase: 'crashed' }); }
     },
 
     // Mevcut devam-et maliyetleri (reviveCount'a göre kümülatif 3 kat)
@@ -430,6 +435,18 @@ const useGameStore = create(
       set({ nightMode: next });
     },
 
+    setSoundOn: (on) => {
+      localStorage.setItem('soundOn', on ? '1' : '0');
+      setSoundEnabled(on);
+      set({ soundOn: on });
+    },
+
+    setGraphics: (q) => {
+      const v = q === 'low' ? 'low' : 'high';
+      localStorage.setItem('graphics', v);
+      set({ graphics: v });
+    },
+
     openGarage:  (tab = null) => set({ showGarage: true, garageOpenTab: tab }),
     closeGarage: () => set({ showGarage: false, garageOpenTab: null }),
 
@@ -439,10 +456,12 @@ const useGameStore = create(
       const dateKey = `daily_carrots_${new Date().toDateString()}`;
       const dailyC = (parseInt(localStorage.getItem(dateKey) ?? '0') + count);
       localStorage.setItem(dateKey, String(dailyC));
+      sfx.collect();
       set({ carrots: c, dailyCarrots: dailyC, runCarrots: get().runCarrots + count });
     },
 
     activateMagnet: () => {
+      sfx.powerup();
       set({ magnetActive: true, magnetTimer: 10 });
     },
 
