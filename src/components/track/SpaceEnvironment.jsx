@@ -106,7 +106,6 @@ function BigPlanet() {
   );
 }
 
-const wallMat  = new THREE.MeshStandardMaterial({ color: '#241a30', roughness: 0.9, metalness: 0.2 });
 const stripMat = new THREE.MeshStandardMaterial({ color: '#3a2a50', emissive: '#ff5522', emissiveIntensity: 0.6 });
 
 function RoadSegment() {
@@ -121,17 +120,11 @@ function RoadSegment() {
         <boxGeometry args={[200, 0.10, SEG_LEN]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
-      {/* Sürekli yüksek duvar — iki yanda harita dışını TAMAMEN kapatır */}
+      {/* yol kenarı ışık şeridi */}
       {[-1, 1].map((side) => (
-        <group key={side}>
-          <mesh position={[side * 14, 9, 0]} material={wallMat}>
-            <boxGeometry args={[4, 18, SEG_LEN]} />
-          </mesh>
-          {/* yol kenarı ışık şeridi */}
-          <mesh position={[side * 9.4, 0.7, 0]} material={stripMat}>
-            <boxGeometry args={[0.25, 0.25, SEG_LEN]} />
-          </mesh>
-        </group>
+        <mesh key={side} position={[side * 9.4, 0.7, 0]} material={stripMat}>
+          <boxGeometry args={[0.25, 0.25, SEG_LEN]} />
+        </mesh>
       ))}
       {/* Yol — 18 birim */}
       <mesh receiveShadow position={[0, 0.15, 0]}>
@@ -189,6 +182,19 @@ function getSideProps(segIdx) {
     const dx = side * (9.6 + pr(i + 70, segIdx) * 1.8); // yol kenarına bitişik
     const f = fillers[Math.floor(pr(i + 80, segIdx * 5) * fillers.length) % fillers.length];
     props.push({ id: `f${i}`, x: dx, z, m: f.m, scale: f.s, ry: pr(i + 90, segIdx) * Math.PI * 2 });
+  }
+
+  // Doğal kaya sırtı — paketteki terrain modelleriyle harita dışını kapatır
+  // (düz duvar yerine; iki yanda sürekli, yüksek)
+  const ridge = [M_TERR_T, M_TERR_TC];
+  const ridgeCount = IS_MOBILE ? 8 : 14;
+  for (let side of [-1, 1]) {
+    for (let i = 0; i < ridgeCount; i++) {
+      const z = -half + i * (SEG_LEN / ridgeCount) + (pr(i + side * 200, segIdx) - 0.5) * 2;
+      const dx = side * (17 + pr(i + side * 50, segIdx) * 2);
+      const m = ridge[Math.floor(pr(i + side * 70, segIdx) * ridge.length) % ridge.length];
+      props.push({ id: `r${side}_${i}`, x: dx, z, m, scale: 5.5 + pr(i + side * 90, segIdx) * 2, ry: pr(i + side * 110, segIdx) * Math.PI * 2 });
+    }
   }
 
   return props;
