@@ -106,6 +106,9 @@ function BigPlanet() {
   );
 }
 
+const wallMat  = new THREE.MeshStandardMaterial({ color: '#241a30', roughness: 0.9, metalness: 0.2 });
+const stripMat = new THREE.MeshStandardMaterial({ color: '#3a2a50', emissive: '#ff5522', emissiveIntensity: 0.6 });
+
 function RoadSegment() {
   return (
     <group>
@@ -118,6 +121,18 @@ function RoadSegment() {
         <boxGeometry args={[200, 0.10, SEG_LEN]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
+      {/* Sürekli yüksek duvar — iki yanda harita dışını TAMAMEN kapatır */}
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          <mesh position={[side * 14, 9, 0]} material={wallMat}>
+            <boxGeometry args={[4, 18, SEG_LEN]} />
+          </mesh>
+          {/* yol kenarı ışık şeridi */}
+          <mesh position={[side * 9.4, 0.7, 0]} material={stripMat}>
+            <boxGeometry args={[0.25, 0.25, SEG_LEN]} />
+          </mesh>
+        </group>
+      ))}
       {/* Yol — 18 birim */}
       <mesh receiveShadow position={[0, 0.15, 0]}>
         <boxGeometry args={[ROAD_W, 0.30, SEG_LEN]} />
@@ -151,11 +166,11 @@ function getSideProps(segIdx) {
     { m: M_PAD_LG, s: 2.8 }, { m: M_LANDER_A, s: 3.0 }, { m: M_SOLAR, s: 3.0 },
     { m: M_TUNNEL, s: 3.2 },
   ];
-  const buildingCount = IS_MOBILE ? 7 : 12;
+  const buildingCount = IS_MOBILE ? 8 : 14;
   for (let i = 0; i < buildingCount; i++) {
-    const z = -half + 6 + i * (SEG_LEN / buildingCount) + (pr(i, segIdx) - 0.5) * 4;
+    const z = -half + 4 + i * (SEG_LEN / buildingCount) + (pr(i, segIdx) - 0.5) * 3;
     const side = i % 2 === 0 ? -1 : 1;
-    const dx = side * (12 + pr(i + 5, segIdx) * 4);
+    const dx = side * (10.5 + pr(i + 5, segIdx) * 1.5); // yol kenarı ile duvar arası
     const b = buildings[Math.floor(pr(i + 20, segIdx * 3) * buildings.length) % buildings.length];
     const ry = side < 0 ? Math.PI / 2 : -Math.PI / 2;
     props.push({ id: `b${i}`, x: dx, z, m: b.m, scale: b.s, ry: ry + (pr(i + 30, segIdx) - 0.5) * 0.3 });
@@ -171,20 +186,9 @@ function getSideProps(segIdx) {
   for (let i = 0; i < fillerCount; i++) {
     const z = -half + i * (SEG_LEN / fillerCount) + (pr(i + 40, segIdx) - 0.5) * 3;
     const side = pr(i + 60, segIdx) > 0.5 ? 1 : -1;
-    const dx = side * (9.8 + pr(i + 70, segIdx) * 5);
+    const dx = side * (9.6 + pr(i + 70, segIdx) * 1.8); // yol kenarına bitişik
     const f = fillers[Math.floor(pr(i + 80, segIdx * 5) * fillers.length) % fillers.length];
     props.push({ id: `f${i}`, x: dx, z, m: f.m, scale: f.s, ry: pr(i + 90, segIdx) * Math.PI * 2 });
-  }
-
-  // Uzak DEV terrain duvarı — iki yanda harita dışını tamamen kapatır
-  const wall = [M_TERR_T, M_TERR_TC, M_STRUCT_T, M_DRILL];
-  const wallCount = IS_MOBILE ? 6 : 10;
-  for (let i = 0; i < wallCount; i++) {
-    const z = -half + i * (SEG_LEN / wallCount) + (pr(i + 110, segIdx) - 0.5) * 4;
-    const side = i % 2 === 0 ? -1 : 1;
-    const dx = side * (26 + pr(i + 120, segIdx) * 14);
-    const m = wall[Math.floor(pr(i + 130, segIdx) * wall.length) % wall.length];
-    props.push({ id: `w${i}`, x: dx, z, m, scale: 5 + pr(i + 135, segIdx) * 2.5, ry: pr(i + 140, segIdx) * Math.PI * 2 });
   }
 
   return props;
@@ -229,8 +233,8 @@ export default function SpaceEnvironment() {
       <directionalLight
         castShadow
         position={[80, 60, -150]}
-        intensity={2.6}
-        color="#ff8844"
+        intensity={3.0}
+        color="#ffb488"
         shadow-mapSize={[SHADOW_MAP, SHADOW_MAP]}
         shadow-camera-near={1}
         shadow-camera-far={350}
@@ -239,8 +243,10 @@ export default function SpaceEnvironment() {
         shadow-camera-top={80}
         shadow-camera-bottom={-80}
       />
-      <hemisphereLight skyColor="#6622aa" groundColor="#110022" intensity={0.5} />
-      <ambientLight intensity={0.35} color="#8866cc" />
+      {/* karşı dolgu ışığı — modeller karanlıkta silüet kalmasın */}
+      <directionalLight position={[-60, 40, 60]} intensity={1.1} color="#88aaff" />
+      <hemisphereLight skyColor="#8877cc" groundColor="#221133" intensity={0.8} />
+      <ambientLight intensity={0.7} color="#9988cc" />
       <Stars />
       <BigPlanet />
       {Array.from({ length: SEG_COUNT }, (_, i) => (
