@@ -1,6 +1,10 @@
 import { useRef, useEffect, useState } from 'react';
 import useGameStore from '@/store/useGameStore';
-import { INITIAL_SPEED, MAX_SPEED } from '@/constants/game';
+import { INITIAL_SPEED } from '@/constants/game';
+import { HORSES } from '@/constants/horses';
+
+// Gösterge skalası: en hızlı atın boost'lu üst hızına göre (40'ta doygunlaşmasın)
+const TOP_SPEED = Math.max(...HORSES.map(h => h.baseMaxSpeed ?? 40)) * 1.3;
 import TouchPad from '@/components/ui/TouchPad';
 
 const isMobile = 'ontouchstart' in window;
@@ -56,7 +60,7 @@ export default function HUD() {
   const adrColor = adrenaline > 75 ? '#ff3333' : adrenaline > 40 ? '#ff9900' : '#33aaff';
   const isMaxAdr = adrenaline > 90;
 
-  const spct = Math.min(1, (speed - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED));
+  const spct = Math.min(1, Math.max(0, (speed - INITIAL_SPEED) / (TOP_SPEED - INITIAL_SPEED)));
   const speedColor = spct < 0.4 ? '#33ff99' : spct < 0.75 ? '#ffcc00' : '#ff4422';
 
   return (
