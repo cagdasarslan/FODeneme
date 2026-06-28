@@ -315,9 +315,9 @@ export default function Garage() {
               {horseOwned && (() => {
                 const ups = horseUpgrades?.[previewHorse.id] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
                 const STATS = [
-                  { key: 'speedLevel',  label: 'NAL ÇİVİLEME',      sub: 'Hız +8%/seviye',    icon: '⚡', color: '#ff9800' },
+                  { key: 'speedLevel',  label: 'NAL ÇİVİLEME',      sub: 'Hız +5%/seviye',    icon: '⚡', color: '#ff9800' },
                   { key: 'maneuvLevel', label: 'EYER SEYİS AYARI',   sub: 'Manevra +10%/seviye', icon: '🎯', color: '#4fc3f7' },
-                  { key: 'jumpLevel',   label: 'SIÇRAMA GÜCÜ',       sub: 'Zıplama +10%/seviye', icon: '🌙', color: '#ce93d8' },
+                  { key: 'jumpLevel',   label: 'SIÇRAMA GÜCÜ',       sub: 'Zıplama +6%/seviye', icon: '🌙', color: '#ce93d8' },
                 ];
                 return (
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -338,7 +338,7 @@ export default function Garage() {
                     {STATS.map(({ key, label, sub, icon, color }) => {
                       const lvl = ups[key] ?? 0;
                       const maxed = lvl >= 5;
-                      const baseCost = (lvl + 1) * 75;
+                      const baseCost = 750 * Math.pow(2, lvl);
                       const cost = upgradeDiscount ? Math.ceil(baseCost * (1 - AD_UPGRADE_DISCOUNT)) : baseCost;
                       const canAfford = !maxed && carrots >= cost;
                       return (

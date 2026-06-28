@@ -59,4 +59,4 @@ export const HORSES = [
 ];
 
 export const MAX_UPGRADE_LEVEL = 5;
-export const upgradeCost = (currentLevel) => (currentLevel + 1) * 75;
+export const upgradeCost = (currentLevel) => 750 * Math.pow(2, currentLevel);

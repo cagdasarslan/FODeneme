@@ -200,7 +200,7 @@ const useGameStore = create(
       const allHorsesForTick = [...HORSES, ...(get().customHorses ?? [])];
       const horse = allHorsesForTick.find(h => h.id === get().selectedHorseId);
       const ups = horseUpgrades[get().selectedHorseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
-      const speedMult = (horse?.baseSpeedMult ?? 1.0) * (1 + ups.speedLevel * 0.08);
+      const speedMult = (horse?.baseSpeedMult ?? 1.0) * (1 + ups.speedLevel * 0.05);
       const cap = (horse?.baseMaxSpeed ?? MAX_SPEED) * speedMult;
 
       // Adrenalin boost: MAX'a ulaşınca 3s 2x skor + hız patlaması
@@ -384,7 +384,7 @@ const useGameStore = create(
       const ups = horseUpgrades[horseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
       const currentLevel = ups[stat] ?? 0;
       if (currentLevel >= 5) return false;
-      let cost = (currentLevel + 1) * 75;
+      let cost = 750 * Math.pow(2, currentLevel);
       if (upgradeDiscount) cost = Math.ceil(cost * (1 - AD_UPGRADE_DISCOUNT));
       if (carrots < cost) return false;
       const newUps = { ...horseUpgrades, [horseId]: { ...ups, [stat]: currentLevel + 1 } };

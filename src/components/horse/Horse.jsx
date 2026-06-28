@@ -376,7 +376,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     const vx = (clampedX - pos.x) / Math.max(delta, 0.001);
 
     // ── Zıplama (zıplama çarpanı) ──────────────────────────────────────────
-    const jumpMult  = (horseVariant.baseJumpMult ?? 1.0) * (1 + horseUps.jumpLevel * 0.1);
+    const jumpMult  = (horseVariant.baseJumpMult ?? 1.0) * (1 + horseUps.jumpLevel * 0.06);
     const wantsJump = controls.current.jump;
     if (wantsJump && !jumpPressedRef.current && onGroundRef.current) {
       velYRef.current     = JUMP_FORCE * jumpMult;
