@@ -102,16 +102,16 @@ function RoadSegment() {
     <group>
       {/* Mars terrain sides — starts after road edge at ±9 */}
       <mesh receiveShadow position={[-31, 0.05, 0]}>
-        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+        <boxGeometry args={[44, 0.10, SEG_LEN + 0.6]} />
         <meshStandardMaterial color="#b84020" roughness={0.95} />
       </mesh>
       <mesh receiveShadow position={[31, 0.05, 0]}>
-        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+        <boxGeometry args={[44, 0.10, SEG_LEN + 0.6]} />
         <meshStandardMaterial color="#b84020" roughness={0.95} />
       </mesh>
       {/* Road - 18 units wide so lanes at ±4 sit comfortably inside */}
       <mesh receiveShadow position={[0, 0.15, 0]}>
-        <boxGeometry args={[18, 0.30, SEG_LEN]} />
+        <boxGeometry args={[18, 0.30, SEG_LEN + 0.6]} />
         <meshStandardMaterial color="#7a3018" roughness={0.85} />
       </mesh>
       {/* Lane markings */}

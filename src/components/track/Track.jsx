@@ -17,12 +17,16 @@ const groundMat  = new THREE.MeshStandardMaterial({ color: '#4e8040', roughness:
 const lineMat    = new THREE.MeshStandardMaterial({ color: '#f0f0f0' });
 const dashMat    = new THREE.MeshStandardMaterial({ color: '#f5d800', emissive: '#b8a000', emissiveIntensity: 0.15 });
 
-const roadGeo   = new THREE.BoxGeometry(ROAD_WIDTH, 0.3, TILE_LENGTH);
-const shldGeo   = new THREE.BoxGeometry(SHOULDER_W, 0.25, TILE_LENGTH);
-const groundGeo = new THREE.BoxGeometry(160, 0.15, TILE_LENGTH);
+// Parçaları aralıklarından biraz uzun yap (komşularla hafif bindirme) →
+// kenar dikişlerinde (floating-point/AA) boşluk oluşmaz
+const OVERLAP = 0.6;
+const TILE_GEO_LEN = TILE_LENGTH + OVERLAP;
+const roadGeo   = new THREE.BoxGeometry(ROAD_WIDTH, 0.3, TILE_GEO_LEN);
+const shldGeo   = new THREE.BoxGeometry(SHOULDER_W, 0.25, TILE_GEO_LEN);
+const groundGeo = new THREE.BoxGeometry(160, 0.15, TILE_GEO_LEN);
 const dashGeo   = new THREE.BoxGeometry(0.16, 0.01, 5);
 const laneGeo   = new THREE.BoxGeometry(0.14, 0.01, 4);
-const edgeGeo   = new THREE.BoxGeometry(0.22, 0.01, TILE_LENGTH);
+const edgeGeo   = new THREE.BoxGeometry(0.22, 0.01, TILE_GEO_LEN);
 
 const DASH_COUNT = 7;
 const DASH_SPACE = TILE_LENGTH / DASH_COUNT;

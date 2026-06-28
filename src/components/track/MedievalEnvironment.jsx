@@ -158,16 +158,16 @@ function RoadSegment({ segIdx = 0 }) {
     <group>
       {/* Çayır kenarlar — geniş, harita dışını kapatır */}
       <mesh receiveShadow position={[-109, 0.05, 0]}>
-        <boxGeometry args={[200, 0.10, SEG_LEN]} />
+        <boxGeometry args={[200, 0.10, SEG_LEN + 0.6]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
       <mesh receiveShadow position={[109, 0.05, 0]}>
-        <boxGeometry args={[200, 0.10, SEG_LEN]} />
+        <boxGeometry args={[200, 0.10, SEG_LEN + 0.6]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
       {/* Koyu harç tabanı — taşların arasındaki derzler */}
       <mesh receiveShadow position={[0, 0.12, 0]}>
-        <boxGeometry args={[ROAD_W, 0.24, SEG_LEN]} />
+        <boxGeometry args={[ROAD_W, 0.24, SEG_LEN + 0.6]} />
         <meshStandardMaterial color="#33302b" roughness={1} />
       </mesh>
       {/* Parke taşları */}

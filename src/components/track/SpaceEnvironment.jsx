@@ -113,11 +113,11 @@ function RoadSegment() {
     <group>
       {/* Geniş zemin — harita dışını (boşluğu) kapatır */}
       <mesh receiveShadow position={[-109, 0.05, 0]}>
-        <boxGeometry args={[200, 0.10, SEG_LEN]} />
+        <boxGeometry args={[200, 0.10, SEG_LEN + 0.6]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
       <mesh receiveShadow position={[109, 0.05, 0]}>
-        <boxGeometry args={[200, 0.10, SEG_LEN]} />
+        <boxGeometry args={[200, 0.10, SEG_LEN + 0.6]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
       {/* yol kenarı ışık şeridi */}
@@ -128,7 +128,7 @@ function RoadSegment() {
       ))}
       {/* Yol — 18 birim */}
       <mesh receiveShadow position={[0, 0.15, 0]}>
-        <boxGeometry args={[ROAD_W, 0.30, SEG_LEN]} />
+        <boxGeometry args={[ROAD_W, 0.30, SEG_LEN + 0.6]} />
         <meshStandardMaterial color={ROAD_COLOR} roughness={0.9} />
       </mesh>
       {[-4, 4].map((x) =>
