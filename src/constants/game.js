@@ -3,7 +3,7 @@ export const LANE_WIDTH  = 4;    // şerit genişliği — yol 12 birim / 3 şer
 export const HALF_TRACK  = 4.5;  // at bu sınırdan çıkamaz
 export const LANES       = [-4, 0, 4];
 
-export const INITIAL_SPEED    = 12;
+export const INITIAL_SPEED    = 16;
 export const MAX_SPEED        = 55;
 export const SPEED_INCREMENT  = 1.5;  // birim/s² — delta ile çarpılır
 
