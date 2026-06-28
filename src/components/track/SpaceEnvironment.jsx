@@ -152,49 +152,37 @@ function getSideProps(segIdx) {
   const props = [];
   const half = SEG_LEN / 2;
 
+  // Assetler 2 kat büyütüldü; yola taşmaması için x dışarı kaydırıldı
   const buildings = [
-    { m: M_BASE_A, s: 3.2 }, { m: M_BASE_B, s: 3.2 }, { m: M_BASE_C, s: 3.2 },
-    { m: M_BASE_GAR, s: 3.2 }, { m: M_DEPOT_A, s: 3.0 }, { m: M_DEPOT_B, s: 3.0 },
-    { m: M_STRUCT_T, s: 3.4 }, { m: M_DRILL, s: 3.2 }, { m: M_WIND_T, s: 3.4 },
-    { m: M_PAD_LG, s: 2.8 }, { m: M_LANDER_A, s: 3.0 }, { m: M_SOLAR, s: 3.0 },
-    { m: M_TUNNEL, s: 3.2 },
+    { m: M_BASE_A, s: 6.4 }, { m: M_BASE_B, s: 6.4 }, { m: M_BASE_C, s: 6.4 },
+    { m: M_BASE_GAR, s: 6.4 }, { m: M_DEPOT_A, s: 6.0 }, { m: M_DEPOT_B, s: 6.0 },
+    { m: M_STRUCT_T, s: 6.8 }, { m: M_DRILL, s: 6.4 }, { m: M_WIND_T, s: 6.8 },
+    { m: M_PAD_LG, s: 5.6 }, { m: M_LANDER_A, s: 6.0 }, { m: M_SOLAR, s: 6.0 },
+    { m: M_TUNNEL, s: 6.4 },
   ];
   const buildingCount = IS_MOBILE ? 8 : 14;
   for (let i = 0; i < buildingCount; i++) {
     const z = -half + 4 + i * (SEG_LEN / buildingCount) + (pr(i, segIdx) - 0.5) * 3;
     const side = i % 2 === 0 ? -1 : 1;
-    const dx = side * (10.5 + pr(i + 5, segIdx) * 1.5); // yol kenarı ile duvar arası
+    const dx = side * (18 + pr(i + 5, segIdx) * 4); // büyük yapılar yoldan uzak
     const b = buildings[Math.floor(pr(i + 20, segIdx * 3) * buildings.length) % buildings.length];
     const ry = side < 0 ? Math.PI / 2 : -Math.PI / 2;
     props.push({ id: `b${i}`, x: dx, z, m: b.m, scale: b.s, ry: ry + (pr(i + 30, segIdx) - 0.5) * 0.3 });
   }
 
   const fillers = [
-    { m: M_CARGO_AS, s: 2.6 }, { m: M_CARGO_BS, s: 2.6 }, { m: M_CONT_A, s: 3.4 },
-    { m: M_CONT_B, s: 3.4 }, { m: M_CONT_C, s: 3.4 }, { m: M_ROCKS_A, s: 3.0 },
-    { m: M_ROCKS_B, s: 3.0 }, { m: M_TRUCK, s: 3.0 }, { m: M_WIND_L, s: 2.8 },
-    { m: M_STRUCT_L, s: 3.0 },
+    { m: M_CARGO_AS, s: 5.2 }, { m: M_CARGO_BS, s: 5.2 }, { m: M_CONT_A, s: 6.8 },
+    { m: M_CONT_B, s: 6.8 }, { m: M_CONT_C, s: 6.8 }, { m: M_ROCKS_A, s: 6.0 },
+    { m: M_ROCKS_B, s: 6.0 }, { m: M_TRUCK, s: 6.0 }, { m: M_WIND_L, s: 5.6 },
+    { m: M_STRUCT_L, s: 6.0 },
   ];
   const fillerCount = IS_MOBILE ? 10 : 18;
   for (let i = 0; i < fillerCount; i++) {
     const z = -half + i * (SEG_LEN / fillerCount) + (pr(i + 40, segIdx) - 0.5) * 3;
     const side = pr(i + 60, segIdx) > 0.5 ? 1 : -1;
-    const dx = side * (9.6 + pr(i + 70, segIdx) * 1.8); // yol kenarına bitişik
+    const dx = side * (13 + pr(i + 70, segIdx) * 4); // yol kenarının dışında
     const f = fillers[Math.floor(pr(i + 80, segIdx * 5) * fillers.length) % fillers.length];
     props.push({ id: `f${i}`, x: dx, z, m: f.m, scale: f.s, ry: pr(i + 90, segIdx) * Math.PI * 2 });
-  }
-
-  // Doğal kaya sırtı — paketteki terrain modelleriyle harita dışını kapatır
-  // (düz duvar yerine; iki yanda sürekli, yüksek)
-  const ridge = [M_TERR_T, M_TERR_TC];
-  const ridgeCount = IS_MOBILE ? 8 : 14;
-  for (let side of [-1, 1]) {
-    for (let i = 0; i < ridgeCount; i++) {
-      const z = -half + i * (SEG_LEN / ridgeCount) + (pr(i + side * 200, segIdx) - 0.5) * 2;
-      const dx = side * (17 + pr(i + side * 50, segIdx) * 2);
-      const m = ridge[Math.floor(pr(i + side * 70, segIdx) * ridge.length) % ridge.length];
-      props.push({ id: `r${side}_${i}`, x: dx, z, m, scale: 5.5 + pr(i + side * 90, segIdx) * 2, ry: pr(i + side * 110, segIdx) * Math.PI * 2 });
-    }
   }
 
   return props;
