@@ -1,8 +1,9 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
-import { SHADOW_MAP } from '@/utils/device';
+import { SHADOW_MAP, IS_MOBILE } from '@/utils/device';
 
 const SEG_LEN = 120;
 const SEG_COUNT = 6;
@@ -10,6 +11,65 @@ const RECYCLE_AFTER = SEG_LEN + 20;
 
 const ROAD_COLOR = '#6b3a2a';
 const GROUND_COLOR = '#2a1a35';
+const ROAD_W = 18;
+
+// ── KayKit Space Base Bits modelleri ──────────────────────────────────────────
+const SB = '/assets/models/spacebits/';
+const M_BASE_A   = SB + 'basemodule_A.gltf';
+const M_BASE_B   = SB + 'basemodule_B.gltf';
+const M_BASE_C   = SB + 'basemodule_C.gltf';
+const M_BASE_GAR = SB + 'basemodule_garage.gltf';
+const M_DEPOT_A  = SB + 'cargodepot_A.gltf';
+const M_DEPOT_B  = SB + 'cargodepot_B.gltf';
+const M_STRUCT_T = SB + 'structure_tall.gltf';
+const M_STRUCT_L = SB + 'structure_low.gltf';
+const M_DRILL    = SB + 'drill_structure.gltf';
+const M_WIND_T   = SB + 'windturbine_tall.gltf';
+const M_WIND_L   = SB + 'windturbine_low.gltf';
+const M_PAD_LG   = SB + 'landingpad_large.gltf';
+const M_LANDER_A = SB + 'lander_A.gltf';
+const M_LANDER_B = SB + 'lander_B.gltf';
+const M_SOLAR    = SB + 'roofmodule_solarpanels.gltf';
+const M_TUNNEL   = SB + 'tunnel_straight_A.gltf';
+// dolgu / küçük
+const M_CARGO_AS = SB + 'cargo_A_stacked.gltf';
+const M_CARGO_BS = SB + 'cargo_B_stacked.gltf';
+const M_CONT_A   = SB + 'containers_A.gltf';
+const M_CONT_B   = SB + 'containers_B.gltf';
+const M_CONT_C   = SB + 'containers_C.gltf';
+const M_ROCKS_A  = SB + 'rocks_A.gltf';
+const M_ROCKS_B  = SB + 'rocks_B.gltf';
+const M_TRUCK    = SB + 'spacetruck.gltf';
+// uzak yüksek duvar
+const M_TERR_T   = SB + 'terrain_tall.gltf';
+const M_TERR_TC  = SB + 'terrain_tall_curved.gltf';
+
+const ALL = [
+  M_BASE_A, M_BASE_B, M_BASE_C, M_BASE_GAR, M_DEPOT_A, M_DEPOT_B, M_STRUCT_T,
+  M_STRUCT_L, M_DRILL, M_WIND_T, M_WIND_L, M_PAD_LG, M_LANDER_A, M_LANDER_B,
+  M_SOLAR, M_TUNNEL, M_CARGO_AS, M_CARGO_BS, M_CONT_A, M_CONT_B, M_CONT_C,
+  M_ROCKS_A, M_ROCKS_B, M_TRUCK, M_TERR_T, M_TERR_TC,
+];
+ALL.forEach((p) => useGLTF.preload(p));
+
+// Klonla + yatayda merkeze çek (pivot kaymalarını giderir); mobilde gölge kapalı
+function Model({ path, position, scale = 1, rotation = [0, 0, 0] }) {
+  const { scene } = useGLTF(path);
+  const cloned = useRef(null);
+  const off = useRef([0, 0]);
+  if (!cloned.current) {
+    cloned.current = scene.clone(true);
+    cloned.current.traverse((n) => { if (n.isMesh) { n.castShadow = !IS_MOBILE; n.receiveShadow = !IS_MOBILE; } });
+    const box = new THREE.Box3().setFromObject(cloned.current);
+    off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
+  }
+  const s = Array.isArray(scale) ? scale : [scale, scale, scale];
+  return (
+    <group position={position} scale={s} rotation={rotation}>
+      <primitive object={cloned.current} position={[-off.current[0], 0, -off.current[1]]} />
+    </group>
+  );
+}
 
 function Stars() {
   const positions = useMemo(() => {
@@ -21,14 +81,10 @@ function Stars() {
     }
     return arr;
   }, []);
-
   return (
     <points>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial color="#ffffff" size={0.5} sizeAttenuation />
     </points>
@@ -42,7 +98,6 @@ function BigPlanet() {
         <sphereGeometry args={[30, 32, 32]} />
         <meshStandardMaterial color="#7b4fa6" roughness={0.7} metalness={0.1} />
       </mesh>
-      {/* Ring */}
       <mesh rotation={[Math.PI * 0.15, 0, 0]}>
         <torusGeometry args={[44, 3, 4, 64]} />
         <meshStandardMaterial color="#9b6fc0" roughness={0.8} transparent opacity={0.7} />
@@ -51,69 +106,23 @@ function BigPlanet() {
   );
 }
 
-function ProceduralCrater({ position, radius = 1.5 }) {
-  return (
-    <group position={position}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[radius * 0.7, radius, 16]} />
-        <meshStandardMaterial color="#3d2255" roughness={1} />
-      </mesh>
-      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[radius * 0.65, 16]} />
-        <meshStandardMaterial color="#1e0f2a" roughness={1} />
-      </mesh>
-    </group>
-  );
-}
-
-function ProceduralSpaceRock({ position, scale = 1 }) {
-  return (
-    <mesh castShadow position={position} scale={[scale * 0.7, scale * 0.5, scale * 0.7]}>
-      <dodecahedronGeometry args={[0.7, 0]} />
-      <meshStandardMaterial color="#4a3060" roughness={0.95} metalness={0.2} />
-    </mesh>
-  );
-}
-
-function ProceduralRocket({ position }) {
-  return (
-    <group position={position}>
-      <mesh castShadow position={[0, 1.5, 0]}>
-        <cylinderGeometry args={[0.3, 0.3, 3, 8]} />
-        <meshStandardMaterial color="#888" metalness={0.8} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, 3.2, 0]}>
-        <coneGeometry args={[0.3, 1, 8]} />
-        <meshStandardMaterial color="#cc4444" metalness={0.6} roughness={0.4} />
-      </mesh>
-      {[-0.5, 0.5].map((dx) => (
-        <mesh key={dx} castShadow position={[dx, 0.8, 0]} rotation={[0, 0, dx > 0 ? 0.4 : -0.4]}>
-          <boxGeometry args={[0.15, 0.8, 0.4]} />
-          <meshStandardMaterial color="#aaaaaa" metalness={0.7} roughness={0.4} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
 function RoadSegment() {
   return (
     <group>
-      {/* Alien ground on sides — starts after road edge at ±9 */}
-      <mesh receiveShadow position={[-31, 0.05, 0]}>
-        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+      {/* Geniş zemin — harita dışını (boşluğu) kapatır */}
+      <mesh receiveShadow position={[-109, 0.05, 0]}>
+        <boxGeometry args={[200, 0.10, SEG_LEN]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
-      <mesh receiveShadow position={[31, 0.05, 0]}>
-        <boxGeometry args={[44, 0.10, SEG_LEN]} />
+      <mesh receiveShadow position={[109, 0.05, 0]}>
+        <boxGeometry args={[200, 0.10, SEG_LEN]} />
         <meshStandardMaterial color={GROUND_COLOR} roughness={1} />
       </mesh>
-      {/* Road - 18 units wide so lanes at ±4 sit comfortably inside */}
+      {/* Yol — 18 birim */}
       <mesh receiveShadow position={[0, 0.15, 0]}>
-        <boxGeometry args={[18, 0.30, SEG_LEN]} />
+        <boxGeometry args={[ROAD_W, 0.30, SEG_LEN]} />
         <meshStandardMaterial color={ROAD_COLOR} roughness={0.9} />
       </mesh>
-      {/* Lane markings at outer-lane edges */}
       {[-4, 4].map((x) =>
         Array.from({ length: 8 }).map((_, i) => (
           <mesh key={`lm-${x}-${i}`} position={[x, 0.31, -SEG_LEN / 2 + 8 + i * 14]}>
@@ -126,33 +135,69 @@ function RoadSegment() {
   );
 }
 
+function pr(a, b = 0) {
+  return (((Math.sin(a * 127.1 + b * 311.7) * 43758.5453) % 1) + 1) % 1;
+}
+
+// Yol kenarına SIK uzay üssü yapıları + harita dışını kapatan yüksek duvar
 function getSideProps(segIdx) {
   const props = [];
-  const pseudoRand = (n) => ((Math.sin(n * 127.1 + segIdx * 311.7) * 43758.5453) % 1 + 1) % 1;
-  for (let i = 0; i < 6; i++) {
-    const localZ = -SEG_LEN / 2 + pseudoRand(i * 3) * SEG_LEN;
-    const lx = -(9.5 + pseudoRand(i * 3 + 1) * 12);
-    const rx = 9.5 + pseudoRand(i * 3 + 2) * 12;
-    const r = pseudoRand(i * 5);
-    const type = r < 0.3 ? 'crater' : r < 0.65 ? 'rock' : 'rocket';
-    const scale = 0.5 + pseudoRand(i * 11) * 1.0;
-    const craterR = 0.8 + pseudoRand(i * 13) * 1.5;
-    props.push({ id: `l${i}`, x: lx, z: localZ, type, scale, craterR });
-    props.push({ id: `r${i}`, x: rx, z: localZ, type, scale, craterR });
+  const half = SEG_LEN / 2;
+
+  const buildings = [
+    { m: M_BASE_A, s: 3.2 }, { m: M_BASE_B, s: 3.2 }, { m: M_BASE_C, s: 3.2 },
+    { m: M_BASE_GAR, s: 3.2 }, { m: M_DEPOT_A, s: 3.0 }, { m: M_DEPOT_B, s: 3.0 },
+    { m: M_STRUCT_T, s: 3.4 }, { m: M_DRILL, s: 3.2 }, { m: M_WIND_T, s: 3.4 },
+    { m: M_PAD_LG, s: 2.8 }, { m: M_LANDER_A, s: 3.0 }, { m: M_SOLAR, s: 3.0 },
+    { m: M_TUNNEL, s: 3.2 },
+  ];
+  const buildingCount = IS_MOBILE ? 7 : 12;
+  for (let i = 0; i < buildingCount; i++) {
+    const z = -half + 6 + i * (SEG_LEN / buildingCount) + (pr(i, segIdx) - 0.5) * 4;
+    const side = i % 2 === 0 ? -1 : 1;
+    const dx = side * (12 + pr(i + 5, segIdx) * 4);
+    const b = buildings[Math.floor(pr(i + 20, segIdx * 3) * buildings.length) % buildings.length];
+    const ry = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+    props.push({ id: `b${i}`, x: dx, z, m: b.m, scale: b.s, ry: ry + (pr(i + 30, segIdx) - 0.5) * 0.3 });
   }
+
+  const fillers = [
+    { m: M_CARGO_AS, s: 2.6 }, { m: M_CARGO_BS, s: 2.6 }, { m: M_CONT_A, s: 3.4 },
+    { m: M_CONT_B, s: 3.4 }, { m: M_CONT_C, s: 3.4 }, { m: M_ROCKS_A, s: 3.0 },
+    { m: M_ROCKS_B, s: 3.0 }, { m: M_TRUCK, s: 3.0 }, { m: M_WIND_L, s: 2.8 },
+    { m: M_STRUCT_L, s: 3.0 },
+  ];
+  const fillerCount = IS_MOBILE ? 10 : 18;
+  for (let i = 0; i < fillerCount; i++) {
+    const z = -half + i * (SEG_LEN / fillerCount) + (pr(i + 40, segIdx) - 0.5) * 3;
+    const side = pr(i + 60, segIdx) > 0.5 ? 1 : -1;
+    const dx = side * (9.8 + pr(i + 70, segIdx) * 5);
+    const f = fillers[Math.floor(pr(i + 80, segIdx * 5) * fillers.length) % fillers.length];
+    props.push({ id: `f${i}`, x: dx, z, m: f.m, scale: f.s, ry: pr(i + 90, segIdx) * Math.PI * 2 });
+  }
+
+  // Uzak DEV terrain duvarı — iki yanda harita dışını tamamen kapatır
+  const wall = [M_TERR_T, M_TERR_TC, M_STRUCT_T, M_DRILL];
+  const wallCount = IS_MOBILE ? 6 : 10;
+  for (let i = 0; i < wallCount; i++) {
+    const z = -half + i * (SEG_LEN / wallCount) + (pr(i + 110, segIdx) - 0.5) * 4;
+    const side = i % 2 === 0 ? -1 : 1;
+    const dx = side * (26 + pr(i + 120, segIdx) * 14);
+    const m = wall[Math.floor(pr(i + 130, segIdx) * wall.length) % wall.length];
+    props.push({ id: `w${i}`, x: dx, z, m, scale: 5 + pr(i + 135, segIdx) * 2.5, ry: pr(i + 140, segIdx) * Math.PI * 2 });
+  }
+
   return props;
 }
 
 function SegmentContent({ segIdx }) {
-  const sideProps = getSideProps(segIdx);
+  const props = useMemo(() => getSideProps(segIdx), [segIdx]);
   return (
     <>
       <RoadSegment />
-      {sideProps.map((p) => {
-        if (p.type === 'crater') return <ProceduralCrater key={p.id} position={[p.x, 0.11, p.z]} radius={p.craterR} />;
-        if (p.type === 'rocket') return <ProceduralRocket key={p.id} position={[p.x, 0, p.z]} />;
-        return <ProceduralSpaceRock key={p.id} position={[p.x, 0, p.z]} scale={p.scale} />;
-      })}
+      {props.map((p) => (
+        <Model key={p.id} path={p.m} position={[p.x, 0, p.z]} scale={p.scale} rotation={[0, p.ry ?? 0, 0]} />
+      ))}
     </>
   );
 }
@@ -181,7 +226,6 @@ export default function SpaceEnvironment() {
   return (
     <>
       <color attach="background" args={['#0d0518']} />
-      {/* SpaceEnvironment manages its own lights */}
       <directionalLight
         castShadow
         position={[80, 60, -150]}
@@ -195,7 +239,8 @@ export default function SpaceEnvironment() {
         shadow-camera-top={80}
         shadow-camera-bottom={-80}
       />
-      <hemisphereLight skyColor="#6622aa" groundColor="#110022" intensity={0.4} />
+      <hemisphereLight skyColor="#6622aa" groundColor="#110022" intensity={0.5} />
+      <ambientLight intensity={0.35} color="#8866cc" />
       <Stars />
       <BigPlanet />
       {Array.from({ length: SEG_COUNT }, (_, i) => (
