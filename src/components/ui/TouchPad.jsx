@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { controlsState } from '@/hooks/useHorseControls';
 import useGameStore from '@/store/useGameStore';
 
-// Sürükleyerek yönlendirme: ekranın HERHANGİ bir yerine parmağını koyup
-// yatay sürükle → at şerit takip eder (geri sürüklersen geri döner).
-// Yukarı sürükle → zıpla. Parmağı kaldırmaya gerek yok.
-const LANE_DRAG_PX = 48;  // bir şerit değiştirmek için yatay sürükleme mesafesi
-const JUMP_DRAG_PX = 44;  // zıplamak için yukarı sürükleme mesafesi
+// Sürükleyerek yönlendirme + EKSEN KİLİDİ:
+// Her dokunuşta önce baskın yön belirlenir (yatay → şerit, dikey → zıpla)
+// ve dokunuş bitene kadar yalnızca o eksen uygulanır. Böylece zıplarken
+// (dikey) at sağa-sola kaymaz, şerit değiştirirken (yatay) yanlışlıkla zıplamaz.
+const LANE_DRAG_PX = 50;  // bir şerit değiştirmek için yatay sürükleme mesafesi
+const JUMP_DRAG_PX = 42;  // zıplamak için yukarı sürükleme mesafesi
+const AXIS_LOCK_PX = 14;  // bu mesafeyi geçince baskın eksene kilitlenir
 const PULSE_MS     = 90;
 
 function pulse(dir) {
@@ -20,15 +22,16 @@ export default function TouchPad() {
   useEffect(() => {
     if (phase !== 'playing') return;
     let startX = 0, startY = 0;
-    let laneStep = 0;     // bu dokunuşta uygulanan net şerit kayması
-    let jumped = false;   // bu dokunuşta zıplandı mı
+    let laneStep = 0;        // bu dokunuşta uygulanan net şerit kayması
+    let jumped = false;      // bu dokunuşta zıplandı mı
+    let axis = null;         // 'h' | 'v' — kilitlenen baskın eksen
     let tracking = false;
 
     const onStart = (e) => {
       const t = e.touches[0];
       if (!t) return;
       startX = t.clientX; startY = t.clientY;
-      laneStep = 0; jumped = false; tracking = true;
+      laneStep = 0; jumped = false; axis = null; tracking = true;
     };
     const onMove = (e) => {
       if (!tracking) return;
@@ -37,23 +40,35 @@ export default function TouchPad() {
       const dx = t.clientX - startX;
       const dy = t.clientY - startY;
 
-      // Yatay sürükleme → şerit (mutlak: parmağın net konumuna göre)
-      const desired = Math.round(dx / LANE_DRAG_PX);
-      if (desired !== laneStep) {
-        const diff = desired - laneStep;
-        const dir = diff > 0 ? 'right' : 'left';
-        for (let i = 0; i < Math.abs(diff); i++) pulse(dir);
-        laneStep = desired;
+      // Baskın ekseni belirle (bir kez kilitlenir)
+      if (!axis) {
+        if (Math.abs(dx) >= AXIS_LOCK_PX || Math.abs(dy) >= AXIS_LOCK_PX) {
+          axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+        } else {
+          return; // henüz net bir yön yok
+        }
       }
 
-      // Yukarı sürükleme → zıpla (dokunuş başına bir kez)
-      if (!jumped && -dy >= JUMP_DRAG_PX) {
-        pulse('jump');
-        jumped = true;
+      if (axis === 'h') {
+        // Yatay sürükleme → şerit (mutlak; başlangıç noktasının yatayını referans al)
+        const desired = Math.round(dx / LANE_DRAG_PX);
+        if (desired !== laneStep) {
+          const diff = desired - laneStep;
+          const dir = diff > 0 ? 'right' : 'left';
+          for (let i = 0; i < Math.abs(diff); i++) pulse(dir);
+          laneStep = desired;
+        }
+      } else {
+        // Dikey sürükleme → yukarı ise zıpla (dokunuş başına bir kez)
+        if (!jumped && -dy >= JUMP_DRAG_PX) {
+          pulse('jump');
+          jumped = true;
+        }
       }
     };
     const onEnd = () => {
       tracking = false;
+      axis = null;
       controlsState.left = controlsState.right = controlsState.jump = false;
     };
 
