@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { setSfxEnabled, setMusicEnabled, sfx, startMusic, startGallop } from '@/utils/audio';
-import { STREAK_REWARDS, pickDailyMissions } from '@/constants/daily';
+import { STREAK_REWARDS, STREAK_MAX_REWARD, pickDailyMissions } from '@/constants/daily';
 import { HORSES } from '@/constants/horses';
 import {
   INITIAL_SPEED,
@@ -458,10 +458,13 @@ const useGameStore = create(
     claimStreak: () => {
       const s = get();
       if (s.lastClaimDate === todayStr()) return 0;
-      const reward = STREAK_REWARDS[(s.streakDay - 1) % STREAK_REWARDS.length];
+      // 1-7. gün tablodan, 7+ günlerde sabit MAX
+      const reward = s.streakDay <= STREAK_REWARDS.length
+        ? STREAK_REWARDS[s.streakDay - 1]
+        : STREAK_MAX_REWARD;
       const newCarrots = s.carrots + reward;
       localStorage.setItem('carrots', String(newCarrots));
-      const nextDay = s.streakDay >= STREAK_REWARDS.length ? 1 : s.streakDay + 1;
+      const nextDay = s.streakDay + 1; // sınırsız ilerler (başa dönmez)
       const next = { carrots: newCarrots, streakDay: nextDay, lastClaimDate: todayStr() };
       set(next);
       saveDaily(get());

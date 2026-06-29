@@ -1,5 +1,6 @@
-// Günlük giriş serisi ödülleri (1-7. gün, 7. gün büyük ödül; sonra başa döner)
-export const STREAK_REWARDS = [100, 150, 200, 300, 400, 600, 1000];
+// Günlük giriş serisi ödülleri (1-7. gün). 7. günden sonra her gün MAX verir.
+export const STREAK_REWARDS = [1000, 1500, 2000, 3000, 4000, 5500, 7000];
+export const STREAK_MAX_REWARD = 7000; // 7+ günlerde her gün
 
 // Günlük görev havuzu — her gün 3 tanesi deterministik seçilir.
 // type alanı oyun içi sayaçlarla eşleşir.
