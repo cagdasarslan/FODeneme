@@ -451,6 +451,14 @@ const useGameStore = create(
       const next = { streakDay, lastClaimDate, statsDate, dailyStats, missionClaimed };
       saveDaily(next);
       set(next);
+
+      // Ücretsiz at migrasyonu: stilize kestane atı herkese ekle
+      const owned = get().ownedHorseIds;
+      if (!owned.includes('stylized_chestnut')) {
+        const next2 = [...owned, 'stylized_chestnut'];
+        localStorage.setItem('ownedHorseIds', JSON.stringify(next2));
+        set({ ownedHorseIds: next2 });
+      }
     },
 
     canClaimStreak: () => get().lastClaimDate !== todayStr(),

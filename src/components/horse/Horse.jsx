@@ -1,5 +1,6 @@
 import { useRef, useEffect, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { sfx, setGallopSpeed } from '@/utils/audio';
 import { useGLTF, useAnimations } from '@react-three/drei';
 import { RigidBody, CapsuleCollider } from '@react-three/rapier';
@@ -227,16 +228,29 @@ function HorsePlaceholder({ groupRef }) {
   );
 }
 
-// ── GLB model — animasyonlu morph ('horse_A_') ────────────────────────────────
+// ── GLB model — varsayılan morph ('horse_A_') VEYA özel iskeletli model ───────
 function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
-  const { scene, animations } = useGLTF(modelPath);
+  // Varyant kendi modelini taşıyabilir (ör. stilize kestane)
+  const path      = horseVariant?.model ?? modelPath;
+  const useScale  = horseVariant?.modelScale ?? scale;
+  const useY      = horseVariant?.modelY ?? -1.05;
+  const clipName  = horseVariant?.animClip ?? 'horse_A_';
+  const skeletal  = !!horseVariant?.skeletal;
+  const noTint    = !!horseVariant?.noTint;
+
+  const { scene, animations } = useGLTF(path);
   const { actions, names }    = useAnimations(animations, groupRef);
   const clonedScene  = useRef(null);
+  const clonedPath   = useRef(null);
   const lastVariant  = useRef(null);
   const phase        = useGameStore((s) => s.phase);
 
-  if (!clonedScene.current) {
-    clonedScene.current = scene.clone(true);
+  // Model yolu değişince yeniden klonla. İskeletli (skinned) modeller için
+  // SkeletonUtils.clone şart (scene.clone iskeleti bozar).
+  if (clonedPath.current !== path) {
+    clonedPath.current = path;
+    lastVariant.current = null;
+    clonedScene.current = skeletal ? skeletonClone(scene) : scene.clone(true);
     clonedScene.current.traverse((obj) => {
       if (obj.isMesh) {
         obj.castShadow    = true;
@@ -246,17 +260,15 @@ function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
     });
   }
 
-  // Recolor when horse variant changes
-  if (horseVariant && horseVariant.id !== lastVariant.current) {
+  // Renklendirme yalnızca varsayılan (dokusuz) modelde
+  if (!noTint && horseVariant && horseVariant.id !== lastVariant.current) {
     lastVariant.current = horseVariant.id;
     let meshIdx = 0;
     clonedScene.current.traverse((obj) => {
       if (!obj.isMesh) return;
       obj.material = obj.material.clone();
-      // horse.glb: mesh 0 = body, mesh 1 = mane/tail/hooves
       obj.material.color.set(meshIdx === 0 ? horseVariant.bodyColor : horseVariant.maneColor);
       if (horseVariant.whiteWash) {
-        // Kahverengi dokuyu kaldır ki renk saf beyaz görünsün
         obj.material.map = null;
         obj.material.roughness = 0.55;
         obj.material.metalness = 0.0;
@@ -266,24 +278,23 @@ function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
     });
   }
 
+  const pickAction = () => actions[clipName] ?? actions['run'] ?? actions[names[0]];
+
   useEffect(() => {
-    const action = actions['horse_A_'] ?? actions[names[0]];
+    const action = pickAction();
     if (!action) return;
-    if (phase === 'playing') {
-      action.reset().fadeIn(0.25).play();
-    } else {
-      action.fadeOut(0.25);
-    }
+    if (phase === 'playing') action.reset().fadeIn(0.25).play();
+    else action.fadeOut(0.25);
     return () => action.stop();
   }, [phase, actions, names]);
 
   useFrame(() => {
-    const action = actions['horse_A_'] ?? actions[names[0]];
+    const action = pickAction();
     if (action) action.timeScale = useGameStore.getState().speed / 14;
   });
 
   return (
-    <group ref={groupRef} scale={scale} rotation={[0, Math.PI, 0]} position={[0, -1.05, 0]}>
+    <group ref={groupRef} scale={useScale} rotation={[0, Math.PI, 0]} position={[0, useY, 0]}>
       <primitive object={clonedScene.current} />
     </group>
   );

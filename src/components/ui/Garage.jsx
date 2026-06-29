@@ -5,6 +5,7 @@ import useGameStore from '@/store/useGameStore';
 import { CHARACTERS } from '@/constants/characters';
 import { HORSES } from '@/constants/horses';
 import * as THREE from 'three';
+import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import Hara from './Hara';
 import AdButton from '@/components/ui/AdButton';
 import { AD_UPGRADE_DISCOUNT } from '@/constants/game';
@@ -56,20 +57,30 @@ function CharPreview3D({ charFile, accentColor }) {
 
 // ── 3D horse preview ──────────────────────────────────────────────────────────
 function HorseModel3DInner({ variant }) {
-  const { scene, animations } = useGLTF(MODEL_PATH);
+  const path     = variant?.model ?? MODEL_PATH;
+  const useScale = variant?.modelScale ?? 0.013;
+  const useY     = variant?.modelY ?? -1.05;
+  const clipName = variant?.animClip ?? 'horse_A_';
+  const skeletal = !!variant?.skeletal;
+  const noTint   = !!variant?.noTint;
+
+  const { scene, animations } = useGLTF(path);
   const groupRef = useRef();
   const { actions, names } = useAnimations(animations, groupRef);
   const cloned = useRef(null);
+  const clonedPath = useRef(null);
   const lastVariant = useRef(null);
 
-  if (!cloned.current) {
-    cloned.current = scene.clone(true);
+  if (clonedPath.current !== path) {
+    clonedPath.current = path;
+    lastVariant.current = null;
+    cloned.current = skeletal ? skeletonClone(scene) : scene.clone(true);
     cloned.current.traverse(o => {
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
     });
   }
 
-  if (variant && variant.id !== lastVariant.current) {
+  if (!noTint && variant && variant.id !== lastVariant.current) {
     lastVariant.current = variant.id;
     let meshIdx = 0;
     cloned.current.traverse(o => {
@@ -87,12 +98,12 @@ function HorseModel3DInner({ variant }) {
   }
 
   useState(() => {
-    const action = actions['horse_A_'] ?? actions[names[0]];
+    const action = actions[clipName] ?? actions['idle'] ?? actions[names[0]];
     if (action) { action.reset().play(); action.timeScale = 0.5; }
   });
 
   return (
-    <group ref={groupRef} scale={0.013} rotation={[0, Math.PI, 0]} position={[0, -1.05, 0]}>
+    <group ref={groupRef} scale={useScale} rotation={[0, Math.PI, 0]} position={[0, useY, 0]}>
       <primitive object={cloned.current} />
     </group>
   );
