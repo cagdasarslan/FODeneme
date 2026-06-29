@@ -266,17 +266,8 @@ export function getHitbox(TypeFnOrName) {
   return [1.00, 1.00];
 }
 
-// Yerdeki parlak uyarı halkası — engeller koyu/küçük olsa bile yolda belli olur
-const dangerGeo = new THREE.RingGeometry(0.78, 1.0, 28);
-const dangerMat = new THREE.MeshStandardMaterial({
-  color: '#ff3a22', emissive: '#ff2a00', emissiveIntensity: 1.6,
-  transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false,
-});
-
 // ── Tek engel bileşeni ────────────────────────────────────────────────────────
 function Obstacle({ data, onRef }) {
-  const [hbDx, hbDz] = getHitbox(data.TypeFn);
-  const ringR = Math.max(hbDx, hbDz) + 0.45;
   return (
     <RigidBody
       ref={rb => onRef(data.id, rb)}
@@ -285,9 +276,6 @@ function Obstacle({ data, onRef }) {
       colliders={false}
       userData={{ tag: 'obstacle' }}
     >
-      {/* uyarı halkası — zeminde, engelin tabanında */}
-      <mesh geometry={dangerGeo} material={dangerMat}
-        rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} scale={ringR} />
       <Suspense fallback={null}>
         <data.Type />
       </Suspense>
