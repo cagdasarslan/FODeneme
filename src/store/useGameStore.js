@@ -32,6 +32,27 @@ import {
 } from '@/constants/foals';
 
 // ---------------------------------------------------------------------------
+// Havuç kalıcılığı — sık toplandığında her seferinde localStorage'a yazmak
+// (özellikle mobilde) jank yapar. Yazımı en fazla saniyede bir yap (debounce).
+let _carrotSaveTimer = null;
+let _todayKey = null;
+function scheduleCarrotSave(get) {
+  if (_carrotSaveTimer) return;
+  _carrotSaveTimer = setTimeout(() => {
+    _carrotSaveTimer = null;
+    const s = get();
+    localStorage.setItem('carrots', String(s.carrots));
+    if (_todayKey) localStorage.setItem(_todayKey, String(s.dailyCarrots));
+  }, 1000);
+}
+function flushCarrotSave(get) {
+  if (_carrotSaveTimer) { clearTimeout(_carrotSaveTimer); _carrotSaveTimer = null; }
+  const s = get();
+  localStorage.setItem('carrots', String(s.carrots));
+  if (_todayKey) localStorage.setItem(_todayKey, String(s.dailyCarrots));
+}
+
+// ---------------------------------------------------------------------------
 // Types (JSDoc for IDE hints without TypeScript overhead)
 // ---------------------------------------------------------------------------
 /**
@@ -167,6 +188,7 @@ const useGameStore = create(
     resumeRun: () => set({ phase: 'playing' }),
 
     endRun: async () => {
+      flushCarrotSave(get); // bekleyen havuç yazımını hemen diske al
       const { score, highScore, mapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5, sessionReady } = get();
       const newHighScore = Math.max(score, highScore);
       const hsKey = mapId === 5 ? 'hs_map5' : mapId === 4 ? 'hs_map4' : mapId === 3 ? 'hs_map3' : mapId === 2 ? 'hs_map2' : 'hs_map1';
@@ -460,13 +482,12 @@ const useGameStore = create(
     closeGarage: () => set({ showGarage: false, garageOpenTab: null }),
 
     collectCarrots: (count = 1) => {
-      const c = get().carrots + count;
-      localStorage.setItem('carrots', String(c));
-      const dateKey = `daily_carrots_${new Date().toDateString()}`;
-      const dailyC = (parseInt(localStorage.getItem(dateKey) ?? '0') + count);
-      localStorage.setItem(dateKey, String(dailyC));
+      const s = get();
+      if (!_todayKey) _todayKey = `daily_carrots_${new Date().toDateString()}`;
       sfx.collect();
-      set({ carrots: c, dailyCarrots: dailyC, runCarrots: get().runCarrots + count });
+      // state'i hemen güncelle, localStorage yazımını debounce et (jank önleme)
+      set({ carrots: s.carrots + count, dailyCarrots: s.dailyCarrots + count, runCarrots: s.runCarrots + count });
+      scheduleCarrotSave(get);
     },
 
     activateMagnet: () => {

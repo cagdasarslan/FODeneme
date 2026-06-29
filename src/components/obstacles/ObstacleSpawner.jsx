@@ -142,11 +142,11 @@ function DesertGLB({ path, scale = 1 }) {
     </group>
   );
 }
-function DesertCactusShort() { return <DesertGLB path={M_CACTUS_S}   scale={2.5} />; }
-function DesertCactusTall()  { return <DesertGLB path={M_CACTUS_T}   scale={2.5} />; }
-function DesertRockA()       { return <DesertGLB path={M_DES_ROCK_A} scale={2.5} />; }
-function DesertRockB()       { return <DesertGLB path={M_DES_ROCK_B} scale={2.5} />; }
-function DesertRockC()       { return <DesertGLB path={M_DES_ROCK_C} scale={2.5} />; }
+function DesertCactusShort() { return <DesertGLB path={M_CACTUS_S}   scale={3.1} />; }
+function DesertCactusTall()  { return <DesertGLB path={M_CACTUS_T}   scale={3.1} />; }
+function DesertRockA()       { return <DesertGLB path={M_DES_ROCK_A} scale={3.0} />; }
+function DesertRockB()       { return <DesertGLB path={M_DES_ROCK_B} scale={3.0} />; }
+function DesertRockC()       { return <DesertGLB path={M_DES_ROCK_C} scale={3.0} />; }
 
 // ── Space GLB obstacles ───────────────────────────────────────────────────────
 function SpaceGLB({ path, scale = 1, yOffset = 0 }) {
@@ -165,13 +165,13 @@ function SpaceGLB({ path, scale = 1, yOffset = 0 }) {
     </group>
   );
 }
-function SpaceBarrels()   { return <SpaceGLB path={M_SP_BARRELS}    scale={3.0} />; }
-function SpaceRover()     { return <SpaceGLB path={M_SP_ROVER}      scale={2.2} />; }
-function SpaceMeteor()    { return <SpaceGLB path={M_SP_METEOR}     scale={3.0} yOffset={0.4} />; }
-function SpaceMeteorDet() { return <SpaceGLB path={M_SP_METEOR_DET} scale={2.8} yOffset={0.3} />; }
+function SpaceBarrels()   { return <SpaceGLB path={M_SP_BARRELS}    scale={3.4} />; }
+function SpaceRover()     { return <SpaceGLB path={M_SP_ROVER}      scale={2.7} />; }
+function SpaceMeteor()    { return <SpaceGLB path={M_SP_METEOR}     scale={3.5} yOffset={0.4} />; }
+function SpaceMeteorDet() { return <SpaceGLB path={M_SP_METEOR_DET} scale={3.3} yOffset={0.3} />; }
 function SpacePlatLow()   { return <SpaceGLB path={M_SP_PLAT_LOW}   scale={3.5} />; }
-function SpaceRockA()     { return <SpaceGLB path={M_SP_ROCK_A}     scale={2.8} />; }
-function SpaceRockB()     { return <SpaceGLB path={M_SP_ROCK_B}     scale={2.8} />; }
+function SpaceRockA()     { return <SpaceGLB path={M_SP_ROCK_A}     scale={3.3} />; }
+function SpaceRockB()     { return <SpaceGLB path={M_SP_ROCK_B}     scale={3.3} />; }
 
 // ── Medieval GLB obstacles ────────────────────────────────────────────────────
 function MedievalGLB({ path, scale = 1, yOffset = 0 }) {
@@ -191,11 +191,11 @@ function MedievalGLB({ path, scale = 1, yOffset = 0 }) {
   );
 }
 function MedWell()    { return <MedievalGLB path={M_MED_WELL}    scale={3.0} />; }
-function MedRocks()   { return <MedievalGLB path={M_MED_ROCKS}   scale={2.4} />; }
+function MedRocks()   { return <MedievalGLB path={M_MED_ROCKS}   scale={3.0} />; }
 function MedRocksSm() { return <MedievalGLB path={M_MED_ROCKS_S} scale={3.4} />; }
-function MedTreeA()   { return <MedievalGLB path={M_MED_TREE_A}  scale={3.0} />; }
-function MedTreeB()   { return <MedievalGLB path={M_MED_TREE_B}  scale={3.0} />; }
-function MedFarm()    { return <MedievalGLB path={M_MED_FARM}    scale={2.4} />; }
+function MedTreeA()   { return <MedievalGLB path={M_MED_TREE_A}  scale={3.6} />; }
+function MedTreeB()   { return <MedievalGLB path={M_MED_TREE_B}  scale={3.6} />; }
+function MedFarm()    { return <MedievalGLB path={M_MED_FARM}    scale={3.0} />; }
 
 // ── Engel tipi listeleri ──────────────────────────────────────────────────────
 const TYPES_FARM = [
@@ -266,8 +266,17 @@ export function getHitbox(TypeFnOrName) {
   return [1.00, 1.00];
 }
 
+// Yerdeki parlak uyarı halkası — engeller koyu/küçük olsa bile yolda belli olur
+const dangerGeo = new THREE.RingGeometry(0.78, 1.0, 28);
+const dangerMat = new THREE.MeshStandardMaterial({
+  color: '#ff3a22', emissive: '#ff2a00', emissiveIntensity: 1.6,
+  transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false,
+});
+
 // ── Tek engel bileşeni ────────────────────────────────────────────────────────
 function Obstacle({ data, onRef }) {
+  const [hbDx, hbDz] = getHitbox(data.TypeFn);
+  const ringR = Math.max(hbDx, hbDz) + 0.45;
   return (
     <RigidBody
       ref={rb => onRef(data.id, rb)}
@@ -276,6 +285,9 @@ function Obstacle({ data, onRef }) {
       colliders={false}
       userData={{ tag: 'obstacle' }}
     >
+      {/* uyarı halkası — zeminde, engelin tabanında */}
+      <mesh geometry={dangerGeo} material={dangerMat}
+        rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} scale={ringR} />
       <Suspense fallback={null}>
         <data.Type />
       </Suspense>

@@ -38,6 +38,7 @@ function tone(freq, dur, { type = 'sine', gain = 0.18, slideTo = null, ctxIn = n
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   osc.connect(g); g.connect(c.destination);
   osc.start(t0); osc.stop(t0 + dur + 0.02);
+  osc.onended = () => { try { osc.disconnect(); g.disconnect(); } catch (e) {} };
 }
 function noise(dur = 0.25, gain = 0.25) {
   const c = acSfx();
@@ -53,10 +54,18 @@ function noise(dur = 0.25, gain = 0.25) {
   const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
   src.connect(lp); lp.connect(g); g.connect(c.destination);
   src.start(t0);
+  src.onended = () => { try { src.disconnect(); lp.disconnect(); g.disconnect(); } catch (e) {} };
 }
 
+let lastCollect = 0;
 export const sfx = {
-  collect: () => tone(880, 0.10, { type: 'triangle', gain: 0.15, slideTo: 1320 }),
+  // havuçlar çok sık toplanabildiği için kıs (düğüm birikmesini önler)
+  collect: () => {
+    const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+    if (now - lastCollect < 70) return;
+    lastCollect = now;
+    tone(880, 0.10, { type: 'triangle', gain: 0.15, slideTo: 1320 });
+  },
   jump:    () => tone(330, 0.18, { type: 'sine', gain: 0.16, slideTo: 720 }),
   crash:   () => { noise(0.3, 0.3); tone(140, 0.3, { type: 'sawtooth', gain: 0.18, slideTo: 60 }); },
   click:   () => tone(440, 0.05, { type: 'square', gain: 0.10 }),
@@ -84,6 +93,7 @@ function clop(delay = 0) {
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
   osc.connect(g); g.connect(c.destination);
   osc.start(t0); osc.stop(t0 + 0.12);
+  osc.onended = () => { try { osc.disconnect(); g.disconnect(); } catch (e) {} };
 }
 
 export function startGallop() {
