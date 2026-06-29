@@ -43,7 +43,7 @@ export const HORSES = [
   },
   {
     id: 'stylized_chestnut',
-    name: 'AKAT',
+    name: 'PAMUK',
     price: 0,
     bodyColor: '#f2f2f4',
     maneColor: '#d8d8de',
@@ -64,7 +64,7 @@ export const HORSES = [
   },
   {
     id: 'pamuk',
-    name: 'PAMUK',
+    name: 'AKAT',
     price: 1200,
     bodyColor: '#ffffff',
     maneColor: '#f2f2f5',
