@@ -102,9 +102,10 @@ export default function App() {
               intensity={isNight ? 0.45 : 0.55} />
           </>
         )}
-        {/* key=mapId: environment fully remounts when map changes, eliminating
-            stale segment groups from the previous map. */}
-        <EnvLayer mapId={mapId} key={mapId} />
+        {/* key=mapId-runId: ortam HER koşuda ve harita değişiminde tamamen
+            yeniden mount edilir → önceki haritanın/koşunun asset'leri kalmaz,
+            segment'ler iç içe geçmez/çoğalmaz. */}
+        <EnvLayer mapId={mapId} key={`${mapId}-${runId}`} />
         <Weather />
         <Physics gravity={[0,-20,0]}>
           <Track />

@@ -149,7 +149,7 @@ function DesertGLB({ path, scale = 1 }) {
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const box = new THREE.Box3().setFromObject(cloned.current);
     off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
-    brightenObstacle(cloned.current);
+    // Çöl: renkler eski haline döndü (emissive aydınlatma yok)
   }
   return (
     <group scale={scale}>
@@ -225,8 +225,9 @@ const TYPES_CITY = [
   CityCar, CityTaxi, CityPolice, CityDump,
 ];
 const TYPES_DESERT = [
-  DesertCactusShort, DesertCactusTall, DesertRockA, DesertRockB, DesertRockC,
-  DesertCactusShort, DesertCactusTall, DesertRockA,
+  // Küçük kısa kaktüs kaldırıldı — yalnızca uzun kaktüs + büyük kayalar
+  DesertCactusTall, DesertRockA, DesertRockB, DesertRockC,
+  DesertCactusTall, DesertRockA, DesertRockB, DesertRockC,
 ];
 const TYPES_SPACE = [
   SpaceBarrels, SpaceRover, SpaceMeteor, SpaceMeteorDet,
@@ -318,6 +319,7 @@ export default function ObstacleSpawner() {
   const rbRefs   = useRef({});
   const timerRef = useRef(0);
   const waveIdx  = useRef(0);
+  const lastFullRef = useRef(false); // önceki dalga 3 şeridi kapladı mı
   const lastReviveRef = useRef(useGameStore.getState().reviveId);
 
   const onRef = useCallback((id, rb) => { rbRefs.current[id] = rb; }, []);
@@ -359,8 +361,12 @@ export default function ObstacleSpawner() {
     if (timerRef.current < spawnInterval) return;
     timerRef.current = 0;
 
-    const maxPattern = speed > 35 ? PATTERNS.length : speed > 22 ? 5 : 3;
-    const pattern    = PATTERNS[Math.floor(Math.random() * maxPattern)];
+    let maxPattern = speed > 35 ? PATTERNS.length : speed > 22 ? 5 : 3;
+    // Önceki dalga 3 şeridi kapladıysa, bu dalga en fazla 2 şerit olsun
+    // (arada geçilemeyen art arda duvar oluşmasın)
+    if (lastFullRef.current) maxPattern = Math.min(maxPattern, 6); // [0,1,2] (idx 6) hariç
+    let pattern = PATTERNS[Math.floor(Math.random() * maxPattern)];
+    lastFullRef.current = pattern.length === 3;
     waveIdx.current++;
 
     pattern.forEach((laneIdx, pi) => {

@@ -172,54 +172,56 @@ export default function MainMenu() {
           </div>
         )}
 
-        {/* İlk menü — günlük ödül + görevler + intro */}
-        {!isGameOver && (
-          <div style={styles.introWrap}>
-            {/* Günlük ödül butonu */}
-            <button style={styles.dailyRewardBtn} onClick={() => setShowDaily(true)}>
-              🎁 GÜNLÜK ÖDÜL
-              {canClaimStreak && <span style={styles.dailyDot} />}
-            </button>
+        {/* Günlük ödül + görevler — HEM ilk menüde HEM oyun sonunda görünür */}
+        <div style={styles.introWrap}>
+          {/* Günlük ödül butonu */}
+          <button style={styles.dailyRewardBtn} onClick={() => setShowDaily(true)}>
+            🎁 GÜNLÜK ÖDÜL
+            {canClaimStreak && <span style={styles.dailyDot} />}
+          </button>
 
-            {/* Günlük görevler */}
-            <div style={styles.dailyWidget}>
-              <div style={styles.dailyHeader}>
-                <span style={styles.dailyIcon}>🎯</span>
-                <span style={styles.dailyLabel}>GÜNLÜK GÖREVLER</span>
-              </div>
-              {missions.map(m => (
-                <div key={m.id} style={styles.missionRow}>
-                  <div style={{ flex: 1 }}>
-                    <div style={styles.missionLabel}>{m.label}</div>
-                    <div style={styles.progressBarBg}>
-                      <div style={{ ...styles.progressBarFill, width: `${(m.progress / m.target) * 100}%`, background: m.done ? '#33ff99' : '#ffd700' }} />
-                    </div>
-                    <div style={styles.missionProg}>{m.progress}/{m.target}</div>
+          {/* Günlük görevler */}
+          <div style={styles.dailyWidget}>
+            <div style={styles.dailyHeader}>
+              <span style={styles.dailyIcon}>🎯</span>
+              <span style={styles.dailyLabel}>GÜNLÜK GÖREVLER</span>
+            </div>
+            {missions.map(m => (
+              <div key={m.id} style={styles.missionRow}>
+                <div style={{ flex: 1 }}>
+                  <div style={styles.missionLabel}>{m.label}</div>
+                  <div style={styles.progressBarBg}>
+                    <div style={{ ...styles.progressBarFill, width: `${(m.progress / m.target) * 100}%`, background: m.done ? '#33ff99' : '#ffd700' }} />
                   </div>
-                  {m.claimed ? (
-                    <span style={styles.missionDone}>✓</span>
-                  ) : m.done ? (
-                    <button style={styles.missionClaim} onClick={() => { claimMission(m.id); }}>
-                      🥕 {m.reward}
-                    </button>
-                  ) : (
-                    <span style={styles.missionReward}>🥕 {m.reward}</span>
-                  )}
+                  <div style={styles.missionProg}>{m.progress}/{m.target}</div>
                 </div>
-              ))}
-            </div>
-
-            <p style={styles.introText}>
-              Engelleri aşarak yol al.<br />
-              Makas atarken adrenalin kazan!
-            </p>
-            <div style={styles.controlsHint}>
-              <kbd style={styles.key}>◄</kbd>
-              <kbd style={styles.key}>►</kbd>
-              <span style={styles.hintText}>veya A / D</span>
-            </div>
+                {m.claimed ? (
+                  <span style={styles.missionDone}>✓</span>
+                ) : m.done ? (
+                  <button style={styles.missionClaim} onClick={() => { claimMission(m.id); }}>
+                    🥕 {m.reward}
+                  </button>
+                ) : (
+                  <span style={styles.missionReward}>🥕 {m.reward}</span>
+                )}
+              </div>
+            ))}
           </div>
-        )}
+
+          {!isGameOver && (
+            <>
+              <p style={styles.introText}>
+                Engelleri aşarak yol al.<br />
+                Makas atarken adrenalin kazan!
+              </p>
+              <div style={styles.controlsHint}>
+                <kbd style={styles.key}>◄</kbd>
+                <kbd style={styles.key}>►</kbd>
+                <span style={styles.hintText}>veya A / D</span>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Bağlantı durumu */}
         {sessionError && (
