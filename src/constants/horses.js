@@ -56,8 +56,8 @@ export const HORSES = [
     baseMaxSpeed: 58,
     // Özel iskeletli model (.blend → GLB), kendi "run" animasyonu var
     model: '/assets/models/horses/chestnut_stylized.glb',
-    modelScale: 0.6,
-    modelY: -1.0,
+    modelScale: 0.95,
+    modelY: -1.05,
     animClip: 'run',
     skeletal: true,
     noTint: true,
