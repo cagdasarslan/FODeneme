@@ -59,12 +59,26 @@ const PATTERNS = [
 
 // ── Prosedürel farm engelleri ─────────────────────────────────────────────────
 const MAT = {
-  barrel:  new THREE.MeshStandardMaterial({ color: '#4a2e0a', roughness: 0.7 }),
-  band:    new THREE.MeshStandardMaterial({ color: '#777', metalness: 0.8 }),
-  hay:     new THREE.MeshStandardMaterial({ color: '#c8a030' }),
-  log:     new THREE.MeshStandardMaterial({ color: '#7a5530' }),
-  logRing: new THREE.MeshStandardMaterial({ color: '#5a3a18' }),
+  barrel:  new THREE.MeshStandardMaterial({ color: '#7a4a14', roughness: 0.7, emissive: '#7a4a14', emissiveIntensity: 0.25 }),
+  band:    new THREE.MeshStandardMaterial({ color: '#999', metalness: 0.8 }),
+  hay:     new THREE.MeshStandardMaterial({ color: '#d8b040', emissive: '#d8b040', emissiveIntensity: 0.2 }),
+  log:     new THREE.MeshStandardMaterial({ color: '#9a6a3a', emissive: '#9a6a3a', emissiveIntensity: 0.22 }),
+  logRing: new THREE.MeshStandardMaterial({ color: '#6a4a22' }),
 };
+
+// Engel materyallerini hafif öz-aydınlat (koyu modeller yolla aynı renge düşmesin).
+// Materyali KLONLAYIP değiştirir; yan dekorla paylaşılan orijinali bozmaz.
+function brightenObstacle(root) {
+  root.traverse((o) => {
+    if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
+    const m = o.material.clone();
+    if (m.color && m.emissive) {
+      m.emissive.copy(m.color);
+      m.emissiveIntensity = 0.28;
+    }
+    o.material = m;
+  });
+}
 
 function Barrel() {
   // Silindiri zemin üstüne oturtmak için y=0.7 offset (merkez yarıçapı 0.7)
@@ -135,6 +149,7 @@ function DesertGLB({ path, scale = 1 }) {
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const box = new THREE.Box3().setFromObject(cloned.current);
     off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
+    brightenObstacle(cloned.current);
   }
   return (
     <group scale={scale}>
@@ -158,6 +173,7 @@ function SpaceGLB({ path, scale = 1, yOffset = 0 }) {
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const box = new THREE.Box3().setFromObject(cloned.current);
     off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
+    brightenObstacle(cloned.current);
   }
   return (
     <group scale={scale} position={[0, yOffset, 0]}>
@@ -183,6 +199,7 @@ function MedievalGLB({ path, scale = 1, yOffset = 0 }) {
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const box = new THREE.Box3().setFromObject(cloned.current);
     off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
+    brightenObstacle(cloned.current);
   }
   return (
     <group scale={scale} position={[0, yOffset, 0]}>
