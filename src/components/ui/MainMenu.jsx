@@ -7,6 +7,7 @@ import HowToPlay from '@/components/ui/HowToPlay';
 import CarrotShop from '@/components/ui/CarrotShop';
 import Settings from '@/components/ui/Settings';
 import DailyReward from '@/components/ui/DailyReward';
+import Missions from '@/components/ui/Missions';
 import AdButton from '@/components/ui/AdButton';
 import { showBanner, hideBanner } from '@/services/AdService';
 import { AD_DAILY_CARROTS, AD_DAILY_MAX } from '@/constants/game';
@@ -57,6 +58,7 @@ export default function MainMenu() {
   const [showShop, setShowShop] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showDaily, setShowDaily] = useState(false);
+  const [showMissions, setShowMissions] = useState(false);
 
   const {
     phase, sessionReady, sessionError, score, carrots,
@@ -123,231 +125,151 @@ export default function MainMenu() {
   return (
     <div style={styles.overlay}>
       <div style={styles.card}>
-        {/* Başlık */}
-        <div style={styles.titleWrap}>
-          <div style={styles.titleSub}>🐴</div>
-          <h1 style={styles.title}>HORSE RUNNER</h1>
-          <div style={styles.titleSubline}>SONSUZ AT KOŞUSU</div>
+        {/* Üst köşe ikonları */}
+        <div style={styles.topIcons}>
+          <button style={styles.iconBtn} onClick={() => setShowGuide(true)}>📖</button>
+          <button style={styles.iconBtn} onClick={() => setShowSettings(true)}>⚙️</button>
         </div>
 
-        {/* Carrot count pill — tıklayınca havuç mağazası açılır */}
-        <div style={{ ...styles.carrotPill, cursor: 'pointer' }} onClick={() => setShowShop(true)}>
-          🥕 <span style={styles.carrotNum}>{carrots.toLocaleString()}</span> <span style={styles.carrotLabel}>havuç</span>
-          <span style={styles.carrotPlus}>＋</span>
-        </div>
-
-        {/* Oyun bitti ekranı */}
-        {isGameOver && (
-          <div style={styles.resultsWrap}>
-            <div style={styles.gameOverText}>GAME OVER</div>
-            {isNewRecord && (
-              <div style={styles.newRecord}>🏆 YENİ REKOR!</div>
-            )}
-            <div style={styles.statsCard}>
-              {/* Map badge */}
-              <div style={{ ...styles.mapBadge, borderColor: mapInfo.color, color: mapInfo.color }}>
-                {mapInfo.emoji} {mapInfo.name}
-              </div>
-              <StatRow label="SKOR"              value={Math.floor(score).toLocaleString()}  color="#fff" />
-              <StatRow label="BU HARİTA REKORU"  value={Math.floor(mapHs).toLocaleString()}  color={mapInfo.color} />
-              <StatRow label="HARİTA 1 REKORU"   value={Math.floor(highScoreMap1).toLocaleString()} color="#6aaa44" />
-              <StatRow label="HARİTA 2 REKORU"   value={Math.floor(highScoreMap2).toLocaleString()} color="#4a90d9" />
-              <StatRow label="ÇÖLLER REKORU"      value={Math.floor(highScoreMap3).toLocaleString()}         color="#d4a020" />
-              <StatRow label="UZAY REKORU"       value={Math.floor(highScoreMap4 ?? 0).toLocaleString()}   color="#aa44ff" />
-              <StatRow label="ORTAÇAĞ REKORU"    value={Math.floor(highScoreMap5 ?? 0).toLocaleString()}   color="#c8843c" />
-              <StatRow label="HAVUÇ"             value={`🥕 ${carrots}`}                                    color="#ffd700" />
-            </div>
-
-            {/* Reklam izle → bu koşunun havuçlarını 2 katına çıkar */}
-            {runCarrots > 0 && !carrotsDoubled && (
-              <div style={{ marginTop: 10 }}>
-                <AdButton
-                  label={`Havuçları 2 KATINA çıkar (+${runCarrots})`}
-                  sub={`Bu koşuda ${runCarrots} havuç topladın`}
-                  color="#ffcf66"
-                  onReward={() => doubleRunCarrots()}
-                />
-              </div>
-            )}
+        {/* Kaydırılabilir içerik */}
+        <div style={styles.scrollArea}>
+          {/* Başlık */}
+          <div style={styles.titleWrap}>
+            <div style={styles.titleSub}>🐴</div>
+            <h1 style={styles.title}>HORSE RUNNER</h1>
+            <div style={styles.titleSubline}>SONSUZ AT KOŞUSU</div>
           </div>
-        )}
 
-        {/* Günlük ödül + görevler — HEM ilk menüde HEM oyun sonunda görünür */}
-        <div style={styles.introWrap}>
-          {/* Günlük ödül butonu */}
-          <button style={styles.dailyRewardBtn} onClick={() => setShowDaily(true)}>
-            🎁 GÜNLÜK ÖDÜL
-            {canClaimStreak && <span style={styles.dailyDot} />}
-          </button>
-
-          {/* Günlük görevler */}
-          <div style={styles.dailyWidget}>
-            <div style={styles.dailyHeader}>
-              <span style={styles.dailyIcon}>🎯</span>
-              <span style={styles.dailyLabel}>GÜNLÜK GÖREVLER</span>
+          {/* Havuç + günlük ödül */}
+          <div style={styles.topRow}>
+            <div style={{ ...styles.carrotPill, cursor: 'pointer' }} onClick={() => setShowShop(true)}>
+              🥕 <span style={styles.carrotNum}>{carrots.toLocaleString()}</span>
+              <span style={styles.carrotPlus}>＋</span>
             </div>
-            {missions.map(m => (
-              <div key={m.id} style={styles.missionRow}>
-                <div style={{ flex: 1 }}>
-                  <div style={styles.missionLabel}>{m.label}</div>
-                  <div style={styles.progressBarBg}>
-                    <div style={{ ...styles.progressBarFill, width: `${(m.progress / m.target) * 100}%`, background: m.done ? '#33ff99' : '#ffd700' }} />
-                  </div>
-                  <div style={styles.missionProg}>{m.progress}/{m.target}</div>
+            <button style={styles.dailyIconBtn} onClick={() => setShowDaily(true)}>
+              🎁
+              {canClaimStreak && <span style={styles.dailyDot} />}
+            </button>
+          </div>
+
+          {/* Oyun bitti ekranı */}
+          {isGameOver && (
+            <div style={styles.resultsWrap}>
+              <div style={styles.gameOverText}>GAME OVER</div>
+              {isNewRecord && <div style={styles.newRecord}>🏆 YENİ REKOR!</div>}
+              <div style={styles.statsCard}>
+                <div style={{ ...styles.mapBadge, borderColor: mapInfo.color, color: mapInfo.color }}>
+                  {mapInfo.emoji} {mapInfo.name}
                 </div>
-                {m.claimed ? (
-                  <span style={styles.missionDone}>✓</span>
-                ) : m.done ? (
-                  <button style={styles.missionClaim} onClick={() => { claimMission(m.id); }}>
-                    🥕 {m.reward}
-                  </button>
-                ) : (
-                  <span style={styles.missionReward}>🥕 {m.reward}</span>
-                )}
+                <StatRow label="SKOR" value={Math.floor(score).toLocaleString()} color="#fff" />
+                <StatRow label="BU HARİTA REKORU" value={Math.floor(mapHs).toLocaleString()} color={mapInfo.color} />
+                <StatRow label="HAVUÇ" value={`🥕 ${carrots}`} color="#ffd700" />
+              </div>
+              {runCarrots > 0 && !carrotsDoubled && (
+                <div style={{ marginTop: 10, width: '100%' }}>
+                  <AdButton label={`Havuçları 2 KATINA çıkar (+${runCarrots})`} sub={`Bu koşuda ${runCarrots} havuç topladın`} color="#ffcf66" onReward={() => doubleRunCarrots()} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {sessionError && <p style={styles.warn}>⚠ Çevrimdışı mod</p>}
+
+          {/* Harita seçici */}
+          <div style={styles.sectionTitle}>🗺️ HARİTA SEÇ</div>
+          <div style={styles.mapRow}>
+            {[
+              { id: 1, emoji: '🌿', name: 'AT YARIŞI',     sub: 'Çiftlik / Pist',    color: '#6aaa44', rgb: '106,170,68', hs: highScoreMap1 },
+              { id: 2, emoji: '🏙️', name: 'ŞEHİR',        sub: 'Kent Sokakları',    color: '#4a90d9', rgb: '74,144,217', hs: highScoreMap2 },
+              { id: 3, emoji: '🌵', name: 'ÇÖLLER',        sub: 'Çöl Koşusu',        color: '#d4a020', rgb: '212,160,32', hs: highScoreMap3 },
+              { id: 4, emoji: '🚀', name: 'UZAY KOLONİSİ', sub: "Mars'ta At Yarışı", color: '#aa44ff', rgb: '170,68,255', hs: highScoreMap4 ?? 0 },
+              { id: 5, emoji: '🏰', name: 'ORTAÇAĞ KÖYÜ',  sub: 'Köy Yolu',          color: '#c8843c', rgb: '200,132,60',  hs: highScoreMap5 ?? 0 },
+            ].map(m => (
+              <div
+                key={m.id}
+                style={{
+                  ...styles.mapCard,
+                  borderColor: mapId === m.id ? m.color : 'rgba(255,255,255,0.1)',
+                  background:  mapId === m.id ? `rgba(${m.rgb},0.13)` : 'rgba(255,255,255,0.04)',
+                  boxShadow: mapId === m.id ? `0 0 12px rgba(${m.rgb},0.3)` : 'none',
+                }}
+                onClick={() => setMapId(m.id)}
+              >
+                <span style={styles.mapEmoji}>{m.emoji}</span>
+                <span style={{ ...styles.mapName, color: mapId === m.id ? m.color : '#fff' }}>{m.name}</span>
+                <span style={styles.mapSub}>{m.sub}</span>
+                <span style={{ ...styles.mapHsChip, color: mapId === m.id ? m.color : 'rgba(255,255,255,0.3)' }}>
+                  ⬡ {Math.floor(m.hs).toLocaleString()}
+                </span>
               </div>
             ))}
           </div>
 
-          {!isGameOver && (
-            <>
-              <p style={styles.introText}>
-                Engelleri aşarak yol al.<br />
-                Makas atarken adrenalin kazan!
-              </p>
-              <div style={styles.controlsHint}>
-                <kbd style={styles.key}>◄</kbd>
-                <kbd style={styles.key}>►</kbd>
-                <span style={styles.hintText}>veya A / D</span>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Bağlantı durumu */}
-        {sessionError && (
-          <p style={styles.warn}>⚠ Çevrimdışı mod</p>
-        )}
-        {!sessionReady && !sessionError && (
-          <p style={styles.connecting}>● Sunucuya bağlanıyor…</p>
-        )}
-
-        {/* Per-map highscore — idle ekranında seçili haritanın rekoru */}
-        {!isGameOver && (
-          <div style={styles.mapHsRow}>
-            <span style={{ color: mapInfo.color }}>{mapInfo.emoji} {mapInfo.name}</span>
-            <span style={styles.mapHsVal}>En İyi: {Math.floor(mapHs).toLocaleString()}</span>
-          </div>
-        )}
-
-        {/* Harita seçici */}
-        <div style={styles.mapRow}>
-          {[
-            { id: 1, emoji: '🌿', name: 'AT YARIŞI',     sub: 'Çiftlik / Pist',    color: '#6aaa44', rgb: '106,170,68', hs: highScoreMap1 },
-            { id: 2, emoji: '🏙️', name: 'ŞEHİR',        sub: 'Kent Sokakları',    color: '#4a90d9', rgb: '74,144,217', hs: highScoreMap2 },
-            { id: 3, emoji: '🌵', name: 'ÇÖLLER',        sub: 'Çöl Koşusu',        color: '#d4a020', rgb: '212,160,32', hs: highScoreMap3 },
-            { id: 4, emoji: '🚀', name: 'UZAY KOLONİSİ', sub: "Mars'ta At Yarışı", color: '#aa44ff', rgb: '170,68,255', hs: highScoreMap4 ?? 0 },
-            { id: 5, emoji: '🏰', name: 'ORTAÇAĞ KÖYÜ',  sub: 'Köy Yolu',          color: '#c8843c', rgb: '200,132,60',  hs: highScoreMap5 ?? 0 },
-          ].map(m => (
-            <div
-              key={m.id}
+          {(mapId === 1 || mapId === 2) && (
+            <button
               style={{
-                ...styles.mapCard,
-                borderColor: mapId === m.id ? m.color : 'rgba(255,255,255,0.1)',
-                background:  mapId === m.id ? `rgba(${m.rgb},0.13)` : 'rgba(255,255,255,0.04)',
-                boxShadow: mapId === m.id ? `0 0 12px rgba(${m.rgb},0.3)` : 'none',
+                ...styles.nightBtn,
+                borderColor: nightMode ? '#8fa8e0' : 'rgba(255,255,255,0.15)',
+                color: nightMode ? '#8fa8e0' : 'rgba(255,255,255,0.5)',
+                background: nightMode ? 'rgba(143,168,224,0.1)' : 'transparent',
               }}
-              onClick={() => setMapId(m.id)}
+              onClick={toggleNightMode}
             >
-              <span style={styles.mapEmoji}>{m.emoji}</span>
-              <span style={{ ...styles.mapName, color: mapId === m.id ? m.color : '#fff' }}>{m.name}</span>
-              <span style={styles.mapSub}>{m.sub}</span>
-              <span style={{ ...styles.mapHsChip, color: mapId === m.id ? m.color : 'rgba(255,255,255,0.3)' }}>
-                ⬡ {Math.floor(m.hs).toLocaleString()}
-              </span>
+              {nightMode ? '🌙 GECE MODU: AÇIK' : '☀️ GECE MODU: KAPALI'}
+            </button>
+          )}
+
+          {/* Aktif jokey + at */}
+          <div style={styles.activeRow} onClick={openGarage}>
+            <div style={styles.activeItem}>
+              <span style={styles.activeEmoji}>{activeChar.emoji}</span>
+              <span style={styles.activeName}>{activeChar.name}</span>
             </div>
-          ))}
-        </div>
-
-        {/* Gece modu (harita 1-2) */}
-        {(mapId === 1 || mapId === 2) && (
-          <button
-            style={{
-              ...styles.nightBtn,
-              borderColor: nightMode ? '#8fa8e0' : 'rgba(255,255,255,0.15)',
-              color: nightMode ? '#8fa8e0' : 'rgba(255,255,255,0.5)',
-              background: nightMode ? 'rgba(143,168,224,0.1)' : 'transparent',
-            }}
-            onClick={toggleNightMode}
-          >
-            {nightMode ? '🌙 GECE MODU: AÇIK' : '☀️ GECE MODU: KAPALI'}
-          </button>
-        )}
-
-        {/* Aktif jokey + at göster */}
-        <div style={styles.activeRow} onClick={openGarage}>
-          <div style={styles.activeItem}>
-            <span style={styles.activeEmoji}>{activeChar.emoji}</span>
-            <span style={styles.activeName}>{activeChar.name}</span>
+            <div style={styles.activeDivider} />
+            <div style={styles.activeItem}>
+              <div style={{ width: 22, height: 22, borderRadius: '50%', background: activeHorse.bodyColor, border: `2px solid ${activeHorse.maneColor}` }} />
+              <span style={styles.activeName}>{activeHorse.name}</span>
+              <span style={styles.levelPill}>SV {horseLevel}</span>
+            </div>
+            <span style={styles.changeHint}>DEĞİŞTİR →</span>
           </div>
-          <div style={styles.activeDivider} />
-          <div style={styles.activeItem}>
-            <div style={{ width: 22, height: 22, borderRadius: '50%', background: activeHorse.bodyColor, border: `2px solid ${activeHorse.maneColor}` }} />
-            <span style={styles.activeName}>{activeHorse.name}</span>
-            <span style={styles.levelPill}>SEVİYE {horseLevel}</span>
+
+          {/* Reklam alanları */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+            {(AD_DAILY_MAX - adBonusToday) > 0 && (
+              <AdButton label={`Bedava ${AD_DAILY_CARROTS} havuç`} sub={`Bugün ${AD_DAILY_MAX - adBonusToday} hakkın kaldı`} color="#ffd700" compact onReward={() => claimAdCarrots()} />
+            )}
+            {!isGameOver && (
+              <AdButton label="Süper Nal ile başla" sub="Bu koşuya mıknatıs boost'u ile başla" color="#00cfff" compact onReward={() => { armStartBoost(); startRun(); }} />
+            )}
           </div>
-          <span style={styles.changeHint}>DEĞİŞTİR →</span>
+
+          <button style={styles.btn} onClick={startRun}>
+            {isGameOver ? 'TEKRAR OYNA' : 'OYNA'}
+          </button>
+
+          {isNative && <div style={{ height: 56, flexShrink: 0 }} />}
         </div>
 
-        {/* Ödüllü reklam alanları */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-          {(AD_DAILY_MAX - adBonusToday) > 0 && (
-            <AdButton
-              label={`Bedava ${AD_DAILY_CARROTS} havuç`}
-              sub={`Bugün ${AD_DAILY_MAX - adBonusToday} hakkın kaldı`}
-              color="#ffd700"
-              compact
-              onReward={() => claimAdCarrots()}
-            />
-          )}
-          {!isGameOver && (
-            <AdButton
-              label="Süper Nal ile başla"
-              sub="Bu koşuya mıknatıs boost'u ile başla"
-              color="#00cfff"
-              compact
-              onReward={() => { armStartBoost(); startRun(); }}
-            />
-          )}
-        </div>
-
-        <button style={styles.btn} onClick={startRun}>
-          {isGameOver ? 'TEKRAR OYNA' : 'OYNA'}
-        </button>
-
-        <button style={styles.leaderboardBtn} onClick={() => setShowLeaderboard(true)}>
-          🏆 LİDERLİK TABLOSU
-        </button>
-
-        <div style={{ display: 'flex', gap: 8, width: '100%' }}>
-          <button style={{ ...styles.garageBtn, flex: 2 }} onClick={openGarage}>
-            🏇 MAĞAZA &nbsp;·&nbsp; 🥕 {carrots}
+        {/* Alt sekme çubuğu */}
+        <div style={styles.bottomNav}>
+          <button style={{ ...styles.navBtn, ...styles.navActive }}>
+            <span style={styles.navIcon}>🏠</span><span style={styles.navLabel}>Ana</span>
           </button>
-          <button style={{ ...styles.garageBtn, flex: 1 }} onClick={() => openGarage('hara')}>
-            🐣 AHIR
+          <button style={styles.navBtn} onClick={() => openGarage()}>
+            <span style={styles.navIcon}>🏇</span><span style={styles.navLabel}>Garaj</span>
+          </button>
+          <button style={styles.navBtn} onClick={() => openGarage('hara')}>
+            <span style={styles.navIcon}>🐣</span><span style={styles.navLabel}>Ahır</span>
+          </button>
+          <button style={styles.navBtn} onClick={() => setShowMissions(true)}>
+            <span style={styles.navIcon}>🎯</span><span style={styles.navLabel}>Görev</span>
+            {canClaimStreak && <span style={styles.navDot} />}
+          </button>
+          <button style={styles.navBtn} onClick={() => setShowShop(true)}>
+            <span style={styles.navIcon}>💎</span><span style={styles.navLabel}>Mağaza</span>
           </button>
         </div>
-
-        <div style={{ display: 'flex', gap: 8, width: '100%' }}>
-          <button style={{ ...styles.guideBtn, flex: 1 }} onClick={() => setShowGuide(true)}>
-            📖 REHBER
-          </button>
-          <button style={{ ...styles.guideBtn, flex: 1 }} onClick={() => setShowSettings(true)}>
-            ⚙️ AYARLAR
-          </button>
-        </div>
-
-        {/* Alt banner reklamı menüyü kapatmasın diye boşluk (yalnızca native) */}
-        {isNative && <div style={{ height: 64, flexShrink: 0 }} />}
       </div>
 
       {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
@@ -355,6 +277,13 @@ export default function MainMenu() {
       {showShop && <CarrotShop onClose={() => setShowShop(false)} />}
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       {showDaily && <DailyReward onClose={() => setShowDaily(false)} />}
+      {showMissions && (
+        <Missions
+          onClose={() => setShowMissions(false)}
+          onDaily={() => { setShowMissions(false); setShowDaily(true); }}
+          onLeaderboard={() => { setShowMissions(false); setShowLeaderboard(true); }}
+        />
+      )}
     </div>
   );
 }
@@ -372,21 +301,43 @@ const styles = {
     userSelect: 'none',
   },
   card: {
+    position: 'relative',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    gap: 14,
-    background: 'linear-gradient(160deg, rgba(12,12,28,0.95) 0%, rgba(8,8,18,0.97) 100%)',
+    background: 'linear-gradient(160deg, rgba(12,12,28,0.96) 0%, rgba(8,8,18,0.98) 100%)',
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: 14,
-    padding: isMobile ? '20px 18px' : '30px 44px',
-    minWidth: isMobile ? 'auto' : 360,
-    width: isMobile ? '96vw' : 'auto',
+    padding: 0,
+    minWidth: isMobile ? 'auto' : 380,
+    width: isMobile ? '96vw' : 420,
     maxWidth: '96vw',
     maxHeight: '92vh',
-    overflowY: 'auto',
+    overflow: 'hidden',
     boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 80px rgba(255,215,0,0.04)',
   },
+  scrollArea: {
+    flex: 1, overflowY: 'auto', minHeight: 0,
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+    padding: '22px 18px 14px',
+  },
+  topIcons: { position: 'absolute', top: 10, right: 12, display: 'flex', gap: 6, zIndex: 2 },
+  iconBtn: { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, width: 34, height: 34, fontSize: 16, cursor: 'pointer' },
+  topRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  dailyIconBtn: { position: 'relative', background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.35)', borderRadius: 20, width: 38, height: 32, fontSize: 16, cursor: 'pointer' },
+  sectionTitle: { alignSelf: 'flex-start', fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginTop: 4 },
+  bottomNav: {
+    display: 'flex', borderTop: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(8,8,16,0.96)', flexShrink: 0,
+  },
+  navBtn: {
+    position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+    background: 'transparent', border: 'none', cursor: 'pointer',
+    padding: '8px 2px calc(8px + env(safe-area-inset-bottom, 0px))', fontFamily: 'monospace',
+  },
+  navActive: { background: 'rgba(255,215,0,0.08)' },
+  navIcon: { fontSize: 18 },
+  navLabel: { fontSize: 9, letterSpacing: 1, color: 'rgba(255,255,255,0.6)', fontWeight: 700 },
+  navDot: { position: 'absolute', top: 6, right: '50%', marginRight: -16, width: 8, height: 8, borderRadius: '50%', background: '#ff3b3b', boxShadow: '0 0 6px #ff3b3b' },
   titleWrap: { textAlign: 'center' },
   titleSub: { fontSize: 42, marginBottom: 2, animation: 'bounce 1.2s infinite alternate' },
   title: {
