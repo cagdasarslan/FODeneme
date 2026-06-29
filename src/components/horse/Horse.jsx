@@ -385,6 +385,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       velYRef.current     = JUMP_FORCE * jumpMult;
       onGroundRef.current = false;
       sfx.jump();
+      useGameStore.getState().bumpDaily('jumps', 1);
     }
     jumpPressedRef.current = wantsJump;
 

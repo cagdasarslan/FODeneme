@@ -6,6 +6,7 @@ import Leaderboard from '@/components/ui/Leaderboard';
 import HowToPlay from '@/components/ui/HowToPlay';
 import CarrotShop from '@/components/ui/CarrotShop';
 import Settings from '@/components/ui/Settings';
+import DailyReward from '@/components/ui/DailyReward';
 import AdButton from '@/components/ui/AdButton';
 import { showBanner, hideBanner } from '@/services/AdService';
 import { AD_DAILY_CARROTS, AD_DAILY_MAX } from '@/constants/game';
@@ -55,6 +56,7 @@ export default function MainMenu() {
   const [showGuide, setShowGuide] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDaily, setShowDaily] = useState(false);
 
   const {
     phase, sessionReady, sessionError, score, carrots,
@@ -90,6 +92,16 @@ export default function MainMenu() {
     armStartBoost:       s.armStartBoost,
   }));
 
+  // Günlük sistem (re-render için ilgili alanlara abone ol)
+  const dailyCarrots   = useGameStore(s => s.dailyCarrots);
+  const missionClaimed = useGameStore(s => s.missionClaimed);
+  const streakDay      = useGameStore(s => s.streakDay);
+  const lastClaimDate  = useGameStore(s => s.lastClaimDate);
+  const getMissions    = useGameStore(s => s.getMissions);
+  const claimMission   = useGameStore(s => s.claimMission);
+  const canClaimStreak = useGameStore(s => s.canClaimStreak)();
+  const missions = getMissions(); // dailyCarrots/missionClaimed değişince yenilenir
+
   // Banner reklam — yalnızca ana menü/oyun sonu ekranında
   useEffect(() => {
     if (phase === 'idle' || phase === 'gameover') showBanner();
@@ -102,11 +114,6 @@ export default function MainMenu() {
   const mapInfo     = MAP_INFO[mapId] ?? MAP_INFO[1];
   const horseLevel  = (horseLevels && horseLevels[selectedHorseId]) ?? 1;
 
-  const dateStr = new Date().toDateString();
-  const dailyChallenge = getDailyChallenge();
-  const dailyProgress = getDailyProgress(dateStr);
-  // Show a 30% progress bar visually for richness
-  const progressPct = dailyProgress.completed ? 100 : Math.min(dailyProgress.progress || 30, 100);
 
   if (phase !== 'idle' && phase !== 'gameover') return null;
 
@@ -165,20 +172,41 @@ export default function MainMenu() {
           </div>
         )}
 
-        {/* İlk menü — daily challenge + intro */}
+        {/* İlk menü — günlük ödül + görevler + intro */}
         {!isGameOver && (
           <div style={styles.introWrap}>
-            {/* Daily challenge widget */}
+            {/* Günlük ödül butonu */}
+            <button style={styles.dailyRewardBtn} onClick={() => setShowDaily(true)}>
+              🎁 GÜNLÜK ÖDÜL
+              {canClaimStreak && <span style={styles.dailyDot} />}
+            </button>
+
+            {/* Günlük görevler */}
             <div style={styles.dailyWidget}>
               <div style={styles.dailyHeader}>
                 <span style={styles.dailyIcon}>🎯</span>
-                <span style={styles.dailyLabel}>GÜNLÜK HEDEF</span>
-                {dailyProgress.completed && <span style={styles.dailyDone}>✓ TAMAMLANDI</span>}
+                <span style={styles.dailyLabel}>GÜNLÜK GÖREVLER</span>
               </div>
-              <div style={styles.dailyChallenge}>{dailyChallenge}</div>
-              <div style={styles.progressBarBg}>
-                <div style={{ ...styles.progressBarFill, width: `${progressPct}%`, background: dailyProgress.completed ? '#33ff99' : '#ffd700' }} />
-              </div>
+              {missions.map(m => (
+                <div key={m.id} style={styles.missionRow}>
+                  <div style={{ flex: 1 }}>
+                    <div style={styles.missionLabel}>{m.label}</div>
+                    <div style={styles.progressBarBg}>
+                      <div style={{ ...styles.progressBarFill, width: `${(m.progress / m.target) * 100}%`, background: m.done ? '#33ff99' : '#ffd700' }} />
+                    </div>
+                    <div style={styles.missionProg}>{m.progress}/{m.target}</div>
+                  </div>
+                  {m.claimed ? (
+                    <span style={styles.missionDone}>✓</span>
+                  ) : m.done ? (
+                    <button style={styles.missionClaim} onClick={() => { claimMission(m.id); }}>
+                      🥕 {m.reward}
+                    </button>
+                  ) : (
+                    <span style={styles.missionReward}>🥕 {m.reward}</span>
+                  )}
+                </div>
+              ))}
             </div>
 
             <p style={styles.introText}>
@@ -324,6 +352,7 @@ export default function MainMenu() {
       {showGuide && <HowToPlay onClose={() => setShowGuide(false)} />}
       {showShop && <CarrotShop onClose={() => setShowShop(false)} />}
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+      {showDaily && <DailyReward onClose={() => setShowDaily(false)} />}
     </div>
   );
 }
@@ -416,6 +445,19 @@ const styles = {
   dailyChallenge: { fontSize: 13, color: '#fff', fontWeight: 700, letterSpacing: 1, marginBottom: 8 },
   progressBarBg: { height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' },
   progressBarFill: { height: '100%', borderRadius: 2, transition: 'width 0.5s ease' },
+  dailyRewardBtn: {
+    position: 'relative', width: '100%', padding: '11px', marginBottom: 10,
+    background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,160,0,0.12))',
+    border: '1px solid rgba(255,215,0,0.4)', borderRadius: 10, color: '#ffd700',
+    fontFamily: 'monospace', fontWeight: 800, letterSpacing: 2, fontSize: 12, cursor: 'pointer',
+  },
+  dailyDot: { position: 'absolute', top: 8, right: 12, width: 10, height: 10, borderRadius: '50%', background: '#ff3b3b', boxShadow: '0 0 8px #ff3b3b' },
+  missionRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid rgba(255,255,255,0.06)' },
+  missionLabel: { fontSize: 11, color: '#fff', fontWeight: 700, marginBottom: 4 },
+  missionProg: { fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
+  missionReward: { fontSize: 11, color: 'rgba(255,215,0,0.55)', fontWeight: 700, whiteSpace: 'nowrap' },
+  missionClaim: { fontSize: 11, fontWeight: 800, color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontFamily: 'monospace', whiteSpace: 'nowrap' },
+  missionDone: { fontSize: 16, color: '#33ff99', fontWeight: 900 },
   introText: { color: 'rgba(255,255,255,0.65)', fontSize: 13, lineHeight: 1.7, margin: '8px 0 0' },
   controlsHint: { marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' },
   key: {

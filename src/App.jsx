@@ -21,6 +21,7 @@ import Garage from '@/components/ui/Garage';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { IS_MOBILE, MAX_DPR, SHADOW_MAP } from '@/utils/device';
 import { startMusic, stopMusic, startGallop, stopGallop } from '@/utils/audio';
+import { initNotifications, scheduleReminders } from '@/services/NotificationService';
 
 // ── EnvLayer MUST be defined outside App so React sees the same component
 // type across re-renders. Defining it inside App creates a new function
@@ -41,7 +42,20 @@ export default function App() {
   const nightMode = useGameStore((s) => s.nightMode);
   const graphics  = useGameStore((s) => s.graphics);
   const phase = useGameStore((s) => s.phase);
-  useEffect(() => { initSession(); }, [initSession]);
+  const initDaily = useGameStore((s) => s.initDaily);
+  useEffect(() => { initSession(); initDaily(); initNotifications(); }, [initSession, initDaily]);
+
+  // Uygulama arka plana alınınca hatırlatma bildirimlerini planla
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') {
+        const hasFoals = (useGameStore.getState().foals?.length ?? 0) > 0;
+        scheduleReminders({ hasFoals });
+      }
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, []);
 
   // Müzik + nal sesi: yalnızca oyun oynanırken
   useEffect(() => {

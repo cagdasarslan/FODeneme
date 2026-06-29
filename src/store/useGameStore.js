@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { setSfxEnabled, setMusicEnabled, sfx, startMusic, startGallop } from '@/utils/audio';
+import { STREAK_REWARDS, pickDailyMissions } from '@/constants/daily';
 import { HORSES } from '@/constants/horses';
 import {
   INITIAL_SPEED,
@@ -52,6 +53,32 @@ function flushCarrotSave(get) {
   if (_todayKey) localStorage.setItem(_todayKey, String(s.dailyCarrots));
 }
 
+// ── Günlük sistem (giriş serisi + görevler) kalıcılığı ──────────────────────
+const todayStr = () => new Date().toDateString();
+const yesterdayStr = () => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toDateString(); };
+function loadDaily() {
+  let d = {};
+  try { d = JSON.parse(localStorage.getItem('daily_v1') ?? '{}'); } catch (e) { d = {}; }
+  return {
+    streakDay: d.streakDay ?? 1,
+    lastClaimDate: d.lastClaimDate ?? '',
+    statsDate: d.statsDate ?? '',
+    dailyStats: d.dailyStats ?? { distance: 0, jumps: 0, jumpover: 0, runs: 0, closecall: 0 },
+    missionClaimed: d.missionClaimed ?? [],
+  };
+}
+function saveDaily(s) {
+  localStorage.setItem('daily_v1', JSON.stringify({
+    streakDay: s.streakDay, lastClaimDate: s.lastClaimDate,
+    statsDate: s.statsDate, dailyStats: s.dailyStats, missionClaimed: s.missionClaimed,
+  }));
+}
+let _dailySaveTimer = null;
+function scheduleDailySave(get) {
+  if (_dailySaveTimer) return;
+  _dailySaveTimer = setTimeout(() => { _dailySaveTimer = null; saveDaily(get()); }, 1000);
+}
+
 // ---------------------------------------------------------------------------
 // Types (JSDoc for IDE hints without TypeScript overhead)
 // ---------------------------------------------------------------------------
@@ -72,6 +99,9 @@ const useGameStore = create(
 
     // ── Daily tracking ────────────────────────────────────────────────────────
     dailyCarrots: parseInt(localStorage.getItem(`daily_carrots_${new Date().toDateString()}`) ?? '0', 10),
+
+    // ── Günlük sistem (giriş serisi + görevler) ───────────────────────────────
+    ...loadDaily(),
 
     // ── Live run state ────────────────────────────────────────────────────────
     /** @type {GamePhase} */
@@ -189,6 +219,11 @@ const useGameStore = create(
 
     endRun: async () => {
       flushCarrotSave(get); // bekleyen havuç yazımını hemen diske al
+      // Günlük görev sayaçları: bu koşunun mesafesi + 1 koşu
+      const _dist = Math.floor(get().distance || 0);
+      if (_dist > 0) get().bumpDaily('distance', _dist);
+      get().bumpDaily('runs', 1);
+      saveDaily(get());
       const { score, highScore, mapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5, sessionReady } = get();
       const newHighScore = Math.max(score, highScore);
       const hsKey = mapId === 5 ? 'hs_map5' : mapId === 4 ? 'hs_map4' : mapId === 3 ? 'hs_map3' : mapId === 2 ? 'hs_map2' : 'hs_map1';
@@ -270,7 +305,7 @@ const useGameStore = create(
     registerCloseCall: () => {
       const { phase, adrenaline } = get();
       if (phase !== 'playing') return;
-
+      get().bumpDaily('closecall', 1);
       set({
         adrenaline: Math.min(adrenaline + ADRENALINE_CLOSE_CALL_GAIN, ADRENALINE_MAX),
       });
@@ -279,6 +314,7 @@ const useGameStore = create(
     registerJumpOver: () => {
       const { phase, adrenaline } = get();
       if (phase !== 'playing') return;
+      get().bumpDaily('jumpover', 1);
       set({
         adrenaline: Math.min(adrenaline + ADRENALINE_JUMP_GAIN, ADRENALINE_MAX),
       });
@@ -391,6 +427,81 @@ const useGameStore = create(
       const c = get().carrots + amount;
       localStorage.setItem('carrots', String(c));
       set({ carrots: c });
+    },
+
+    // =========================================================================
+    // Günlük sistem: giriş serisi + görevler
+    // =========================================================================
+
+    // Uygulama açılışında çağrılır: gün değiştiyse sıfırla, seri kopmuşsa düşür
+    initDaily: () => {
+      const s = get();
+      const today = todayStr();
+      let { streakDay, lastClaimDate, statsDate, dailyStats, missionClaimed } = s;
+      // Yeni gün → günlük sayaç ve görev talepleri sıfırla
+      if (statsDate !== today) {
+        statsDate = today;
+        dailyStats = { distance: 0, jumps: 0, jumpover: 0, runs: 0, closecall: 0 };
+        missionClaimed = [];
+      }
+      // Seri: dün talep edilmediyse ve bugün de değilse → kopmuş, başa dön
+      if (lastClaimDate && lastClaimDate !== today && lastClaimDate !== yesterdayStr()) {
+        streakDay = 1;
+      }
+      const next = { streakDay, lastClaimDate, statsDate, dailyStats, missionClaimed };
+      saveDaily(next);
+      set(next);
+    },
+
+    canClaimStreak: () => get().lastClaimDate !== todayStr(),
+
+    claimStreak: () => {
+      const s = get();
+      if (s.lastClaimDate === todayStr()) return 0;
+      const reward = STREAK_REWARDS[(s.streakDay - 1) % STREAK_REWARDS.length];
+      const newCarrots = s.carrots + reward;
+      localStorage.setItem('carrots', String(newCarrots));
+      const nextDay = s.streakDay >= STREAK_REWARDS.length ? 1 : s.streakDay + 1;
+      const next = { carrots: newCarrots, streakDay: nextDay, lastClaimDate: todayStr() };
+      set(next);
+      saveDaily(get());
+      sfx.powerup();
+      return reward;
+    },
+
+    // Bugünün 3 görevi + canlı ilerleme + tamamlandı/talep durumu
+    getMissions: () => {
+      const s = get();
+      const list = pickDailyMissions(todayStr());
+      const progressOf = (m) => m.type === 'carrots' ? s.dailyCarrots : (s.dailyStats[m.type] ?? 0);
+      return list.map(m => {
+        const progress = Math.min(progressOf(m), m.target);
+        return { ...m, progress, done: progress >= m.target, claimed: s.missionClaimed.includes(m.id) };
+      });
+    },
+
+    claimMission: (id) => {
+      const s = get();
+      const m = pickDailyMissions(todayStr()).find(x => x.id === id);
+      if (!m || s.missionClaimed.includes(id)) return 0;
+      const progress = m.type === 'carrots' ? s.dailyCarrots : (s.dailyStats[m.type] ?? 0);
+      if (progress < m.target) return 0;
+      const newCarrots = s.carrots + m.reward;
+      localStorage.setItem('carrots', String(newCarrots));
+      const missionClaimed = [...s.missionClaimed, id];
+      set({ carrots: newCarrots, missionClaimed });
+      saveDaily(get());
+      sfx.collect();
+      return m.reward;
+    },
+
+    // Günlük sayaç arttırıcı (oyun olaylarından çağrılır)
+    bumpDaily: (key, n = 1) => {
+      const s = get();
+      const dailyStats = { ...s.dailyStats, [key]: (s.dailyStats[key] ?? 0) + n };
+      set({ dailyStats });
+      // sık çağrılabilir; kaydı debounce et (havuç gibi)
+      scheduleDailySave(get);
     },
 
     // =========================================================================
