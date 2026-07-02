@@ -43,13 +43,15 @@ export default function TouchPad() {
         pulse(dx > 0 ? 'right' : 'left');
       } else if (dy < 0) {
         pulse('jump');
+      } else {
+        pulse('slide'); // aşağı kaydır → eğil
       }
       // Segmenti sıfırla: bir sonraki swipe için yeni orijin.
       ox = t.clientX; oy = t.clientY;
     };
     const onEnd = () => {
       tracking = false;
-      controlsState.left = controlsState.right = controlsState.jump = false;
+      controlsState.left = controlsState.right = controlsState.jump = controlsState.slide = false;
     };
 
     window.addEventListener('touchstart',  onStart, { passive: true });
@@ -61,12 +63,12 @@ export default function TouchPad() {
       window.removeEventListener('touchmove',   onMove);
       window.removeEventListener('touchend',    onEnd);
       window.removeEventListener('touchcancel', onEnd);
-      controlsState.left = controlsState.right = controlsState.jump = false;
+      controlsState.left = controlsState.right = controlsState.jump = controlsState.slide = false;
     };
   }, [phase]);
 
   if (phase !== 'playing') return null;
-  return <div style={hint}>kaydır: ← → şerit&nbsp;&nbsp;·&nbsp;&nbsp;↑ zıpla</div>;
+  return <div style={hint}>kaydır: ← → şerit · ↑ zıpla · ↓ eğil</div>;
 }
 
 const hint = {

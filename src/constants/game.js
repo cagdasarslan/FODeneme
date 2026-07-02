@@ -19,6 +19,24 @@ export const CONTINUE_BASE_CARROTS = 200;
 export const CONTINUE_BASE_ADS     = 1;
 export const CONTINUE_MULTIPLIER   = 3;
 
+// Eğilme (slide) — üstten geçen engellerin altından kaymak için
+export const SLIDE_DURATION_MS = 700;
+
+// Combo: art arda makas/engel-atlama skoru katlar (x1 → x4)
+export const COMBO_WINDOW_MS = 5000;  // bu süre içinde yeni aksiyon gelmezse sıfırlanır
+export const COMBO_PER_STEP  = 3;     // her 3 combo'da çarpan +1
+export const COMBO_MAX_MULT  = 4;
+
+// Tökezleme (stumble): ilk çarpma affedilir — bu pencere içinde ikinci çarpma öldürür
+export const STUMBLE_WINDOW_MS = 15000;
+
+// Harita kilitleri: herhangi bir haritadaki en iyi skorun eşiği
+export const MAP_UNLOCKS = { 2: 1000, 3: 3000, 4: 6000, 5: 10000 };
+
+// Uzay imza mekaniği: düşük yerçekimi
+export const SPACE_GRAVITY_MULT = 0.62;
+export const SPACE_JUMP_MULT    = 1.05;
+
 // Ödüllü reklam ödülleri — 1 reklam ≈ 200 havuç değerinde olacak şekilde
 export const AD_CARROT_VALUE     = 200;  // 1 reklamın havuç karşılığı
 export const AD_DAILY_CARROTS    = 200;  // günlük bedava havuç (1 reklam = 200)

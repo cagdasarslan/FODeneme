@@ -54,8 +54,29 @@ export default function HUD() {
   const phase      = useGameStore((s) => s.phase);
   const magnetActive      = useGameStore((s) => s.magnetActive);
   const adrenalinBoosting = useGameStore((s) => s.adrenalinBoosting);
+  const comboMult         = useGameStore((s) => s.comboMult);
+  const stumbleActive     = useGameStore((s) => s.stumbleActive);
+  const mapId             = useGameStore((s) => s.mapId);
+
+  // İlk oyun eğitimi (tutorial): 3 adım, sonra kalıcı olarak kapanır
+  const [tutStep, setTutStep] = useState(() =>
+    localStorage.getItem('tut_done') ? 3 : 0
+  );
+  useEffect(() => {
+    if (phase !== 'playing' || tutStep >= 3) return;
+    const t = setTimeout(() => {
+      setTutStep((s) => {
+        const n = s + 1;
+        if (n >= 3) localStorage.setItem('tut_done', '1');
+        return n;
+      });
+    }, 3500);
+    return () => clearTimeout(t);
+  }, [phase, tutStep]);
 
   if (phase !== 'playing' && phase !== 'paused') return null;
+
+  const TUT_MSGS = ['👆 ← → kaydırarak şerit değiştir', '👆 ↑ yukarı kaydır = ZIPLA', '👆 ↓ aşağı kaydır = EĞİL'];
 
   const adrColor = adrenaline > 75 ? '#ff3333' : adrenaline > 40 ? '#ff9900' : '#33aaff';
   const isMaxAdr = adrenaline > 90;
@@ -105,6 +126,46 @@ export default function HUD() {
         </div>
       )}
 
+      {/* Combo çarpanı — art arda riskli hamleler skoru katlar */}
+      {comboMult > 1 && (
+        <div style={{ position:'fixed', top:132, left:'50%', transform:'translateX(-50%)',
+          fontFamily:'monospace', fontSize:18, fontWeight:900, color:'#ffd54a',
+          textShadow:'0 0 14px #ffb300', letterSpacing:3, pointerEvents:'none',
+          animation:'pulse 0.4s infinite alternate' }}>
+          🔥 COMBO x{comboMult}
+        </div>
+      )}
+
+      {/* Tökezleme uyarısı — pencere içinde ikinci çarpma öldürür */}
+      {stumbleActive && (
+        <div style={{ position:'fixed', top:160, left:'50%', transform:'translateX(-50%)',
+          fontFamily:'monospace', fontSize:14, fontWeight:900, color:'#ff5544',
+          textShadow:'0 0 12px #ff2200', letterSpacing:2, pointerEvents:'none',
+          background:'rgba(0,0,0,0.45)', padding:'6px 14px', borderRadius:8,
+          border:'1px solid rgba(255,60,40,0.5)',
+          animation:'pulse 0.6s infinite alternate' }}>
+          ⚠️ TÖKEZLEDİN — bir daha çarparsan düşersin!
+        </div>
+      )}
+
+      {/* İlk oyun eğitimi */}
+      {tutStep < 3 && (
+        <div style={{ position:'fixed', top:'46%', left:'50%', transform:'translateX(-50%)',
+          fontFamily:'monospace', fontSize:17, fontWeight:800, color:'#fff',
+          textShadow:'0 2px 6px #000', letterSpacing:1, pointerEvents:'none',
+          background:'rgba(0,0,0,0.55)', padding:'12px 20px', borderRadius:12,
+          border:'1px solid rgba(255,215,0,0.4)', whiteSpace:'nowrap' }}>
+          {TUT_MSGS[tutStep]}
+        </div>
+      )}
+
+      {/* Çöl imza mekaniği: periyodik kum fırtınası vinyeti (görüş daralır) */}
+      {mapId === 3 && (
+        <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:4000,
+          background:'radial-gradient(ellipse at center, transparent 30%, rgba(200,110,30,0.85) 100%)',
+          animation:'sandPulse 30s infinite', opacity:0 }} />
+      )}
+
       {/* Adrenalin barı */}
       <div style={styles.adrWrap}>
         <div style={{ ...styles.adrLabel, color: adrColor, animation: isMaxAdr ? 'pulse 0.5s infinite alternate' : 'none' }}>
@@ -133,6 +194,11 @@ export default function HUD() {
 
       <style>{`
         @keyframes pulse { from { opacity:1; transform:scale(1); } to { opacity:0.6; transform:scale(1.06); } }
+        @keyframes sandPulse {
+          0%, 78%  { opacity: 0; }
+          84%, 92% { opacity: 1; }
+          100%     { opacity: 0; }
+        }
       `}</style>
     </>
   );

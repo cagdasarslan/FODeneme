@@ -214,29 +214,63 @@ function MedTreeA()   { return <MedievalGLB path={M_MED_TREE_A}  scale={3.6} />;
 function MedTreeB()   { return <MedievalGLB path={M_MED_TREE_B}  scale={3.6} />; }
 function MedFarm()    { return <MedievalGLB path={M_MED_FARM}    scale={3.0} />; }
 
+// ── Üstten geçen engel (EĞİLEREK altından geçilir) ────────────────────────────
+// Kiriş alt yüzü at başı hizasında; eğilmeden (veya zıplayarak) geçmek çarpma.
+function OverheadGate({ post = '#8a6a44', beam = '#a5825a', glow = null }) {
+  const beamMat = glow
+    ? { color: beam, emissive: glow, emissiveIntensity: 1.2, roughness: 0.4 }
+    : { color: beam, roughness: 0.8 };
+  return (
+    <group>
+      {[-1.6, 1.6].map((x) => (
+        <mesh key={x} position={[x, 0.95, 0]} castShadow>
+          <boxGeometry args={[0.22, 1.9, 0.22]} />
+          <meshStandardMaterial color={post} roughness={0.85} />
+        </mesh>
+      ))}
+      <mesh position={[0, 1.72, 0]} castShadow>
+        <boxGeometry args={[3.5, 0.34, 0.34]} />
+        <meshStandardMaterial {...beamMat} />
+      </mesh>
+    </group>
+  );
+}
+function OverheadFarm()     { return <OverheadGate post="#7a5a34" beam="#a5825a" />; }
+function OverheadCity()     { return <OverheadGate post="#666" beam="#d8b400" />; }
+function OverheadDesert()   { return <OverheadGate post="#8a4a20" beam="#a05a28" />; }
+function OverheadSpace()    { return <OverheadGate post="#556" beam="#66ccff" glow="#2288ff" />; }
+function OverheadMedieval() { return <OverheadGate post="#7a7a7a" beam="#909090" />; }
+
+// Tip → tür: 'overhead' = altından eğilerek geçilir; diğerleri zemin engeli
+const KIND_MAP = new Map([
+  [OverheadFarm, 'overhead'], [OverheadCity, 'overhead'], [OverheadDesert, 'overhead'],
+  [OverheadSpace, 'overhead'], [OverheadMedieval, 'overhead'],
+]);
+export function getKind(TypeFn) { return KIND_MAP.get(TypeFn) ?? 'ground'; }
+
 // ── Engel tipi listeleri ──────────────────────────────────────────────────────
 const TYPES_FARM = [
   Barrel, HayBale, LogPile,
   Barrel, HayBale, LogPile,
-  Barrel, LogPile,
+  Barrel, LogPile, OverheadFarm, OverheadFarm,
 ];
 const TYPES_CITY = [
   CityCar, CityTaxi, CityPolice, CityDump,
-  CityCar, CityTaxi, CityPolice, CityDump,
+  CityCar, CityTaxi, CityPolice, CityDump, OverheadCity, OverheadCity,
 ];
 const TYPES_DESERT = [
   // Küçük kısa kaktüs kaldırıldı — yalnızca uzun kaktüs + büyük kayalar
   DesertCactusTall, DesertRockA, DesertRockB, DesertRockC,
-  DesertCactusTall, DesertRockA, DesertRockB, DesertRockC,
+  DesertCactusTall, DesertRockA, DesertRockB, DesertRockC, OverheadDesert, OverheadDesert,
 ];
 const TYPES_SPACE = [
   SpaceBarrels, SpaceRover, SpaceMeteor, SpaceMeteorDet,
   SpacePlatLow, SpaceRockA, SpaceRockB,
-  SpaceBarrels, SpaceRover, SpaceMeteor,
+  SpaceBarrels, SpaceRover, SpaceMeteor, OverheadSpace, OverheadSpace,
 ];
 const TYPES_MEDIEVAL = [
   MedWell, MedRocks, MedRocksSm, MedTreeA, MedTreeB, MedFarm,
-  MedRocks, MedTreeA, MedRocksSm, MedTreeB,
+  MedRocks, MedTreeA, MedRocksSm, MedTreeB, OverheadMedieval, OverheadMedieval,
 ];
 
 // ── Tip → hitbox [dx, dz] eşlemesi (function ref, minification-safe) ──────────
@@ -280,7 +314,11 @@ const _setMedieval = () => {
   HITBOX_MAP.set(MedTreeB,   [0.90, 0.90]);
   HITBOX_MAP.set(MedFarm,    [1.50, 1.50]);
 };
-_setFarm(); _setCity(); _setDesert(); _setSpace(); _setMedieval();
+const _setOverhead = () => {
+  [OverheadFarm, OverheadCity, OverheadDesert, OverheadSpace, OverheadMedieval]
+    .forEach(T => HITBOX_MAP.set(T, [1.70, 0.45]));
+};
+_setFarm(); _setCity(); _setDesert(); _setSpace(); _setMedieval(); _setOverhead();
 export function getHitbox(TypeFnOrName) {
   if (typeof TypeFnOrName === 'function') return HITBOX_MAP.get(TypeFnOrName) ?? [1.00, 1.00];
   return [1.00, 1.00];
@@ -351,6 +389,11 @@ export default function ObstacleSpawner() {
     poolRef.current.forEach((obs) => {
       if (!obs.active) return;
       obs.z += speed * delta;
+      // Hareketli engel: şeritler arasında yanal salınım (zamanlamayla geçilir)
+      if (obs.mover) {
+        obs.movT = (obs.movT ?? 0) + delta;
+        obs.x = Math.max(-4, Math.min(4, obs.baseX + Math.sin(obs.movT * 1.7 + obs.movPhase) * 4));
+      }
       rbRefs.current[obs.id]?.setTranslation({ x: obs.x, y: 0.15, z: obs.z }, true);
       upsertObstacle(obs.id, obs.x, obs.z);
       if (obs.z > RECYCLE_Z) {
@@ -385,6 +428,13 @@ export default function ObstacleSpawner() {
       slot.typeIdx   = typeIdx;
       slot.Type      = TypeFn;
       slot.TypeFn    = TypeFn;
+      // Hareketli engel: yalnızca TEK şeritli dalgalarda, yüksek hızda, zemin
+      // engellerinde — %30 şans. Salınarak şerit değiştirir (dinamiklik).
+      slot.mover = pattern.length === 1 && speed > 24 &&
+                   getKind(TypeFn) === 'ground' && Math.random() < 0.30;
+      slot.baseX    = slot.x;
+      slot.movPhase = Math.random() * Math.PI * 2;
+      slot.movT     = 0;
       slot.active    = true;
       upsertObstacle(slot.id, slot.x, slot.z, TypeFn);   // position BEFORE active=true
       setObstacleActive(slot.id, true);

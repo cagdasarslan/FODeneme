@@ -18,7 +18,13 @@ import {
   AD_DAILY_CARROTS,
   AD_DAILY_MAX,
   AD_UPGRADE_DISCOUNT,
+  COMBO_WINDOW_MS,
+  COMBO_PER_STEP,
+  COMBO_MAX_MULT,
+  STUMBLE_WINDOW_MS,
 } from '@/constants/game';
+import { ACHIEVEMENTS } from '@/constants/achievements';
+import { haptic } from '@/utils/haptics';
 import {
   startGuestSession,
   fetchMyHighScore,
@@ -72,6 +78,7 @@ function saveDaily(s) {
     streakDay: s.streakDay, lastClaimDate: s.lastClaimDate,
     statsDate: s.statsDate, dailyStats: s.dailyStats, missionClaimed: s.missionClaimed,
   }));
+  localStorage.setItem('life_v1', JSON.stringify(s.lifeStats));
 }
 let _dailySaveTimer = null;
 function scheduleDailySave(get) {
@@ -103,6 +110,10 @@ const useGameStore = create(
     // ── Günlük sistem (giriş serisi + görevler) ───────────────────────────────
     ...loadDaily(),
 
+    // ── Ömür-boyu istatistikler + başarımlar ──────────────────────────────────
+    lifeStats: JSON.parse(localStorage.getItem('life_v1') ?? '{"distance":0,"jumps":0,"jumpover":0,"runs":0,"closecall":0}'),
+    achClaimed: JSON.parse(localStorage.getItem('achClaimed') ?? '[]'),
+
     // ── Live run state ────────────────────────────────────────────────────────
     /** @type {GamePhase} */
     phase: 'idle',
@@ -113,6 +124,14 @@ const useGameStore = create(
     runId: 0,
     reviveId: 0,        // her devam-et (revive) işleminde artar → at sıfırlanır
     reviveCount: 0,     // bu koşuda kaç kez devam edildi (maliyet 3^reviveCount)
+    // Combo (art arda makas / engel atlama → skor çarpanı x1..x4)
+    combo: 0,
+    comboExpire: 0,
+    comboMult: 1,
+    // Tökezleme (ilk çarpma affedilir; pencere içinde ikincisi öldürür)
+    stumbleUntil: 0,
+    stumbleId: 0,
+    stumbleActive: false,
     runCarrots: 0,      // bu koşuda toplanan havuç (oyun sonu 2x için)
     carrotsDoubled: false, // oyun sonu havuç katlama kullanıldı mı
     startBoost: false,  // sonraki koşuya boost (mıknatıs) ile başla
@@ -212,6 +231,8 @@ const useGameStore = create(
         startBoost: false,
         adrenalinBoosting: false,
         adrenalinBoostTimer: 0,
+        combo: 0, comboExpire: 0, comboMult: 1,
+        stumbleUntil: 0, stumbleActive: false,
       })),
 
     pauseRun: () => set({ phase: 'paused' }),
@@ -288,11 +309,20 @@ const useGameStore = create(
         ? { magnetTimer: Math.max(0, magnetTimer - delta), magnetActive: magnetTimer - delta > 0 }
         : {};
 
+      // Combo: pencere doldu mu → sıfırla; çarpanı türet
+      const now = Date.now();
+      let combo = get().combo;
+      if (combo > 0 && now > get().comboExpire) combo = 0;
+      const comboMult = 1 + Math.min(COMBO_MAX_MULT - 1, Math.floor(combo / COMBO_PER_STEP));
+
       set({
         speed: newSpeed,
         distance: distance + traveled,
-        score: score + traveled * SCORE_PER_METER * scoreMult,
+        score: score + traveled * SCORE_PER_METER * scoreMult * comboMult,
         adrenaline: newAdrenaline,
+        combo,
+        comboMult,
+        stumbleActive: now < get().stumbleUntil,
         ...magnetUpdate,
         ...boostUpdate,
       });
@@ -302,10 +332,17 @@ const useGameStore = create(
     // Event actions
     // =========================================================================
 
+    // Combo artırıcı: art arda riskli aksiyonlar skor çarpanını yükseltir
+    _bumpCombo: () => {
+      const combo = get().combo + 1;
+      set({ combo, comboExpire: Date.now() + COMBO_WINDOW_MS });
+    },
+
     registerCloseCall: () => {
       const { phase, adrenaline } = get();
       if (phase !== 'playing') return;
       get().bumpDaily('closecall', 1);
+      get()._bumpCombo();
       set({
         adrenaline: Math.min(adrenaline + ADRENALINE_CLOSE_CALL_GAIN, ADRENALINE_MAX),
       });
@@ -315,15 +352,47 @@ const useGameStore = create(
       const { phase, adrenaline } = get();
       if (phase !== 'playing') return;
       get().bumpDaily('jumpover', 1);
+      get()._bumpCombo();
+      haptic.light();
       set({
         adrenaline: Math.min(adrenaline + ADRENALINE_JUMP_GAIN, ADRENALINE_MAX),
       });
     },
 
-    // Çarpışma → önce "devam et" teklifi göster (gameover'ı ertele)
+    // Üst engelin altından EĞİLEREK geçme ödülü
+    registerSlideUnder: () => {
+      const { phase, adrenaline } = get();
+      if (phase !== 'playing') return;
+      get()._bumpCombo();
+      haptic.light();
+      sfx.collect();
+      set({
+        adrenaline: Math.min(adrenaline + ADRENALINE_JUMP_GAIN, ADRENALINE_MAX),
+      });
+    },
+
+    // Çarpışma → TÖKEZLEME sistemi (piyasa runner'ları gibi affedici):
+    // İlk çarpma = tökezle (hız yarıya düşer, 15sn tehlike penceresi).
+    // Pencere içinde ikinci çarpma = gerçek çarpış → "devam et" ekranı.
     registerCollision: () => {
-      const { phase } = get();
-      if (phase === 'playing') { sfx.crash(); set({ phase: 'crashed' }); }
+      const s = get();
+      if (s.phase !== 'playing') return;
+      const now = Date.now();
+      if (now < s.stumbleUntil) {
+        sfx.crash();
+        haptic.heavy();
+        set({ phase: 'crashed' });
+      } else {
+        sfx.crash();
+        haptic.heavy();
+        set({
+          stumbleUntil: now + STUMBLE_WINDOW_MS,
+          stumbleId: s.stumbleId + 1,
+          stumbleActive: true,
+          speed: Math.max(INITIAL_SPEED, s.speed * 0.55), // tökezleme: yavaşla
+          combo: 0, comboMult: 1,                          // combo kırılır
+        });
+      }
     },
 
     // Mevcut devam-et maliyetleri (reviveCount'a göre kümülatif 3 kat)
@@ -344,6 +413,8 @@ const useGameStore = create(
         adrenaline: 0,
         adrenalinBoosting: false,
         adrenalinBoostTimer: 0,
+        combo: 0, comboExpire: 0, comboMult: 1,
+        stumbleUntil: 0, stumbleActive: false,
       }));
     },
 
@@ -535,6 +606,7 @@ const useGameStore = create(
       set(next);
       saveDaily(get());
       sfx.powerup();
+      haptic.success();
       return reward;
     },
 
@@ -561,6 +633,7 @@ const useGameStore = create(
       set({ carrots: newCarrots, missionClaimed });
       saveDaily(get());
       sfx.collect();
+      haptic.success();
       return m.reward;
     },
 
@@ -568,9 +641,42 @@ const useGameStore = create(
     bumpDaily: (key, n = 1) => {
       const s = get();
       const dailyStats = { ...s.dailyStats, [key]: (s.dailyStats[key] ?? 0) + n };
-      set({ dailyStats });
+      // Ömür-boyu istatistikler de birlikte artar (başarımlar bunları izler)
+      const lifeStats = { ...s.lifeStats, [key]: (s.lifeStats[key] ?? 0) + n };
+      set({ dailyStats, lifeStats });
       // sık çağrılabilir; kaydı debounce et (havuç gibi)
       scheduleDailySave(get);
+    },
+
+    // =========================================================================
+    // Başarımlar (achievements) — kalıcı hedefler, havuç ödülü
+    // =========================================================================
+
+    getAchievements: () => {
+      const s = get();
+      const maxhs = Math.max(
+        s.highScoreMap1 ?? 0, s.highScoreMap2 ?? 0, s.highScoreMap3 ?? 0,
+        s.highScoreMap4 ?? 0, s.highScoreMap5 ?? 0
+      );
+      return ACHIEVEMENTS.map((a) => {
+        const raw = a.stat === 'maxhs' ? maxhs : (s.lifeStats[a.stat] ?? 0);
+        const progress = Math.min(Math.floor(raw), a.target);
+        return { ...a, progress, done: progress >= a.target, claimed: s.achClaimed.includes(a.id) };
+      });
+    },
+
+    claimAchievement: (id) => {
+      const s = get();
+      const a = get().getAchievements().find((x) => x.id === id);
+      if (!a || !a.done || a.claimed) return 0;
+      const carrots = s.carrots + a.reward;
+      const achClaimed = [...s.achClaimed, id];
+      localStorage.setItem('carrots', String(carrots));
+      localStorage.setItem('achClaimed', JSON.stringify(achClaimed));
+      set({ carrots, achClaimed });
+      sfx.powerup();
+      haptic.success();
+      return a.reward;
     },
 
     // =========================================================================

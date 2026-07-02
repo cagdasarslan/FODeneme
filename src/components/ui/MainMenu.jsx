@@ -10,10 +10,50 @@ import DailyReward from '@/components/ui/DailyReward';
 import Missions from '@/components/ui/Missions';
 import AdButton from '@/components/ui/AdButton';
 import { showBanner, hideBanner } from '@/services/AdService';
-import { AD_DAILY_CARROTS, AD_DAILY_MAX } from '@/constants/game';
+import { AD_DAILY_CARROTS, AD_DAILY_MAX, MAP_UNLOCKS } from '@/constants/game';
 import { Capacitor } from '@capacitor/core';
 
 const isNative = Capacitor.getPlatform() !== 'web';
+
+// Oyun sonu skoru: 0'dan hedefe hızla sayarak dolar (ease-out)
+function AnimatedScore({ value }) {
+  const [disp, setDisp] = useState(0);
+  useEffect(() => {
+    const target = Math.floor(value);
+    if (target <= 0) { setDisp(0); return; }
+    const t0 = performance.now();
+    const DUR = 800;
+    let raf;
+    const step = (t) => {
+      const p = Math.min(1, (t - t0) / DUR);
+      setDisp(Math.floor(target * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{disp.toLocaleString()}</>;
+}
+
+// Yeni rekor konfetisi — hafif, saf CSS animasyonlu emoji parçacıkları
+const CONFETTI = ['🎉', '⭐', '🥕', '🏆', '✨'];
+function Confetti() {
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      {Array.from({ length: 18 }, (_, i) => (
+        <span key={i} style={{
+          position: 'absolute', top: -20, left: `${(i * 53) % 100}%`,
+          fontSize: 14 + (i % 3) * 6,
+          animation: `confFall ${1.6 + (i % 5) * 0.35}s ${(i % 7) * 0.18}s ease-in infinite`,
+        }}>{CONFETTI[i % CONFETTI.length]}</span>
+      ))}
+      <style>{`@keyframes confFall {
+        0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(340px) rotate(300deg); opacity: 0; }
+      }`}</style>
+    </div>
+  );
+}
 
 function StatRow({ label, value, color }) {
   return (
@@ -154,14 +194,15 @@ export default function MainMenu() {
 
           {/* Oyun bitti ekranı */}
           {isGameOver && (
-            <div style={styles.resultsWrap}>
+            <div style={{ ...styles.resultsWrap, position: 'relative' }}>
+              {isNewRecord && <Confetti />}
               <div style={styles.gameOverText}>GAME OVER</div>
               {isNewRecord && <div style={styles.newRecord}>🏆 YENİ REKOR!</div>}
               <div style={styles.statsCard}>
                 <div style={{ ...styles.mapBadge, borderColor: mapInfo.color, color: mapInfo.color }}>
                   {mapInfo.emoji} {mapInfo.name}
                 </div>
-                <StatRow label="SKOR" value={Math.floor(score).toLocaleString()} color="#fff" />
+                <StatRow label="SKOR" value={<AnimatedScore value={score} />} color="#fff" />
                 <StatRow label="BU HARİTA REKORU" value={Math.floor(mapHs).toLocaleString()} color={mapInfo.color} />
                 <StatRow label="HAVUÇ" value={`🥕 ${carrots}`} color="#ffd700" />
               </div>
@@ -184,25 +225,33 @@ export default function MainMenu() {
               { id: 3, emoji: '🌵', name: 'ÇÖLLER',        sub: 'Çöl Koşusu',        color: '#d4a020', rgb: '212,160,32', hs: highScoreMap3 },
               { id: 4, emoji: '🚀', name: 'UZAY KOLONİSİ', sub: "Mars'ta At Yarışı", color: '#aa44ff', rgb: '170,68,255', hs: highScoreMap4 ?? 0 },
               { id: 5, emoji: '🏰', name: 'ORTAÇAĞ KÖYÜ',  sub: 'Köy Yolu',          color: '#c8843c', rgb: '200,132,60',  hs: highScoreMap5 ?? 0 },
-            ].map(m => (
-              <div
-                key={m.id}
-                style={{
-                  ...styles.mapCard,
-                  borderColor: mapId === m.id ? m.color : 'rgba(255,255,255,0.1)',
-                  background:  mapId === m.id ? `rgba(${m.rgb},0.13)` : 'rgba(255,255,255,0.04)',
-                  boxShadow: mapId === m.id ? `0 0 12px rgba(${m.rgb},0.3)` : 'none',
-                }}
-                onClick={() => setMapId(m.id)}
-              >
-                <span style={styles.mapEmoji}>{m.emoji}</span>
-                <span style={{ ...styles.mapName, color: mapId === m.id ? m.color : '#fff' }}>{m.name}</span>
-                <span style={styles.mapSub}>{m.sub}</span>
-                <span style={{ ...styles.mapHsChip, color: mapId === m.id ? m.color : 'rgba(255,255,255,0.3)' }}>
-                  ⬡ {Math.floor(m.hs).toLocaleString()}
-                </span>
-              </div>
-            ))}
+            ].map(m => {
+              // Harita kilidi: herhangi bir haritadaki en iyi skor eşiği geçmeli
+              const maxHS = Math.max(highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4 ?? 0, highScoreMap5 ?? 0);
+              const need  = MAP_UNLOCKS[m.id] ?? 0;
+              const locked = need > 0 && maxHS < need;
+              return (
+                <div
+                  key={m.id}
+                  style={{
+                    ...styles.mapCard,
+                    borderColor: mapId === m.id ? m.color : 'rgba(255,255,255,0.1)',
+                    background:  mapId === m.id ? `rgba(${m.rgb},0.13)` : 'rgba(255,255,255,0.04)',
+                    boxShadow: mapId === m.id ? `0 0 12px rgba(${m.rgb},0.3)` : 'none',
+                    opacity: locked ? 0.45 : 1,
+                    cursor: locked ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() => { if (!locked) setMapId(m.id); }}
+                >
+                  <span style={styles.mapEmoji}>{locked ? '🔒' : m.emoji}</span>
+                  <span style={{ ...styles.mapName, color: mapId === m.id ? m.color : '#fff' }}>{m.name}</span>
+                  <span style={styles.mapSub}>{m.sub}</span>
+                  <span style={{ ...styles.mapHsChip, color: locked ? '#ff8866' : mapId === m.id ? m.color : 'rgba(255,255,255,0.3)' }}>
+                    {locked ? `🔒 ${need.toLocaleString()} skor gerekli` : `⬡ ${Math.floor(m.hs).toLocaleString()}`}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           {(mapId === 1 || mapId === 2) && (

@@ -10,8 +10,9 @@ import useGameStore from '@/store/useGameStore';
 import HorseErrorBoundary from './HorseErrorBoundary';
 import { obstacleRegistry } from '@/utils/obstacleRegistry';
 import { horseRef } from '@/utils/horseRef';
-import { HALF_TRACK, HORSE_LATERAL_SPEED, LANES, COLLISION_DX, COLLISION_DZ, CLOSE_CALL_RADIUS } from '@/constants/game';
-import { getHitbox } from '@/components/obstacles/ObstacleSpawner';
+import { HALF_TRACK, HORSE_LATERAL_SPEED, LANES, COLLISION_DX, COLLISION_DZ, CLOSE_CALL_RADIUS, SLIDE_DURATION_MS, SPACE_GRAVITY_MULT, SPACE_JUMP_MULT } from '@/constants/game';
+import { getHitbox, getKind } from '@/components/obstacles/ObstacleSpawner';
+import { haptic } from '@/utils/haptics';
 import { CHARACTERS } from '@/constants/characters';
 import { HORSES } from '@/constants/horses';
 
@@ -334,7 +335,21 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       reviveId: s.reviveId,
     })
   );
+  const mapId     = useGameStore((s) => s.mapId);
+  const stumbleId = useGameStore((s) => s.stumbleId);
   const jumpedRef = useRef(new Set()); // bu zıplamada üzerinden atlanan engeller
+
+  // ── Eğilme (slide) durumu ──────────────────────────────────────────────────
+  const crouchRef       = useRef();       // model+jokey sarmalayıcı (çömelme görseli)
+  const slideUntilRef   = useRef(0);      // performance.now() < bu → eğiliyor
+  const slidePressedRef = useRef(false);
+  const slidUnderRef    = useRef(new Set()); // altından kayılan üst engeller (tek ödül)
+
+  // Tökezleme: store stumbleId artınca kısa dokunulmazlık ver (ikinci çarpma
+  // penceresi içinde tekrar aynı engele takılmasın)
+  useEffect(() => {
+    if (stumbleId > 0) graceRef.current = Math.max(graceRef.current, 1.2);
+  }, [stumbleId]);
 
   // Yeni koşu başlayınca ata başlangıç pozisyonuna dön
   useEffect(() => {
@@ -349,6 +364,8 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     prevLeftRef.current  = false;
     prevRightRef.current = false;
     jumpedRef.current.clear();
+    slideUntilRef.current = 0;
+    slidUnderRef.current.clear();
   }, [runId]);
 
   // Devam et (revive): skoru koruyarak atı diriltir — pozisyon sıfırlanır ve
@@ -389,10 +406,24 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     const clampedX = THREE.MathUtils.clamp(newX, -HALF_TRACK, HALF_TRACK);
     const vx = (clampedX - pos.x) / Math.max(delta, 0.001);
 
-    // ── Zıplama (zıplama çarpanı) ──────────────────────────────────────────
-    const jumpMult  = (horseVariant.baseJumpMult ?? 1.0) * (1 + horseUps.jumpLevel * 0.06);
+    // ── Eğilme (slide) — üst engellerin altından geçmek için ───────────────
+    const nowMs   = performance.now();
+    const sliding = nowMs < slideUntilRef.current;
+    const wantsSlide = controls.current.slide;
+    if (wantsSlide && !slidePressedRef.current && onGroundRef.current && !sliding) {
+      slideUntilRef.current = nowMs + SLIDE_DURATION_MS;
+      sfx.click();
+      haptic.light();
+    }
+    slidePressedRef.current = wantsSlide;
+
+    // ── Zıplama (zıplama çarpanı; UZAY'da düşük yerçekimi = süzülen zıplama) ─
+    const inSpace   = mapId === 4;
+    const jumpMult  = (horseVariant.baseJumpMult ?? 1.0) * (1 + horseUps.jumpLevel * 0.06)
+                    * (inSpace ? SPACE_JUMP_MULT : 1);
+    const gravity   = JUMP_GRAVITY * (inSpace ? SPACE_GRAVITY_MULT : 1);
     const wantsJump = controls.current.jump;
-    if (wantsJump && !jumpPressedRef.current && onGroundRef.current) {
+    if (wantsJump && !jumpPressedRef.current && onGroundRef.current && !sliding) {
       velYRef.current     = JUMP_FORCE * jumpMult;
       onGroundRef.current = false;
       sfx.jump();
@@ -402,13 +433,21 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
 
     let newY = pos.y;
     if (!onGroundRef.current) {
-      velYRef.current += JUMP_GRAVITY * delta;
+      velYRef.current += gravity * delta;
       newY += velYRef.current * delta;
       if (newY <= GROUND_Y) {
         newY            = GROUND_Y;
         velYRef.current = 0;
         onGroundRef.current = true;
       }
+    }
+
+    // Çömelme görseli: model+jokey sarmalayıcısını yumuşakça bastır
+    if (crouchRef.current) {
+      const tY = sliding ? 0.55 : 1;
+      const tP = sliding ? -0.35 : 0;
+      crouchRef.current.scale.y    = THREE.MathUtils.lerp(crouchRef.current.scale.y, tY, 14 * delta);
+      crouchRef.current.position.y = THREE.MathUtils.lerp(crouchRef.current.position.y, tP, 14 * delta);
     }
 
     rb.setTranslation({ x: clampedX, y: newY, z: pos.z }, true);
@@ -425,31 +464,53 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       ref.rotation.x = onGroundRef.current ? 0 : THREE.MathUtils.clamp(-velYRef.current * 0.015, -0.25, 0.2);
     }
 
-    // ── Engel üzerinden atlama → adrenalin ödülü ───────────────────────────
-    // Yalnızca engeli temizleyecek kadar yüksekteyken say (alçak hop ödüllenmez)
+    graceRef.current     = Math.max(0, graceRef.current - delta);
+    closeCoolRef.current = Math.max(0, closeCoolRef.current - delta);
+
+    // ── Engel üzerinden atlama → adrenalin ödülü (yalnız ZEMİN engelleri) ──
     if (!onGroundRef.current && newY > GROUND_Y + 1.0) {
       for (const [id, obs] of obstacleRegistry) {
         if (!obs.active || jumpedRef.current.has(id)) continue;
+        if (getKind(obs.TypeFn) === 'overhead') continue;
         const [hbDx, hbDz] = getHitbox(obs.TypeFn);
-        // At havadayken bir engelin tam üzerinden geçiyorsa (x ve z hizalı)
         if (Math.abs(pos.x - obs.x) < hbDx && Math.abs(pos.z - obs.z) < hbDz) {
           jumpedRef.current.add(id);
           registerJumpOver();
         }
       }
     } else if (onGroundRef.current && jumpedRef.current.size) {
-      // Yere inince sayaç sıfırlanır (sonraki zıplamada tekrar ödül verilebilir)
       jumpedRef.current.clear();
     }
 
-    // ── Çarpışma — havadayken atla ─────────────────────────────────────────
-    if (!onGroundRef.current && newY > GROUND_Y + 1.0) return;
+    // ── ÜST ENGELLER: her yükseklikte kontrol — zıplayarak geçilmez! ───────
+    // Eğilerek geçmek serbesttir ve ödül verir.
+    if (graceRef.current <= 0) {
+      for (const [id, obs] of obstacleRegistry) {
+        if (!obs.active || getKind(obs.TypeFn) !== 'overhead') continue;
+        if (obs.z > 2) { slidUnderRef.current.delete(id); continue; } // geçti → işareti temizle (pool id'si yeniden kullanılır)
+        const [hbDx, hbDz] = getHitbox(obs.TypeFn);
+        const dx = Math.abs(pos.x - obs.x);
+        const dz = Math.abs(pos.z - obs.z);
+        if (dx < hbDx && dz < hbDz) {
+          if (sliding) {
+            if (!slidUnderRef.current.has(id)) {
+              slidUnderRef.current.add(id);
+              useGameStore.getState().registerSlideUnder();
+            }
+          } else {
+            registerCollision();
+            return;
+          }
+        }
+      }
+    }
 
-    graceRef.current     = Math.max(0, graceRef.current - delta);
-    closeCoolRef.current = Math.max(0, closeCoolRef.current - delta);
+    // ── Zemin çarpışması — yeterince yüksekteyken atla ─────────────────────
+    if (!onGroundRef.current && newY > GROUND_Y + 1.0) return;
     if (graceRef.current > 0) return;
     for (const [, obs] of obstacleRegistry) {
       if (!obs.active) continue;
+      if (getKind(obs.TypeFn) === 'overhead') continue; // yukarıda ele alındı
       const [hbDx, hbDz] = getHitbox(obs.TypeFn);
       const dx = Math.abs(pos.x - obs.x);
       const dz = Math.abs(pos.z - obs.z);
@@ -470,15 +531,18 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     >
       <CapsuleCollider args={[0.5, 0.55]} />
 
-      <HorseErrorBoundary
-        fallback={<HorsePlaceholder groupRef={placeholderRef} />}
-      >
-        <Suspense fallback={<HorsePlaceholder groupRef={placeholderRef} />}>
-          <HorseModel modelPath={modelPath} scale={scale} groupRef={modelGroupRef} horseVariant={horseVariant} />
-        </Suspense>
-      </HorseErrorBoundary>
+      {/* Çömelme sarmalayıcısı: eğilirken model + jokey birlikte bastırılır */}
+      <group ref={crouchRef}>
+        <HorseErrorBoundary
+          fallback={<HorsePlaceholder groupRef={placeholderRef} />}
+        >
+          <Suspense fallback={<HorsePlaceholder groupRef={placeholderRef} />}>
+            <HorseModel modelPath={modelPath} scale={scale} groupRef={modelGroupRef} horseVariant={horseVariant} />
+          </Suspense>
+        </HorseErrorBoundary>
 
-      <Jockey />
+        <Jockey />
+      </group>
     </RigidBody>
   );
 }

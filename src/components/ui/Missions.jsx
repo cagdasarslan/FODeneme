@@ -7,7 +7,12 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
   const getMissions    = useGameStore(s => s.getMissions);
   const claimMission   = useGameStore(s => s.claimMission);
   const canClaimStreak = useGameStore(s => s.canClaimStreak)();
+  const lifeStats      = useGameStore(s => s.lifeStats);
+  const achClaimed     = useGameStore(s => s.achClaimed);
+  const getAchievements   = useGameStore(s => s.getAchievements);
+  const claimAchievement  = useGameStore(s => s.claimAchievement);
   const missions = getMissions(); // dailyCarrots/missionClaimed değişince yenilenir
+  const achievements = getAchievements(); // lifeStats/achClaimed değişince yenilenir
 
   return (
     <div style={S.modal}>
@@ -38,6 +43,28 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
               <button style={S.claim} onClick={() => claimMission(m.id)}>🥕 {m.reward}</button>
             ) : (
               <span style={S.reward}>🥕 {m.reward}</span>
+            )}
+          </div>
+        ))}
+
+        {/* Başarımlar — kalıcı hedefler */}
+        <div style={{ ...S.sectionLabel, marginTop: 18 }}>BAŞARIMLAR</div>
+        {achievements.map(a => (
+          <div key={a.id} style={S.row}>
+            <span style={{ fontSize: 18 }}>{a.emoji}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={S.label}>{a.label}</div>
+              <div style={S.barBg}>
+                <div style={{ ...S.barFill, width: `${(a.progress / a.target) * 100}%`, background: a.done ? '#33ff99' : '#8899ff' }} />
+              </div>
+              <div style={S.prog}>{a.progress.toLocaleString()}/{a.target.toLocaleString()}</div>
+            </div>
+            {a.claimed ? (
+              <span style={S.doneTick}>✓</span>
+            ) : a.done ? (
+              <button style={S.claim} onClick={() => claimAchievement(a.id)}>🥕 {a.reward}</button>
+            ) : (
+              <span style={S.reward}>🥕 {a.reward}</span>
             )}
           </div>
         ))}
