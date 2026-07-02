@@ -102,6 +102,17 @@ export default function MainMenu() {
   const [showDaily, setShowDaily] = useState(false);
   const [showMissions, setShowMissions] = useState(false);
 
+  // İlk girişte TEK SEFERLİK kullanıcı adı — liderlikte bu adla görünür
+  const [showNameModal, setShowNameModal] = useState(() => !localStorage.getItem('nameSet'));
+  const [nameInput, setNameInput] = useState(() => localStorage.getItem('playerName') || '');
+  const saveName = () => {
+    const n = nameInput.trim();
+    if (n.length < 3) return;
+    localStorage.setItem('playerName', n.slice(0, 16));
+    localStorage.setItem('nameSet', '1');
+    setShowNameModal(false);
+  };
+
   const {
     phase, sessionReady, sessionError, score, carrots,
     startRun, openGarage, selectedCharacterId, selectedHorseId,
@@ -224,6 +235,10 @@ export default function MainMenu() {
             <button style={styles.dailyIconBtn} onClick={() => setShowDaily(true)}>
               🎁
               {canClaimStreak && <span style={styles.dailyDot} />}
+            </button>
+            {/* Liderlik — ana sayfadan hızlı erişim */}
+            <button style={styles.dailyIconBtn} onClick={() => setShowLeaderboard(true)}>
+              🏆
             </button>
           </div>
 
@@ -392,6 +407,34 @@ export default function MainMenu() {
         </div>
       </div>
 
+      {/* Tek seferlik kullanıcı adı onboarding'i */}
+      {showNameModal && (
+        <div style={styles.nameOverlay}>
+          <div style={styles.nameBox}>
+            <div style={{ fontSize: 40, marginBottom: 6 }}>🏇</div>
+            <div style={styles.nameTitle}>KULLANICI ADINI SEÇ</div>
+            <div style={styles.nameSub}>Liderlik tablosunda bu adla görüneceksin</div>
+            <input
+              autoFocus
+              value={nameInput}
+              maxLength={16}
+              placeholder="ör. ŞimşekBinici"
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') saveName(); }}
+              style={styles.nameInput}
+            />
+            <div style={styles.nameHint}>{nameInput.trim().length < 3 ? 'En az 3 karakter' : `${nameInput.trim().length}/16`}</div>
+            <button
+              style={{ ...styles.nameBtn, opacity: nameInput.trim().length < 3 ? 0.4 : 1 }}
+              disabled={nameInput.trim().length < 3}
+              onClick={saveName}
+            >
+              BAŞLA 🏁
+            </button>
+          </div>
+        </div>
+      )}
+
       {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
       {showGuide && <HowToPlay onClose={() => setShowGuide(false)} />}
       {showShop && <CarrotShop onClose={() => setShowShop(false)} />}
@@ -447,6 +490,31 @@ const styles = {
   topIcons: { position: 'absolute', top: 10, right: 12, display: 'flex', gap: 6, zIndex: 2 },
   iconBtn: { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, width: 34, height: 34, fontSize: 16, cursor: 'pointer' },
   topRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  nameOverlay: {
+    position: 'fixed', inset: 0, zIndex: 15000,
+    background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+  },
+  nameBox: {
+    width: '100%', maxWidth: 340, textAlign: 'center',
+    background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))',
+    border: '1px solid rgba(255,215,0,0.35)', borderRadius: 18, padding: '26px 22px',
+    fontFamily: 'monospace',
+  },
+  nameTitle: { fontSize: 17, fontWeight: 800, letterSpacing: 2, color: '#fff' },
+  nameSub: { fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 6, marginBottom: 16 },
+  nameInput: {
+    width: '100%', boxSizing: 'border-box', padding: '13px 14px', fontSize: 15,
+    fontFamily: 'monospace', fontWeight: 700, textAlign: 'center',
+    background: 'rgba(0,0,0,0.45)', color: '#ffd700',
+    border: '1px solid rgba(255,215,0,0.4)', borderRadius: 10, outline: 'none',
+  },
+  nameHint: { fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 6 },
+  nameBtn: {
+    marginTop: 14, width: '100%', padding: 14, borderRadius: 12, border: 'none',
+    fontFamily: 'monospace', fontWeight: 800, letterSpacing: 2, fontSize: 14,
+    color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', cursor: 'pointer',
+  },
   eventBadge: {
     fontFamily: 'monospace', fontSize: 11, fontWeight: 800, letterSpacing: 2,
     border: '1px solid', borderRadius: 20, padding: '6px 16px',

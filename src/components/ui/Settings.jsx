@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { sfx } from '@/utils/audio';
 
@@ -9,6 +10,17 @@ export default function Settings({ onClose }) {
   const setSoundOn = useGameStore(s => s.setSoundOn);
   const setMusicOn = useGameStore(s => s.setMusicOn);
   const setGraphics = useGameStore(s => s.setGraphics);
+
+  // Kullanıcı adı (liderlikte görünür)
+  const [pname, setPname] = useState(() => localStorage.getItem('playerName') || '');
+  const savePname = () => {
+    const n = pname.trim();
+    if (n.length >= 3) {
+      localStorage.setItem('playerName', n.slice(0, 16));
+      localStorage.setItem('nameSet', '1');
+      sfx.click();
+    }
+  };
 
   return (
     <div style={S.modal}>
@@ -64,6 +76,25 @@ export default function Settings({ onClose }) {
           </div>
         </div>
 
+        {/* Kullanıcı adı */}
+        <div style={{ ...S.row, flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
+          <span style={S.label}>🏷️ Kullanıcı Adı <span style={{ fontSize: 9, opacity: 0.5 }}>(liderlikte görünür)</span></span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              value={pname}
+              maxLength={16}
+              onChange={e => setPname(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') savePname(); }}
+              style={S.nameInput}
+            />
+            <button
+              style={{ ...S.segBtn, ...S.segOn, minWidth: 70, opacity: pname.trim().length < 3 ? 0.4 : 1 }}
+              disabled={pname.trim().length < 3}
+              onClick={savePname}
+            >KAYDET</button>
+          </div>
+        </div>
+
         <div style={S.note}>
           DÜŞÜK görüntü: gölgeler kapalı, daha akıcı (yavaş telefonlar için).
         </div>
@@ -95,5 +126,10 @@ const S = {
     cursor: 'pointer', fontFamily: 'monospace', transition: 'all 0.15s',
   },
   segOn: { background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', color: '#0a0a14' },
+  nameInput: {
+    flex: 1, minWidth: 0, padding: '9px 12px', fontSize: 13, fontFamily: 'monospace',
+    fontWeight: 700, background: 'rgba(0,0,0,0.4)', color: '#ffd700',
+    border: '1px solid rgba(255,215,0,0.35)', borderRadius: 8, outline: 'none',
+  },
   note: { fontSize: 9, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 6, lineHeight: 1.5 },
 };
