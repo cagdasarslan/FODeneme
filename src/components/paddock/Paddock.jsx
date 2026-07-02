@@ -26,7 +26,7 @@ const MODEL_PATH = '/assets/models/horse.glb';
 export const paddockInput = { dx: 0, dz: 0, mag: 0, jump: false };
 
 // ── Materyaller / geometriler ────────────────────────────────────────────────
-const sandMat  = new THREE.MeshStandardMaterial({ color: '#e2c073', roughness: 1 });
+const sandMat  = new THREE.MeshStandardMaterial({ color: '#c49a4e', roughness: 1 });
 const grassMat = new THREE.MeshStandardMaterial({ color: '#4e8040', roughness: 1 });
 const postMat  = new THREE.MeshStandardMaterial({ color: '#8a6a44', roughness: 0.9 });
 const railMat  = new THREE.MeshStandardMaterial({ color: '#a5825a', roughness: 0.85 });
@@ -128,10 +128,22 @@ function PaddockHorseModel({ variant, animRef }) {
         cur.current = want;
       }
     } else {
+      // Morph model (horse.glb): durunca animasyonu durdur VE morph
+      // etkilerini sıfırla — stop() mixer'ı keser ama son kare değerlerini
+      // mesh'te bırakır; fill(0) atı doğal duruşa (4 ayak yerde) döndürür.
       const a = actions['horse_A_'] ?? actions[names[0]];
       if (a) {
-        if (!a.isRunning()) a.play();
-        a.timeScale = speed === 0 ? 0 : Math.max(0.4, speed / 10);
+        if (speed === 0) {
+          if (a.isRunning()) {
+            a.stop();
+            cloned.current.traverse((o) => {
+              if (o.morphTargetInfluences) o.morphTargetInfluences.fill(0);
+            });
+          }
+        } else {
+          if (!a.isRunning()) a.reset().play();
+          a.timeScale = Math.max(0.4, speed / 10);
+        }
       }
     }
   });
@@ -199,6 +211,22 @@ export default function PaddockScene() {
       while (d >  Math.PI) d -= Math.PI * 2;
       while (d < -Math.PI) d += Math.PI * 2;
       yawRef.current += d * Math.min(1, 10 * delta);
+    }
+
+    // Engel çarpışması: yeterince yükseğe zıplamadıysa (y < 0.45) engellerin
+    // içinden geçilemez — at engel yarıçapının dışına itilir. Zıplayarak
+    // üzerinden geçmek serbest (XP de oradan kazanılıyor).
+    if (yRef.current < 0.45) {
+      const obstacles = useGameStore.getState().paddockObstacles;
+      const R = 1.15;
+      for (const o of obstacles) {
+        const dx = p.x - o.x, dz = p.z - o.z;
+        const d = Math.hypot(dx, dz);
+        if (d < R && d > 0.0001) {
+          p.x = THREE.MathUtils.clamp(o.x + (dx / d) * R, -MOVE_CLAMP, MOVE_CLAMP);
+          p.z = THREE.MathUtils.clamp(o.z + (dz / d) * R, -MOVE_CLAMP, MOVE_CLAMP);
+        }
+      }
     }
 
     // Zıplama

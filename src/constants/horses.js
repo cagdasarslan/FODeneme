@@ -46,9 +46,9 @@ export const HORSES = [
     name: 'PAMUK',
     price: 0,
     bodyColor: '#f2f2f4',
-    maneColor: '#d8d8de',
-    hoofColor: '#9a9aa2',
-    desc: 'Bembeyaz stilize at (gerçek koşu animasyonlu)',
+    maneColor: '#8c8c96',   // gümüş-gri yele/kuyruk
+    hoofColor: '#212126',   // koyu toynak (beyaz atlarda deri/toynak koyudur)
+    desc: 'Bembeyaz at — gümüş yele, koyu toynak',
     accentColor: '#ffffff',
     baseSpeedMult: 1.3,
     baseManeuvMult: 1.2,
@@ -56,6 +56,26 @@ export const HORSES = [
     baseMaxSpeed: 58,
     // Özel iskeletli model (.blend → GLB), kendi "run" animasyonu var
     model: '/assets/models/horses/chestnut_stylized.glb',
+    modelScale: 1.15,
+    modelY: -1.05,
+    animClip: 'run',
+    skeletal: true,
+    noTint: true,
+  },
+  {
+    id: 'ahal_teke',
+    name: 'AHAL TEKE',
+    price: 2000,
+    bodyColor: '#c89b3c',   // metalik altın gövde
+    maneColor: '#141416',   // siyah yele/kuyruk (gerçek buckskin donu)
+    hoofColor: '#141416',   // siyah bacak altları
+    desc: 'Efsanevi altın Ahal Teke — metalik parıltılı',
+    accentColor: '#e8c261',
+    baseSpeedMult: 1.7,
+    baseManeuvMult: 1.3,
+    baseJumpMult: 1.4,
+    baseMaxSpeed: 78,
+    model: '/assets/models/horses/ahal_teke.glb',
     modelScale: 1.15,
     modelY: -1.05,
     animClip: 'run',
