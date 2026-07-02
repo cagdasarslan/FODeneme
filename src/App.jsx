@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import useGameStore from '@/store/useGameStore';
@@ -66,6 +66,38 @@ export default function App() {
   }, [phase, mapId]);
 
   const isPaddock = phase === 'paddock';
+
+  // OTOMATİK KALİTE: YÜKSEK moddayken oyun sırasında FPS düşükse (2 ölçüm
+  // üst üste <22) bir kereliğine DÜŞÜK moda geç ve kullanıcıya bildir.
+  // Kullanıcı ayarı elle değiştirdiyse (gfx_user) asla karışma.
+  const [autoLowMsg, setAutoLowMsg] = useState(false);
+  useEffect(() => {
+    if (graphics !== 'high') return;
+    if (localStorage.getItem('gfx_user') || localStorage.getItem('auto_low')) return;
+    let frames = 0, last = performance.now(), bad = 0, raf;
+    const loop = (t) => {
+      frames++;
+      if (t - last >= 2000) {
+        const fps = frames / ((t - last) / 1000);
+        frames = 0; last = t;
+        if (useGameStore.getState().phase === 'playing') {
+          if (fps < 22) {
+            bad++;
+            if (bad >= 2) {
+              localStorage.setItem('auto_low', '1');
+              useGameStore.getState().setGraphics('low');
+              setAutoLowMsg(true);
+              setTimeout(() => setAutoLowMsg(false), 5000);
+              return; // döngüyü bitir
+            }
+          } else bad = 0;
+        }
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [graphics]);
 
   // Görüntü kalitesi (Ayarlar): low = gölgesiz + düşük dpr, high = tam
   const lowGfx     = graphics === 'low';
@@ -137,6 +169,14 @@ export default function App() {
       <MainMenu />
       <Garage />
       {isPaddock && <PaddockUI />}
+      {/* Otomatik kalite bildirimi */}
+      {autoLowMsg && (
+        <div style={{ position:'fixed', top:14, left:'50%', transform:'translateX(-50%)', zIndex:9500,
+          background:'rgba(0,0,0,0.85)', border:'1px solid rgba(255,215,0,0.5)', color:'#ffd700',
+          fontFamily:'monospace', fontSize:12, fontWeight:700, padding:'10px 16px', borderRadius:10 }}>
+          ⚡ Akıcılık için grafik DÜŞÜK moda alındı (Ayarlar'dan değiştirebilirsin)
+        </div>
+      )}
     </>
   );
 }

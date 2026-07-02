@@ -2,6 +2,11 @@
 // productId'ler Play Console'da BİREBİR aynı olmalı (consumable olarak oluşturun).
 // price alanı yalnızca yedek/gösterim içindir; mağaza açıldığında Play'in
 // yerelleştirilmiş gerçek fiyatı varsa onun yerine geçer.
+// Tek seferlik "Reklamları Kaldır" (NON-CONSUMABLE) — banner tamamen kapanır;
+// ödüllü reklamlar isteğe bağlı oldukları için kalır.
+export const REMOVE_ADS_ID    = 'remove_ads';
+export const REMOVE_ADS_PRICE = '₺59,99';
+
 export const CARROT_PACKAGES = [
   { id: 'carrots_1000',   carrots: 1000,   price: '₺14,99'  },
   { id: 'carrots_2500',   carrots: 2500,   price: '₺34,99'  },

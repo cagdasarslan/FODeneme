@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
+import { getActiveEvent } from '@/constants/events';
 
 const TILE_LENGTH   = 100;
 const TILE_COUNT    = 6;
@@ -124,6 +125,37 @@ function StreetLamps({ seed }) {
   );
 }
 
+// ── Mevsimsel etkinlik dekoru (harita 1-2 banketleri) ─────────────────────────
+const pumpkinMat = new THREE.MeshStandardMaterial({ color: '#ff8c1a', roughness: 0.7, emissive: '#c25500', emissiveIntensity: 0.35 });
+const stemMat    = new THREE.MeshStandardMaterial({ color: '#3a5a20', roughness: 0.9 });
+const hayStackMat= new THREE.MeshStandardMaterial({ color: '#e0b850', roughness: 1 });
+const pumpkinGeo = new THREE.SphereGeometry(0.45, 10, 8);
+const stemGeo    = new THREE.CylinderGeometry(0.05, 0.08, 0.25, 6);
+const hayStackGeo= new THREE.ConeGeometry(0.7, 1.2, 8);
+
+function EventDecor({ seed }) {
+  const ev = getActiveEvent();
+  if (!ev || (ev.id !== 'halloween' && ev.id !== 'harvest')) return null;
+  const sideX = ROAD_WIDTH / 2 + SHOULDER_W / 2; // banket ortası
+  const items = Array.from({ length: 4 }, (_, i) => ({
+    x: (i % 2 === 0 ? -1 : 1) * sideX,
+    z: -TILE_LENGTH / 2 + ((seed * 37 + i * 263) % TILE_LENGTH),
+  }));
+  return (
+    <group>
+      {items.map((p, i) => ev.id === 'halloween' ? (
+        <group key={i} position={[p.x, 0.35, p.z]} scale={[1, 0.8, 1]}>
+          <mesh geometry={pumpkinGeo} material={pumpkinMat} castShadow />
+          <mesh geometry={stemGeo} material={stemMat} position={[0, 0.42, 0]} />
+        </group>
+      ) : (
+        <mesh key={i} geometry={hayStackGeo} material={hayStackMat}
+          position={[p.x, 0.6, p.z]} castShadow />
+      ))}
+    </group>
+  );
+}
+
 function RoadTile({ seed = 0 }) {
   return (
     <group>
@@ -148,6 +180,7 @@ function RoadTile({ seed = 0 }) {
       })}
       <RoadDetails seed={seed} />
       <StreetLamps seed={seed} />
+      <EventDecor seed={seed} />
     </group>
   );
 }

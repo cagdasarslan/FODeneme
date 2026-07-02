@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import useGameStore from '@/store/useGameStore';
-import { CARROT_PACKAGES } from '@/constants/iap';
-import { initBilling, purchase, setGrantHandler, getDisplayPrice } from '@/services/BillingService';
+import { CARROT_PACKAGES, REMOVE_ADS_ID } from '@/constants/iap';
+import { initBilling, purchase, setGrantHandler, setRemoveAdsHandler, getDisplayPrice, getRemoveAdsPrice } from '@/services/BillingService';
+import { hideBanner } from '@/services/AdService';
 
 // Gerçek para ile havuç satın alma mağazası (Google Play Billing).
 export default function CarrotShop({ onClose }) {
   const carrots = useGameStore(s => s.carrots);
   const addCarrots = useGameStore(s => s.addCarrots);
+  const adsRemoved = useGameStore(s => s.adsRemoved);
+  const setAdsRemoved = useGameStore(s => s.setAdsRemoved);
   const [busy, setBusy] = useState(null);   // satın alınan productId
   const [flash, setFlash] = useState('');
   const [, force] = useState(0);
@@ -17,8 +20,14 @@ export default function CarrotShop({ onClose }) {
       setFlash(`✅ ${amount.toLocaleString()} havuç hesabına eklendi!`);
       setTimeout(() => setFlash(''), 2500);
     });
+    setRemoveAdsHandler(() => {
+      setAdsRemoved();
+      hideBanner();
+      setFlash('🎉 Reklamlar kaldırıldı — iyi koşular!');
+      setTimeout(() => setFlash(''), 2500);
+    });
     initBilling().then(() => force(n => n + 1)); // gerçek fiyatlar gelince yenile
-  }, [addCarrots]);
+  }, [addCarrots, setAdsRemoved]);
 
   const handleBuy = async (pkg) => {
     if (busy) return;
@@ -39,6 +48,24 @@ export default function CarrotShop({ onClose }) {
         <div style={S.balance}>🥕 {carrots.toLocaleString()} havuç</div>
 
         {flash && <div style={S.flash}>{flash}</div>}
+
+        {/* Reklamları Kaldır — tek seferlik, kalıcı */}
+        {adsRemoved ? (
+          <div style={S.adsDone}>✓ Reklamlar kaldırıldı</div>
+        ) : (
+          <button
+            style={{ ...S.removeAds, opacity: busy ? 0.5 : 1 }}
+            disabled={!!busy}
+            onClick={() => handleBuy({ id: REMOVE_ADS_ID })}
+          >
+            <span style={{ fontSize: 18 }}>🚫</span>
+            <span style={{ flex: 1, textAlign: 'left' }}>
+              <b>REKLAMLARI KALDIR</b>
+              <div style={{ fontSize: 9, opacity: 0.75, marginTop: 2 }}>Banner tamamen kapanır · ödüllü reklamlar isteğe bağlı kalır</div>
+            </span>
+            <span style={S.priceBtn}>{busy === REMOVE_ADS_ID ? '...' : getRemoveAdsPrice()}</span>
+          </button>
+        )}
 
         <div style={S.grid}>
           {CARROT_PACKAGES.map(pkg => (
@@ -87,6 +114,17 @@ const S = {
     textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#33ff99',
     background: 'rgba(51,255,153,0.1)', border: '1px solid #33ff9955',
     borderRadius: 8, padding: '8px', marginBottom: 10,
+  },
+  removeAds: {
+    display: 'flex', alignItems: 'center', gap: 10, width: '100%', marginBottom: 12,
+    background: 'rgba(120,80,255,0.12)', border: '1px solid rgba(150,110,255,0.5)',
+    borderRadius: 12, padding: '12px 12px', color: '#c9b8ff', fontFamily: 'monospace',
+    fontSize: 12, cursor: 'pointer',
+  },
+  adsDone: {
+    textAlign: 'center', color: '#33ff99', fontFamily: 'monospace', fontSize: 12,
+    fontWeight: 700, marginBottom: 12, padding: 8,
+    border: '1px solid rgba(51,255,153,0.35)', borderRadius: 10,
   },
   grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 },
   pkg: {

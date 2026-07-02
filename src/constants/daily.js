@@ -15,6 +15,36 @@ export const MISSION_POOL = [
   { id: 'close1',  type: 'closecall',target: 8,    reward: 180, label: '8 makas (kıl payı) yap' },
 ];
 
+// ── Haftalık görevler — kümülatif, pazartesi sıfırlanır, büyük ödül ──────────
+export const WEEKLY_POOL = [
+  { id: 'wdist',   type: 'distance', target: 15000, reward: 1500, label: 'Bu hafta toplam 15.000m koş' },
+  { id: 'wover',   type: 'jumpover', target: 60,    reward: 1200, label: 'Bu hafta 60 engel üstünden atla' },
+  { id: 'wruns',   type: 'runs',     target: 20,    reward: 1000, label: 'Bu hafta 20 koşu tamamla' },
+  { id: 'wcarrot', type: 'carrots',  target: 800,   reward: 1500, label: 'Bu hafta 800 havuç topla' },
+  { id: 'wclose',  type: 'closecall',target: 40,    reward: 1200, label: 'Bu hafta 40 makas yap' },
+];
+
+// Haftanın anahtarı: içinde bulunulan haftanın pazartesi tarihi
+export function weekKey(d = new Date()) {
+  const x = new Date(d);
+  const day = (x.getDay() + 6) % 7; // pazartesi=0
+  x.setDate(x.getDate() - day);
+  return 'W' + x.toDateString();
+}
+
+export function pickWeeklyMissions(wKey) {
+  let h = 0;
+  for (const ch of wKey) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const pool = WEEKLY_POOL.map((_, i) => i);
+  const out = [];
+  for (let i = 0; i < 3 && pool.length; i++) {
+    const j = (h % pool.length);
+    out.push(WEEKLY_POOL[pool.splice(j, 1)[0]]);
+    h = (h * 131 + 17) >>> 0;
+  }
+  return out;
+}
+
 // Tarihe göre deterministik 3 görev seç
 export function pickDailyMissions(dateStr) {
   let h = 0;

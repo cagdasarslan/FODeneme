@@ -9,9 +9,14 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
   const canClaimStreak = useGameStore(s => s.canClaimStreak)();
   const lifeStats      = useGameStore(s => s.lifeStats);
   const achClaimed     = useGameStore(s => s.achClaimed);
+  const weekStats      = useGameStore(s => s.weekStats);
+  const weeklyClaimed  = useGameStore(s => s.weeklyClaimed);
   const getAchievements   = useGameStore(s => s.getAchievements);
   const claimAchievement  = useGameStore(s => s.claimAchievement);
+  const getWeeklyMissions = useGameStore(s => s.getWeeklyMissions);
+  const claimWeekly       = useGameStore(s => s.claimWeekly);
   const missions = getMissions(); // dailyCarrots/missionClaimed değişince yenilenir
+  const weekly   = getWeeklyMissions(); // weekStats/weeklyClaimed değişince yenilenir
   const achievements = getAchievements(); // lifeStats/achClaimed değişince yenilenir
 
   return (
@@ -41,6 +46,27 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
               <span style={S.doneTick}>✓</span>
             ) : m.done ? (
               <button style={S.claim} onClick={() => claimMission(m.id)}>🥕 {m.reward}</button>
+            ) : (
+              <span style={S.reward}>🥕 {m.reward}</span>
+            )}
+          </div>
+        ))}
+
+        {/* Haftalık görevler — pazartesi sıfırlanır, büyük ödül */}
+        <div style={{ ...S.sectionLabel, marginTop: 18, color: 'rgba(140,180,255,0.85)' }}>HAFTALIK GÖREVLER</div>
+        {weekly.map(m => (
+          <div key={m.id} style={S.row}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={S.label}>{m.label}</div>
+              <div style={S.barBg}>
+                <div style={{ ...S.barFill, width: `${(m.progress / m.target) * 100}%`, background: m.done ? '#33ff99' : '#6a9fff' }} />
+              </div>
+              <div style={S.prog}>{m.progress.toLocaleString()}/{m.target.toLocaleString()}</div>
+            </div>
+            {m.claimed ? (
+              <span style={S.doneTick}>✓</span>
+            ) : m.done ? (
+              <button style={S.claim} onClick={() => claimWeekly(m.id)}>🥕 {m.reward}</button>
             ) : (
               <span style={S.reward}>🥕 {m.reward}</span>
             )}

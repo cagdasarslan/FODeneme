@@ -2,6 +2,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
+import { getActiveEvent } from '@/constants/events';
 
 // ── Hava durumu efektleri ─────────────────────────────────────────────────────
 // Harita 1-2: yağmur (koşu bazında runId'ye göre %50 ihtimalle)
@@ -155,7 +156,51 @@ function MeteorShower() {
   );
 }
 
+// ── Kar (Kış Şenliği etkinliği) — yumuşak, yavaş süzülen taneler ─────────────
+function Snow() {
+  const ref = useRef();
+  const positions = useMemo(() => {
+    const arr = new Float32Array(RAIN_COUNT * 3);
+    for (let i = 0; i < RAIN_COUNT; i++) {
+      arr[i * 3]     = (Math.random() - 0.5) * VOL_X;
+      arr[i * 3 + 1] = Math.random() * VOL_Y;
+      arr[i * 3 + 2] = -Math.random() * VOL_Z + 15;
+    }
+    return arr;
+  }, []);
+
+  useFrame((_, delta) => {
+    if (!ref.current) return;
+    const { phase, speed } = useGameStore.getState();
+    if (phase !== 'playing') return;
+    const arr = ref.current.geometry.attributes.position.array;
+    const t = performance.now() / 1000;
+    const fall  = 3.5 * delta;          // yavaş süzülme
+    const drift = speed * delta * 0.8;
+    for (let i = 0; i < RAIN_COUNT; i++) {
+      arr[i * 3]     += Math.sin(t * 1.3 + i) * 0.6 * delta; // hafif salınım
+      arr[i * 3 + 1] -= fall;
+      arr[i * 3 + 2] += drift;
+      if (arr[i * 3 + 1] < 0) arr[i * 3 + 1] += VOL_Y;
+      arr[i * 3 + 2] = wrap(arr[i * 3 + 2], -VOL_Z + 15, 15);
+    }
+    ref.current.geometry.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial color="#ffffff" size={0.16} transparent opacity={0.9}
+        sizeAttenuation depthWrite={false} />
+    </points>
+  );
+}
+
 export default function Weather() {
-  // Tüm hava durumu efektleri kaldırıldı (yağmur, kum fırtınası, meteor)
+  // Normal hava efektleri kapalı; yalnızca mevsimsel etkinlik dekoru:
+  // Aralık'ta Kış Şenliği karı (tüm haritalarda).
+  if (getActiveEvent()?.id === 'winter') return <Snow />;
   return null;
 }

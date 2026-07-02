@@ -54,7 +54,11 @@ export default function Settings({ onClose }) {
               <button
                 key={txt}
                 style={{ ...S.segBtn, ...(graphics === val ? S.segOn : {}) }}
-                onClick={() => { setGraphics(val); sfx.click(); }}
+                onClick={() => {
+                  localStorage.setItem('gfx_user', '1'); // otomatik kalite artık karışmaz
+                  setGraphics(val);
+                  sfx.click();
+                }}
               >{txt}</button>
             ))}
           </div>

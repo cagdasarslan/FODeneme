@@ -11,6 +11,8 @@ import Missions from '@/components/ui/Missions';
 import AdButton from '@/components/ui/AdButton';
 import { showBanner, hideBanner } from '@/services/AdService';
 import { AD_DAILY_CARROTS, AD_DAILY_MAX, MAP_UNLOCKS } from '@/constants/game';
+import { getActiveEvent } from '@/constants/events';
+import { fetchLeaderboard } from '@/services/LeaderboardService';
 import { Capacitor } from '@capacitor/core';
 
 const isNative = Capacitor.getPlatform() !== 'web';
@@ -134,6 +136,32 @@ export default function MainMenu() {
     armStartBoost:       s.armStartBoost,
   }));
 
+  // Tay vitrini — en acil tayın durumu ana ekranda
+  const foals = useGameStore(s => s.foals);
+
+  // "Arkadaşını geç": oyun sonunda liderlikte bir üstündeki oyuncuyu göster
+  const [rival, setRival] = useState(null);
+  useEffect(() => {
+    if (phase !== 'gameover') { setRival(null); return; }
+    let on = true;
+    fetchLeaderboard(100).then(items => {
+      if (!on || !Array.isArray(items)) return;
+      const myId = sessionStorage.getItem('ll_player_id');
+      const idx = items.findIndex(it => String(it.member_id) === String(myId));
+      if (idx > 0) {
+        const up = items[idx - 1];
+        setRival({
+          rank: idx, // üstteki oyuncunun sırası (1-bazlı: idx)
+          name: up.player?.name || `Jokey#${String(up.member_id).slice(-4)}`,
+          diff: Math.max(1, Math.floor(up.score) - Math.floor(score)),
+        });
+      }
+    }).catch(() => {});
+    return () => { on = false; };
+  }, [phase]);
+
+  const activeEvent = getActiveEvent();
+
   // Günlük sistem (re-render için ilgili alanlara abone ol)
   const dailyCarrots   = useGameStore(s => s.dailyCarrots);
   const missionClaimed = useGameStore(s => s.missionClaimed);
@@ -177,8 +205,15 @@ export default function MainMenu() {
           <div style={styles.titleWrap}>
             <div style={styles.titleSub}>🐴</div>
             <h1 style={styles.title}>HORSE RUNNER</h1>
-            <div style={styles.titleSubline}>SONSUZ AT KOŞUSU</div>
+            <div style={styles.titleSubline}>KOŞ · YETİŞTİR · YARIŞ</div>
           </div>
+
+          {/* Mevsimsel etkinlik rozeti */}
+          {activeEvent && (
+            <div style={{ ...styles.eventBadge, borderColor: activeEvent.color, color: activeEvent.color }}>
+              {activeEvent.emoji} {activeEvent.name} ETKİNLİĞİ!
+            </div>
+          )}
 
           {/* Havuç + günlük ödül */}
           <div style={styles.topRow}>
@@ -191,6 +226,33 @@ export default function MainMenu() {
               {canClaimStreak && <span style={styles.dailyDot} />}
             </button>
           </div>
+
+          {/* Tay vitrini — oyunun farkı: koşu + at yetiştiriciliği */}
+          {!isGameOver && (foals.length > 0 ? (() => {
+            const f = foals[0];
+            const hungry = f.tokluk < 40;
+            return (
+              <div style={styles.foalCard} onClick={() => openGarage('hara')}>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: f.genes.bodyColor, border: `3px solid ${f.genes.maneColor}`, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                  <div style={styles.foalName}>🐣 {f.name} <span style={styles.foalStage}>({f.stage})</span></div>
+                  <div style={{ ...styles.foalStatus, color: hungry ? '#ff8866' : '#8ee69a' }}>
+                    {hungry ? '⚠️ Acıktı — hemen besle!' : `Tokluk %${Math.floor(f.tokluk)} · Mutluluk %${Math.floor(f.mutluluk)}`}
+                  </div>
+                </div>
+                <span style={styles.foalGo}>BAK →</span>
+              </div>
+            );
+          })() : (
+            <div style={styles.foalCard} onClick={() => openGarage('hara')}>
+              <span style={{ fontSize: 26 }}>🐣</span>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div style={styles.foalName}>İlk tayını yetiştir!</div>
+                <div style={{ ...styles.foalStatus, color: 'rgba(255,255,255,0.5)' }}>Çiftleştir, besle, büyüt — kendi şampiyonunu yarat</div>
+              </div>
+              <span style={styles.foalGo}>AHIR →</span>
+            </div>
+          ))}
 
           {/* Oyun bitti ekranı */}
           {isGameOver && (
@@ -206,6 +268,13 @@ export default function MainMenu() {
                 <StatRow label="BU HARİTA REKORU" value={Math.floor(mapHs).toLocaleString()} color={mapInfo.color} />
                 <StatRow label="HAVUÇ" value={`🥕 ${carrots}`} color="#ffd700" />
               </div>
+              {/* Arkadaşını geç — liderlikte bir üstteki oyuncu */}
+              {rival && (
+                <div style={styles.rivalRow}>
+                  🎯 {rival.rank}. sıradaki <b>{rival.name}</b>'i geçmek için{' '}
+                  <b style={{ color: '#ffd700' }}>{rival.diff.toLocaleString()}</b> puan!
+                </div>
+              )}
               {runCarrots > 0 && !carrotsDoubled && (
                 <div style={{ marginTop: 10, width: '100%' }}>
                   <AdButton label={`Havuçları 2 KATINA çıkar (+${runCarrots})`} sub={`Bu koşuda ${runCarrots} havuç topladın`} color="#ffcf66" onReward={() => doubleRunCarrots()} />
@@ -378,6 +447,25 @@ const styles = {
   topIcons: { position: 'absolute', top: 10, right: 12, display: 'flex', gap: 6, zIndex: 2 },
   iconBtn: { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, width: 34, height: 34, fontSize: 16, cursor: 'pointer' },
   topRow: { display: 'flex', alignItems: 'center', gap: 8 },
+  eventBadge: {
+    fontFamily: 'monospace', fontSize: 11, fontWeight: 800, letterSpacing: 2,
+    border: '1px solid', borderRadius: 20, padding: '6px 16px',
+    animation: 'pulse 1.2s infinite alternate',
+  },
+  foalCard: {
+    display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+    background: 'rgba(129,199,132,0.08)', border: '1px solid rgba(129,199,132,0.3)',
+    borderRadius: 10, padding: '10px 12px', cursor: 'pointer', boxSizing: 'border-box',
+  },
+  foalName: { fontFamily: 'monospace', fontSize: 12, fontWeight: 800, color: '#fff' },
+  foalStage: { fontSize: 9, color: 'rgba(255,255,255,0.45)', fontWeight: 400 },
+  foalStatus: { fontFamily: 'monospace', fontSize: 10, marginTop: 2 },
+  foalGo: { fontFamily: 'monospace', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' },
+  rivalRow: {
+    marginTop: 8, fontFamily: 'monospace', fontSize: 11, color: 'rgba(255,255,255,0.8)',
+    background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.25)',
+    borderRadius: 8, padding: '8px 12px',
+  },
   dailyIconBtn: { position: 'relative', background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.35)', borderRadius: 20, width: 38, height: 32, fontSize: 16, cursor: 'pointer' },
   sectionTitle: { alignSelf: 'flex-start', fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginTop: 4 },
   bottomNav: {

@@ -69,6 +69,8 @@ let bannerShown = false;
 
 export async function showBanner() {
   if (!isNative || bannerShown) return;
+  // "Reklamları Kaldır" satın alındıysa banner asla gösterilmez
+  if (localStorage.getItem('adsRemoved') === '1') return;
   await ensureInit();
   try {
     await AdMob.showBanner({

@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { setSfxEnabled, setMusicEnabled, sfx, startMusic, startGallop } from '@/utils/audio';
-import { STREAK_REWARDS, STREAK_MAX_REWARD, pickDailyMissions } from '@/constants/daily';
+import { STREAK_REWARDS, STREAK_MAX_REWARD, pickDailyMissions, pickWeeklyMissions, weekKey } from '@/constants/daily';
+import { submitScoreSupa } from '@/services/SupaLeaderboard';
 import { HORSES } from '@/constants/horses';
 import {
   INITIAL_SPEED,
@@ -71,12 +72,17 @@ function loadDaily() {
     statsDate: d.statsDate ?? '',
     dailyStats: d.dailyStats ?? { distance: 0, jumps: 0, jumpover: 0, runs: 0, closecall: 0 },
     missionClaimed: d.missionClaimed ?? [],
+    // Haftalık görevler (pazartesi sıfırlanır)
+    weekDate: d.weekDate ?? '',
+    weekStats: d.weekStats ?? { distance: 0, jumps: 0, jumpover: 0, runs: 0, closecall: 0, carrots: 0 },
+    weeklyClaimed: d.weeklyClaimed ?? [],
   };
 }
 function saveDaily(s) {
   localStorage.setItem('daily_v1', JSON.stringify({
     streakDay: s.streakDay, lastClaimDate: s.lastClaimDate,
     statsDate: s.statsDate, dailyStats: s.dailyStats, missionClaimed: s.missionClaimed,
+    weekDate: s.weekDate, weekStats: s.weekStats, weeklyClaimed: s.weeklyClaimed,
   }));
   localStorage.setItem('life_v1', JSON.stringify(s.lifeStats));
 }
@@ -113,6 +119,13 @@ const useGameStore = create(
     // ── Ömür-boyu istatistikler + başarımlar ──────────────────────────────────
     lifeStats: JSON.parse(localStorage.getItem('life_v1') ?? '{"distance":0,"jumps":0,"jumpover":0,"runs":0,"closecall":0}'),
     achClaimed: JSON.parse(localStorage.getItem('achClaimed') ?? '[]'),
+
+    // ── Reklamsız (tek seferlik IAP) ──────────────────────────────────────────
+    adsRemoved: localStorage.getItem('adsRemoved') === '1',
+    setAdsRemoved: () => {
+      localStorage.setItem('adsRemoved', '1');
+      set({ adsRemoved: true });
+    },
 
     // ── Live run state ────────────────────────────────────────────────────────
     /** @type {GamePhase} */
@@ -245,6 +258,8 @@ const useGameStore = create(
       if (_dist > 0) get().bumpDaily('distance', _dist);
       get().bumpDaily('runs', 1);
       saveDaily(get());
+      // Sezonluk liderlik (Supabase yapılandırıldıysa) — arka planda gönder
+      submitScoreSupa(get().score, get().mapId);
       const { score, highScore, mapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5, sessionReady } = get();
       const newHighScore = Math.max(score, highScore);
       const hsKey = mapId === 5 ? 'hs_map5' : mapId === 4 ? 'hs_map4' : mapId === 3 ? 'hs_map3' : mapId === 2 ? 'hs_map2' : 'hs_map1';
@@ -566,19 +581,28 @@ const useGameStore = create(
     initDaily: () => {
       const s = get();
       const today = todayStr();
-      let { streakDay, lastClaimDate, statsDate, dailyStats, missionClaimed } = s;
+      let { streakDay, lastClaimDate, statsDate, dailyStats, missionClaimed,
+            weekDate, weekStats, weeklyClaimed } = s;
       // Yeni gün → günlük sayaç ve görev talepleri sıfırla
       if (statsDate !== today) {
         statsDate = today;
         dailyStats = { distance: 0, jumps: 0, jumpover: 0, runs: 0, closecall: 0 };
         missionClaimed = [];
       }
+      // Yeni hafta → haftalık sayaç ve talepleri sıfırla
+      const wk = weekKey();
+      if (weekDate !== wk) {
+        weekDate = wk;
+        weekStats = { distance: 0, jumps: 0, jumpover: 0, runs: 0, closecall: 0, carrots: 0 };
+        weeklyClaimed = [];
+      }
       // Seri: dün talep edilmediyse ve bugün de değilse → kopmuş, başa dön
       if (lastClaimDate && lastClaimDate !== today && lastClaimDate !== yesterdayStr()) {
         streakDay = 1;
       }
-      const next = { streakDay, lastClaimDate, statsDate, dailyStats, missionClaimed };
-      saveDaily(next);
+      const next = { streakDay, lastClaimDate, statsDate, dailyStats, missionClaimed,
+                     weekDate, weekStats, weeklyClaimed };
+      saveDaily({ ...get(), ...next });
       set(next);
 
       // Ücretsiz at migrasyonu: stilize kestane atı herkese ekle
@@ -641,11 +665,36 @@ const useGameStore = create(
     bumpDaily: (key, n = 1) => {
       const s = get();
       const dailyStats = { ...s.dailyStats, [key]: (s.dailyStats[key] ?? 0) + n };
-      // Ömür-boyu istatistikler de birlikte artar (başarımlar bunları izler)
+      // Haftalık + ömür-boyu istatistikler de birlikte artar
+      const weekStats = { ...s.weekStats, [key]: (s.weekStats[key] ?? 0) + n };
       const lifeStats = { ...s.lifeStats, [key]: (s.lifeStats[key] ?? 0) + n };
-      set({ dailyStats, lifeStats });
+      set({ dailyStats, weekStats, lifeStats });
       // sık çağrılabilir; kaydı debounce et (havuç gibi)
       scheduleDailySave(get);
+    },
+
+    // Haftalık görevler: bu haftanın 3 görevi + ilerleme/talep durumu
+    getWeeklyMissions: () => {
+      const s = get();
+      const list = pickWeeklyMissions(weekKey());
+      return list.map((m) => {
+        const progress = Math.min(Math.floor(s.weekStats[m.type] ?? 0), m.target);
+        return { ...m, progress, done: progress >= m.target, claimed: s.weeklyClaimed.includes(m.id) };
+      });
+    },
+
+    claimWeekly: (id) => {
+      const s = get();
+      const m = get().getWeeklyMissions().find((x) => x.id === id);
+      if (!m || !m.done || m.claimed) return 0;
+      const carrots = s.carrots + m.reward;
+      const weeklyClaimed = [...s.weeklyClaimed, id];
+      localStorage.setItem('carrots', String(carrots));
+      set({ carrots, weeklyClaimed });
+      saveDaily(get());
+      sfx.powerup();
+      haptic.success();
+      return m.reward;
     },
 
     // =========================================================================
@@ -772,7 +821,12 @@ const useGameStore = create(
       if (!_todayKey) _todayKey = `daily_carrots_${new Date().toDateString()}`;
       sfx.collect();
       // state'i hemen güncelle, localStorage yazımını debounce et (jank önleme)
-      set({ carrots: s.carrots + count, dailyCarrots: s.dailyCarrots + count, runCarrots: s.runCarrots + count });
+      set({
+        carrots: s.carrots + count,
+        dailyCarrots: s.dailyCarrots + count,
+        runCarrots: s.runCarrots + count,
+        weekStats: { ...s.weekStats, carrots: (s.weekStats.carrots ?? 0) + count },
+      });
       scheduleCarrotSave(get);
     },
 
