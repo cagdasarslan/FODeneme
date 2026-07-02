@@ -120,9 +120,12 @@ export default function App() {
               {/* key=runId: spawners fully remount on every new run so pools are
                   re-created with the current map's obstacle/carrot types and no
                   stale state (active flags, timers) leaks across runs. */}
-              <ObstacleSpawner key={runId} />
+              {/* DİKKAT: kardeş elemanlarda çıplak key={runId} kullanma —
+                  ikisi aynı key'i paylaşınca React çocukları duplike edebiliyor
+                  (asset çoğalması bug'ının kökeniydi). Prefix'le benzersizleştir. */}
+              <ObstacleSpawner key={`obs-${runId}`} />
               <CarrotSpawner />
-              <SuperNalSpawner key={runId} />
+              <SuperNalSpawner key={`nal-${runId}`} />
               <Horse />
             </Physics>
           </>

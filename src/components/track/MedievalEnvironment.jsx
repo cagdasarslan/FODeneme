@@ -111,7 +111,9 @@ function CobbleRoad({ segIdx }) {
   const ref = useRef();
   const { count, matrices, colors } = useMemo(() => {
     const dummy = new THREE.Object3D();
-    const STEP = 1.0;                        // taş aralığı
+    // Mobilde taş sayısını ~yarıya indir (en ağır haritaydı) — taşlar biraz
+    // daha büyük/seyrek olur ama kare süresi belirgin düşer.
+    const STEP = IS_MOBILE ? 1.4 : 1.0;      // taş aralığı
     const cols = Math.floor(ROAD_W / STEP);  // ~18 sütun
     const rows = Math.floor(SEG_LEN / STEP); // 120 sıra
     const mats = [];
