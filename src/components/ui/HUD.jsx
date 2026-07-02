@@ -58,19 +58,16 @@ export default function HUD() {
   const stumbleActive     = useGameStore((s) => s.stumbleActive);
   const mapId             = useGameStore((s) => s.mapId);
 
-  // İlk oyun eğitimi (tutorial): 3 adım, sonra kalıcı olarak kapanır
+  // İlk oyun eğitimi (tutorial): kurulumdan sonra YALNIZCA ilk koşuda gösterilir.
+  // Gösterim BAŞLAR BAŞLAMAZ kalıcı işaretlenir — oyuncu ilk koşuda erken ölse
+  // bile bir daha asla çıkmaz.
   const [tutStep, setTutStep] = useState(() =>
     localStorage.getItem('tut_done') ? 3 : 0
   );
   useEffect(() => {
     if (phase !== 'playing' || tutStep >= 3) return;
-    const t = setTimeout(() => {
-      setTutStep((s) => {
-        const n = s + 1;
-        if (n >= 3) localStorage.setItem('tut_done', '1');
-        return n;
-      });
-    }, 3500);
+    if (tutStep === 0) localStorage.setItem('tut_done', '1'); // tek seferlik
+    const t = setTimeout(() => setTutStep((s) => s + 1), 3500);
     return () => clearTimeout(t);
   }, [phase, tutStep]);
 

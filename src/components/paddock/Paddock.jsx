@@ -354,10 +354,12 @@ export function PaddockUI() {
     return () => clearTimeout(t);
   }, [toastId, toast]);
 
-  // Sanal joystick: canvas üzerinde sürükleme → hareket vektörü
+  // Sanal joystick — ÇOKLU DOKUNUŞ güvenli: canvas'a ilk basan parmağın
+  // identifier'ına kilitlenir. Böylece ikinci parmakla ZIPLA'ya basıp
+  // kaldırmak joystick'i SIFIRLAMAZ (hem koşup hem zıplama mümkün).
   useEffect(() => {
     const isCanvas = (e) => e.target && e.target.tagName === 'CANVAS';
-    const start = (x, y) => { dragRef.current = { x, y }; };
+    const start = (x, y, id) => { dragRef.current = { x, y, id }; };
     const move = (x, y) => {
       if (!dragRef.current) return;
       if (useGameStore.getState().paddockPlacing) return; // yerleştirirken yürüme
@@ -371,24 +373,47 @@ export function PaddockUI() {
     };
     const end = () => { dragRef.current = null; paddockInput.dx = paddockInput.dz = paddockInput.mag = 0; };
 
-    const ts = (e) => { if (isCanvas(e)) { const t = e.touches[0]; start(t.clientX, t.clientY); } };
-    const tm = (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); };
-    const md = (e) => { if (isCanvas(e)) start(e.clientX, e.clientY); };
-    const mm = (e) => move(e.clientX, e.clientY);
+    const ts = (e) => {
+      if (dragRef.current !== null) return;            // zaten bir parmak sürüklüyor
+      if (!isCanvas(e)) return;                        // buton dokunuşları joystick değil
+      const t = e.changedTouches[0];
+      if (t) start(t.clientX, t.clientY, t.identifier);
+    };
+    const tm = (e) => {
+      const d = dragRef.current;
+      if (!d) return;
+      // yalnızca joystick parmağını izle (identifier eşleşmesi)
+      for (const t of e.touches) {
+        if (t.identifier === d.id) { move(t.clientX, t.clientY); return; }
+      }
+    };
+    const te = (e) => {
+      const d = dragRef.current;
+      if (!d) return;
+      // yalnızca joystick parmağı kalktıysa bitir; ZIPLA parmağı ise dokunma
+      for (const t of e.changedTouches) {
+        if (t.identifier === d.id) { end(); return; }
+      }
+    };
+    const md = (e) => { if (isCanvas(e)) start(e.clientX, e.clientY, 'mouse'); };
+    const mm = (e) => { if (dragRef.current?.id === 'mouse') move(e.clientX, e.clientY); };
+    const mu = () => { if (dragRef.current?.id === 'mouse') end(); };
 
-    window.addEventListener('touchstart', ts, { passive: true });
-    window.addEventListener('touchmove',  tm, { passive: true });
-    window.addEventListener('touchend',   end);
-    window.addEventListener('mousedown',  md);
-    window.addEventListener('mousemove',  mm);
-    window.addEventListener('mouseup',    end);
+    window.addEventListener('touchstart',  ts, { passive: true });
+    window.addEventListener('touchmove',   tm, { passive: true });
+    window.addEventListener('touchend',    te);
+    window.addEventListener('touchcancel', te);
+    window.addEventListener('mousedown',   md);
+    window.addEventListener('mousemove',   mm);
+    window.addEventListener('mouseup',     mu);
     return () => {
-      window.removeEventListener('touchstart', ts);
-      window.removeEventListener('touchmove',  tm);
-      window.removeEventListener('touchend',   end);
-      window.removeEventListener('mousedown',  md);
-      window.removeEventListener('mousemove',  mm);
-      window.removeEventListener('mouseup',    end);
+      window.removeEventListener('touchstart',  ts);
+      window.removeEventListener('touchmove',   tm);
+      window.removeEventListener('touchend',    te);
+      window.removeEventListener('touchcancel', te);
+      window.removeEventListener('mousedown',   md);
+      window.removeEventListener('mousemove',   mm);
+      window.removeEventListener('mouseup',     mu);
       end();
     };
   }, []);
@@ -425,8 +450,9 @@ export function PaddockUI() {
       <div style={S.hint}>parmağını sürükle → yürü / koş</div>
       <button
         style={S.jumpBtn}
-        onTouchStart={() => { paddockInput.jump = true; }}
-        onMouseDown={() => { paddockInput.jump = true; }}
+        onTouchStart={(e) => { e.stopPropagation(); paddockInput.jump = true; }}
+        onTouchEnd={(e) => e.stopPropagation()}
+        onMouseDown={(e) => { e.stopPropagation(); paddockInput.jump = true; }}
       >
         ⬆<br /><span style={{ fontSize: 10 }}>ZIPLA</span>
       </button>
