@@ -19,4 +19,6 @@
 // Boş bırakılırsa oyun mevcut LootLocker "TÜMÜ" tablosuyla çalışmaya devam
 // eder; sezonluk sekmeler "yakında" mesajı gösterir.
 export const SUPA_URL = 'https://vdyjyuqdzkpsixnopndx.supabase.co';
-export const SUPA_KEY = ''; // ← Project Settings → API → anon public key buraya
+// Publishable (anon) anahtar — istemciye gömülmek için tasarlanmıştır;
+// güvenlik RLS policy'leriyle sağlanır (yalnız insert + select açık).
+export const SUPA_KEY = 'sb_publishable_Vd8PVfujUxWOPZoDNV3Rqw_XWE_qCvN';
