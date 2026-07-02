@@ -18,5 +18,5 @@
 //
 // Boş bırakılırsa oyun mevcut LootLocker "TÜMÜ" tablosuyla çalışmaya devam
 // eder; sezonluk sekmeler "yakında" mesajı gösterir.
-export const SUPA_URL = '';
-export const SUPA_KEY = '';
+export const SUPA_URL = 'https://vdyjyuqdzkpsixnopndx.supabase.co';
+export const SUPA_KEY = ''; // ← Project Settings → API → anon public key buraya
