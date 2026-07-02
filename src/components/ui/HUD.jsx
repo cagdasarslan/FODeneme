@@ -42,18 +42,18 @@ function CloseCallFlash() {
 
 // ── Ana HUD ───────────────────────────────────────────────────────────────────
 export default function HUD() {
-  const { score, highScore, carrots, adrenaline, speed, phase, magnetActive, adrenalinBoosting } = useGameStore(
-    (s) => ({
-      score:            s.score,
-      highScore:        s.highScore,
-      carrots:          s.carrots,
-      adrenaline:       s.adrenaline,
-      speed:            s.speed,
-      phase:            s.phase,
-      magnetActive:     s.magnetActive,
-      adrenalinBoosting: s.adrenalinBoosting,
-    })
-  );
+  // KRİTİK PERFORMANS: skor/hız/adrenalin her frame kesirli değişir. Obje
+  // selector her store set'inde yeni referans üretip HUD'u 60fps yeniden
+  // render ediyordu (yüksek hızda donmaların ana sebebi). Primitive + floor
+  // selector'larla yalnızca görünen değer değişince render olur.
+  const score      = useGameStore((s) => Math.floor(s.score));
+  const highScore  = useGameStore((s) => Math.floor(s.highScore));
+  const carrots    = useGameStore((s) => s.carrots);
+  const adrenaline = useGameStore((s) => Math.floor(s.adrenaline));
+  const speed      = useGameStore((s) => Math.floor(s.speed));
+  const phase      = useGameStore((s) => s.phase);
+  const magnetActive      = useGameStore((s) => s.magnetActive);
+  const adrenalinBoosting = useGameStore((s) => s.adrenalinBoosting);
 
   if (phase !== 'playing' && phase !== 'paused') return null;
 

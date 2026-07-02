@@ -430,6 +430,64 @@ const useGameStore = create(
     },
 
     // =========================================================================
+    // Çiftlik (paddock) — serbest antrenman alanı
+    // =========================================================================
+    paddockObstacles: JSON.parse(localStorage.getItem('paddockObstacles') ?? '[]'),
+    trainingXP: JSON.parse(localStorage.getItem('trainingXP') ?? '{}'),
+    paddockPlacing: null,   // satın alınan, yerleştirme bekleyen engel tipi
+    paddockToast: '',
+    paddockToastId: 0,
+
+    enterPaddock: () => set({ phase: 'paddock' }),
+    exitPaddock:  () => set({ phase: 'idle', paddockPlacing: null }),
+
+    setPaddockPlacing: (type) => set({ paddockPlacing: type }),
+    showPaddockToast: (msg) =>
+      set((s) => ({ paddockToast: msg, paddockToastId: s.paddockToastId + 1 })),
+
+    // Engel satın al (havuç düş) → yerleştirme moduna geç
+    buyPaddockObstacle: (type, cost) => {
+      const { carrots } = get();
+      if (carrots < cost) return false;
+      const c = carrots - cost;
+      localStorage.setItem('carrots', String(c));
+      set({ carrots: c, paddockPlacing: type });
+      return true;
+    },
+
+    // Yerleştirme modundaki engeli zemine koy
+    placePaddockObstacle: (x, z) => {
+      const { paddockPlacing, paddockObstacles } = get();
+      if (!paddockPlacing) return;
+      const next = [...paddockObstacles, { id: `po_${Date.now()}`, type: paddockPlacing, x, z }];
+      localStorage.setItem('paddockObstacles', JSON.stringify(next));
+      set({ paddockObstacles: next, paddockPlacing: null });
+    },
+
+    // Antrenman XP'si: her 100 XP'de en düşük seviyeli stat +1 (bedava gelişim)
+    addTrainingXP: (horseId, amount) => {
+      const s = get();
+      let xp = (s.trainingXP[horseId] ?? 0) + amount;
+      const ups = { ...(s.horseUpgrades[horseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 }) };
+      const leveled = [];
+      while (xp >= 100) {
+        const order = ['jumpLevel', 'speedLevel', 'maneuvLevel'];
+        const open = order.filter((k) => (ups[k] ?? 0) < 5);
+        if (!open.length) { xp = 99; break; } // hepsi maksimum
+        const k = open.reduce((a, b) => ((ups[a] ?? 0) <= (ups[b] ?? 0) ? a : b));
+        ups[k] = (ups[k] ?? 0) + 1;
+        leveled.push(k);
+        xp -= 100;
+      }
+      const trainingXP = { ...s.trainingXP, [horseId]: xp };
+      const horseUpgrades = { ...s.horseUpgrades, [horseId]: ups };
+      localStorage.setItem('trainingXP', JSON.stringify(trainingXP));
+      localStorage.setItem('horseUpgrades', JSON.stringify(horseUpgrades));
+      set({ trainingXP, horseUpgrades });
+      return leveled;
+    },
+
+    // =========================================================================
     // Günlük sistem: giriş serisi + görevler
     // =========================================================================
 

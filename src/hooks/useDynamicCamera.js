@@ -31,6 +31,9 @@ export function useDynamicCamera() {
     const delta = Math.min(rawDelta, 1 / 30);
     const { phase, speed, adrenaline, mapId } = useGameStore.getState();
 
+    // Çiftlik (paddock) kendi kamerasını yönetir — burada dokunma
+    if (phase === 'paddock') return;
+
     // FOV hızla büyür
     const t        = (speed - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED);
     const targetFov = THREE.MathUtils.lerp(BASE_FOV, MAX_FOV, Math.pow(t, 0.55));

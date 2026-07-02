@@ -5,7 +5,9 @@ export const LANES       = [-4, 0, 4];
 
 export const INITIAL_SPEED    = 16;
 export const MAX_SPEED        = 55;
-export const SPEED_INCREMENT  = 1.5;  // birim/s² — delta ile çarpılır
+// Piyasa runner'ları gibi yavaş ve akıcı hızlanma (eski 1.5 çok agresifti:
+// 26 saniyede maksimuma çıkıyordu). 0.5 ile artış dakikalara yayılır.
+export const SPEED_INCREMENT  = 0.5;  // birim/s² — delta ile çarpılır
 
 export const ADRENALINE_CLOSE_CALL_GAIN = 20;
 export const ADRENALINE_JUMP_GAIN       = 18; // engel üzerinden atlama ödülü

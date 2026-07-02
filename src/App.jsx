@@ -22,6 +22,7 @@ import LoadingScreen from '@/components/ui/LoadingScreen';
 import { IS_MOBILE, MAX_DPR, SHADOW_MAP } from '@/utils/device';
 import { startMusic, stopMusic, startGallop, stopGallop } from '@/utils/audio';
 import { initNotifications, scheduleReminders } from '@/services/NotificationService';
+import PaddockScene, { PaddockUI } from '@/components/paddock/Paddock';
 
 // ── EnvLayer MUST be defined outside App so React sees the same component
 // type across re-renders. Defining it inside App creates a new function
@@ -57,11 +58,14 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onHide);
   }, []);
 
-  // Müzik + nal sesi: yalnızca oyun oynanırken
+  // Müzik + nal sesi: koşuda harita müziği; çiftlikte sakin çiftlik müziği
   useEffect(() => {
     if (phase === 'playing') { startMusic(mapId); startGallop(); }
+    else if (phase === 'paddock') { startMusic(1); stopGallop(); }
     else { stopMusic(); stopGallop(); }
   }, [phase, mapId]);
+
+  const isPaddock = phase === 'paddock';
 
   // Görüntü kalitesi (Ayarlar): low = gölgesiz + düşük dpr, high = tam
   const lowGfx     = graphics === 'low';
@@ -86,43 +90,50 @@ export default function App() {
         style={{ width:'100vw', height:'100vh' }}
         gl={{ antialias, powerPreference:'high-performance' }}
         dpr={[1,dprMax]} performance={{ min:0.5 }}>
-        <fog attach="fog" args={[fogColor, selfLit ? 120 : isNight ? 60 : 90, selfLit ? 500 : isNight ? 280 : 420]} />
+        {!isPaddock && <fog attach="fog" args={[fogColor, selfLit ? 120 : isNight ? 60 : 90, selfLit ? 500 : isNight ? 280 : 420]} />}
         <CameraRig />
-        {!selfLit && (
+        {isPaddock ? (
+          <PaddockScene />
+        ) : (
           <>
-            <ambientLight intensity={isNight ? 0.34 : 0.65} />
-            <directionalLight castShadow position={[-50,80,30]}
-              intensity={isNight ? 0.85 : 2.0}
-              color={isNight ? '#aebfe8' : '#ffffff'}
-              shadow-mapSize={[SHADOW_MAP,SHADOW_MAP]} shadow-camera-near={1} shadow-camera-far={280}
-              shadow-camera-left={-60} shadow-camera-right={60}
-              shadow-camera-top={60} shadow-camera-bottom={-60} />
-            <hemisphereLight skyColor={isNight ? '#26305a' : '#87ceeb'}
-              groundColor={isNight ? '#10121e' : hemiGround}
-              intensity={isNight ? 0.45 : 0.55} />
+            {!selfLit && (
+              <>
+                <ambientLight intensity={isNight ? 0.34 : 0.65} />
+                <directionalLight castShadow position={[-50,80,30]}
+                  intensity={isNight ? 0.85 : 2.0}
+                  color={isNight ? '#aebfe8' : '#ffffff'}
+                  shadow-mapSize={[SHADOW_MAP,SHADOW_MAP]} shadow-camera-near={1} shadow-camera-far={280}
+                  shadow-camera-left={-60} shadow-camera-right={60}
+                  shadow-camera-top={60} shadow-camera-bottom={-60} />
+                <hemisphereLight skyColor={isNight ? '#26305a' : '#87ceeb'}
+                  groundColor={isNight ? '#10121e' : hemiGround}
+                  intensity={isNight ? 0.45 : 0.55} />
+              </>
+            )}
+            {/* key=mapId-runId: ortam HER koşuda ve harita değişiminde tamamen
+                yeniden mount edilir → önceki haritanın/koşunun asset'leri kalmaz,
+                segment'ler iç içe geçmez/çoğalmaz. */}
+            <EnvLayer mapId={mapId} key={`${mapId}-${runId}`} />
+            <Weather />
+            <Physics gravity={[0,-20,0]}>
+              <Track />
+              {/* key=runId: spawners fully remount on every new run so pools are
+                  re-created with the current map's obstacle/carrot types and no
+                  stale state (active flags, timers) leaks across runs. */}
+              <ObstacleSpawner key={runId} />
+              <CarrotSpawner />
+              <SuperNalSpawner key={runId} />
+              <Horse />
+            </Physics>
           </>
         )}
-        {/* key=mapId-runId: ortam HER koşuda ve harita değişiminde tamamen
-            yeniden mount edilir → önceki haritanın/koşunun asset'leri kalmaz,
-            segment'ler iç içe geçmez/çoğalmaz. */}
-        <EnvLayer mapId={mapId} key={`${mapId}-${runId}`} />
-        <Weather />
-        <Physics gravity={[0,-20,0]}>
-          <Track />
-          {/* key=runId: spawners fully remount on every new run so pools are
-              re-created with the current map's obstacle/carrot types and no
-              stale state (active flags, timers) leaks across runs. */}
-          <ObstacleSpawner key={runId} />
-          <CarrotSpawner />
-          <SuperNalSpawner key={runId} />
-          <Horse />
-        </Physics>
       </Canvas>
       <LoadingScreen />
       <HUD />
       <ContinueOverlay />
       <MainMenu />
       <Garage />
+      {isPaddock && <PaddockUI />}
     </>
   );
 }

@@ -248,13 +248,15 @@ export default function MainMenu() {
             {isGameOver ? 'TEKRAR OYNA' : 'OYNA'}
           </button>
 
-          {isNative && <div style={{ height: 56, flexShrink: 0 }} />}
         </div>
 
         {/* Alt sekme çubuğu */}
         <div style={styles.bottomNav}>
           <button style={{ ...styles.navBtn, ...styles.navActive }}>
             <span style={styles.navIcon}>🏠</span><span style={styles.navLabel}>Ana</span>
+          </button>
+          <button style={styles.navBtn} onClick={() => useGameStore.getState().enterPaddock()}>
+            <span style={styles.navIcon}>🐎</span><span style={styles.navLabel}>Çiftlik</span>
           </button>
           <button style={styles.navBtn} onClick={() => openGarage()}>
             <span style={styles.navIcon}>🏇</span><span style={styles.navLabel}>Garaj</span>
@@ -299,6 +301,10 @@ const styles = {
     backdropFilter: 'blur(3px)',
     fontFamily: 'monospace',
     userSelect: 'none',
+    // Native'de alttaki AdMob banner'ı alt sekme çubuğunu kapatmasın:
+    // kartın tamamını banner yüksekliği kadar yukarı kaldır.
+    paddingBottom: isNative ? 'calc(64px + env(safe-area-inset-bottom, 0px))' : 0,
+    boxSizing: 'border-box',
   },
   card: {
     position: 'relative',

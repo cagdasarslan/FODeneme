@@ -254,29 +254,31 @@ const _setCity = () => {
   HITBOX_MAP.set(CityPolice,[1.10, 1.80]);
   HITBOX_MAP.set(CityDump,  [0.90, 1.20]);
 };
+// Hitbox'lar görsel scale'lerle senkron tutulmalı — modeller büyütüldüğünde
+// burası da orantılı güncellenmeli, yoksa "havada ölme / içinden geçme" olur.
 const _setDesert = () => {
-  HITBOX_MAP.set(DesertCactusShort, [0.55, 0.55]);
-  HITBOX_MAP.set(DesertCactusTall,  [0.50, 0.50]);
-  HITBOX_MAP.set(DesertRockA,       [1.10, 1.10]);
-  HITBOX_MAP.set(DesertRockB,       [1.10, 1.10]);
-  HITBOX_MAP.set(DesertRockC,       [1.10, 1.10]);
+  HITBOX_MAP.set(DesertCactusShort, [0.68, 0.68]);
+  HITBOX_MAP.set(DesertCactusTall,  [0.62, 0.62]);
+  HITBOX_MAP.set(DesertRockA,       [1.32, 1.32]);
+  HITBOX_MAP.set(DesertRockB,       [1.32, 1.32]);
+  HITBOX_MAP.set(DesertRockC,       [1.32, 1.32]);
 };
 const _setSpace = () => {
-  HITBOX_MAP.set(SpaceBarrels,   [0.85, 0.85]);
-  HITBOX_MAP.set(SpaceRover,     [1.20, 1.60]);
-  HITBOX_MAP.set(SpaceMeteor,    [1.10, 1.10]);
-  HITBOX_MAP.set(SpaceMeteorDet, [1.00, 1.00]);
+  HITBOX_MAP.set(SpaceBarrels,   [0.96, 0.96]);
+  HITBOX_MAP.set(SpaceRover,     [1.47, 1.96]);
+  HITBOX_MAP.set(SpaceMeteor,    [1.28, 1.28]);
+  HITBOX_MAP.set(SpaceMeteorDet, [1.18, 1.18]);
   HITBOX_MAP.set(SpacePlatLow,   [1.50, 0.90]);
-  HITBOX_MAP.set(SpaceRockA,     [1.20, 1.20]);
-  HITBOX_MAP.set(SpaceRockB,     [1.20, 1.20]);
+  HITBOX_MAP.set(SpaceRockA,     [1.41, 1.41]);
+  HITBOX_MAP.set(SpaceRockB,     [1.41, 1.41]);
 };
 const _setMedieval = () => {
   HITBOX_MAP.set(MedWell,    [1.10, 1.10]);
-  HITBOX_MAP.set(MedRocks,   [1.10, 1.10]);
+  HITBOX_MAP.set(MedRocks,   [1.38, 1.38]);
   HITBOX_MAP.set(MedRocksSm, [0.95, 0.95]);
-  HITBOX_MAP.set(MedTreeA,   [0.75, 0.75]);
-  HITBOX_MAP.set(MedTreeB,   [0.75, 0.75]);
-  HITBOX_MAP.set(MedFarm,    [1.20, 1.20]);
+  HITBOX_MAP.set(MedTreeA,   [0.90, 0.90]);
+  HITBOX_MAP.set(MedTreeB,   [0.90, 0.90]);
+  HITBOX_MAP.set(MedFarm,    [1.50, 1.50]);
 };
 _setFarm(); _setCity(); _setDesert(); _setSpace(); _setMedieval();
 export function getHitbox(TypeFnOrName) {
