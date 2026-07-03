@@ -25,6 +25,7 @@ import {
   STUMBLE_WINDOW_MS,
 } from '@/constants/game';
 import { ACHIEVEMENTS } from '@/constants/achievements';
+import { POWERUP_IDS, powerupDuration, powerupUpgradeCost, POWERUP_MAX_LEVEL } from '@/constants/powerups';
 import { haptic } from '@/utils/haptics';
 import {
   startGuestSession,
@@ -153,6 +154,15 @@ const useGameStore = create(
     adBonusToday: parseInt(localStorage.getItem(`ad_bonus_${new Date().toDateString()}`) ?? '0', 10),
     magnetActive: false,
     magnetTimer: 0,
+    // Diğer yetenekler (Süper Nal ile aynı desen: <id>Active / <id>Timer)
+    wingsActive: false,  wingsTimer: 0,
+    turboActive: false,  turboTimer: 0,
+    shieldActive: false, shieldTimer: 0,
+    slowmoActive: false, slowmoTimer: 0,
+    goldenActive: false, goldenTimer: 0,
+    speedBase: INITIAL_SPEED, // gerçek hız ilerlemesi (slowmo/turbo geçici bindirme yapar)
+    // Yetenek seviyeleri (kalıcı): süre = baseDur × (1 + 0.2 × seviye)
+    powerupLevels: JSON.parse(localStorage.getItem('powerupLevels') ?? '{}'),
     adrenalinBoosting: false,
     adrenalinBoostTimer: 0,
 
@@ -241,6 +251,12 @@ const useGameStore = create(
         // Reklam boost'u alındıysa mıknatısla başla
         magnetActive: s.startBoost,
         magnetTimer: s.startBoost ? 12 : 0,
+        wingsActive: false,  wingsTimer: 0,
+        turboActive: false,  turboTimer: 0,
+        shieldActive: false, shieldTimer: 0,
+        slowmoActive: false, slowmoTimer: 0,
+        goldenActive: false, goldenTimer: 0,
+        speedBase: INITIAL_SPEED,
         startBoost: false,
         adrenalinBoosting: false,
         adrenalinBoostTimer: 0,
@@ -315,14 +331,27 @@ const useGameStore = create(
         scoreMult = 2;
       }
 
-      const boostCap = adrenalinBoosting ? Math.min(cap * 1.3, MAX_SPEED * 1.3) : cap;
-      const newSpeed = Math.min(speed + SPEED_INCREMENT * delta, boostCap);
-      const traveled = newSpeed * delta;
-      const newAdrenaline = adrenalinBoosting ? 0 : Math.max(0, adrenaline - ADRENALINE_DECAY_RATE * delta);
+      // Yetenek zamanlayıcıları (magnet dahil, tek desen)
+      const puUpdate = {};
+      const puActive = (id) => (puUpdate[id + 'Active'] !== undefined ? puUpdate[id + 'Active'] : get()[id + 'Active']);
+      for (const id of POWERUP_IDS) {
+        const tv = get()[id + 'Timer'];
+        if (tv > 0) {
+          const nt = Math.max(0, tv - delta);
+          puUpdate[id + 'Timer'] = nt;
+          puUpdate[id + 'Active'] = nt > 0;
+        }
+      }
 
-      const magnetUpdate = magnetTimer > 0
-        ? { magnetTimer: Math.max(0, magnetTimer - delta), magnetActive: magnetTimer - delta > 0 }
-        : {};
+      // Hız: gerçek ilerleme speedBase'te; turbo/slowmo geçici bindirme yapar
+      const boostCap = adrenalinBoosting ? Math.min(cap * 1.3, MAX_SPEED * 1.3) : cap;
+      const speedBase = Math.min((get().speedBase ?? speed) + SPEED_INCREMENT * delta, boostCap);
+      let effSpeed = speedBase;
+      if (puActive('turbo'))  effSpeed = boostCap * 1.15;      // turbo: tavan üstü hız
+      if (puActive('slowmo')) effSpeed = effSpeed * 0.5;       // zaman büyüsü: dünya yavaş
+      const traveled = effSpeed * delta;                        // dünya/mesafe (yavaşlamış)
+      const scoreSpeed = puActive('slowmo') ? speedBase : effSpeed; // skor normal akar
+      const newAdrenaline = adrenalinBoosting ? 0 : Math.max(0, adrenaline - ADRENALINE_DECAY_RATE * delta);
 
       // Combo: pencere doldu mu → sıfırla; çarpanı türet
       const now = Date.now();
@@ -331,16 +360,51 @@ const useGameStore = create(
       const comboMult = 1 + Math.min(COMBO_MAX_MULT - 1, Math.floor(combo / COMBO_PER_STEP));
 
       set({
-        speed: newSpeed,
+        speed: effSpeed,
+        speedBase,
         distance: distance + traveled,
-        score: score + traveled * SCORE_PER_METER * scoreMult * comboMult,
+        score: score + scoreSpeed * delta * SCORE_PER_METER * scoreMult * comboMult,
         adrenaline: newAdrenaline,
         combo,
         comboMult,
         stumbleActive: now < get().stumbleUntil,
-        ...magnetUpdate,
+        ...puUpdate,
         ...boostUpdate,
       });
+    },
+
+    // ── Yetenek etkinleştirme / geliştirme ──────────────────────────────────
+    activatePowerup: (id) => {
+      const lvl = get().powerupLevels[id] ?? 0;
+      const dur = powerupDuration(id, lvl);
+      sfx.powerup();
+      haptic.medium();
+      set({ [id + 'Active']: true, [id + 'Timer']: dur });
+    },
+
+    // Kalkan çarpmayı emer (bir kez) — tüketildiğinde kapanır
+    consumeShield: () => {
+      if (!get().shieldActive) return false;
+      sfx.crash();
+      haptic.medium();
+      set({ shieldActive: false, shieldTimer: 0 });
+      return true;
+    },
+
+    upgradePowerup: (id) => {
+      const s = get();
+      const lvl = s.powerupLevels[id] ?? 0;
+      if (lvl >= POWERUP_MAX_LEVEL) return false;
+      const cost = powerupUpgradeCost(lvl);
+      if (s.carrots < cost) return false;
+      const carrots = s.carrots - cost;
+      const powerupLevels = { ...s.powerupLevels, [id]: lvl + 1 };
+      localStorage.setItem('carrots', String(carrots));
+      localStorage.setItem('powerupLevels', JSON.stringify(powerupLevels));
+      set({ carrots, powerupLevels });
+      sfx.powerup();
+      haptic.success();
+      return true;
     },
 
     // =========================================================================
@@ -430,6 +494,11 @@ const useGameStore = create(
         adrenalinBoostTimer: 0,
         combo: 0, comboExpire: 0, comboMult: 1,
         stumbleUntil: 0, stumbleActive: false,
+        wingsActive: false,  wingsTimer: 0,
+        turboActive: false,  turboTimer: 0,
+        slowmoActive: false, slowmoTimer: 0,
+        goldenActive: false, goldenTimer: 0,
+        speedBase: s.speed,
       }));
     },
 
@@ -818,6 +887,7 @@ const useGameStore = create(
 
     collectCarrots: (count = 1) => {
       const s = get();
+      if (s.goldenActive) count *= 2; // 💰 Altın Havuç: 2 kat
       if (!_todayKey) _todayKey = `daily_carrots_${new Date().toDateString()}`;
       sfx.collect();
       // state'i hemen güncelle, localStorage yazımını debounce et (jank önleme)
@@ -830,10 +900,7 @@ const useGameStore = create(
       scheduleCarrotSave(get);
     },
 
-    activateMagnet: () => {
-      sfx.powerup();
-      set({ magnetActive: true, magnetTimer: 10 });
-    },
+    activateMagnet: () => get().activatePowerup('magnet'),
 
     // ── Hara actions ──────────────────────────────────────────────────────────
 

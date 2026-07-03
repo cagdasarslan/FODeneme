@@ -9,6 +9,7 @@ import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.j
 import Hara from './Hara';
 import AdButton from '@/components/ui/AdButton';
 import { AD_UPGRADE_DISCOUNT } from '@/constants/game';
+import { POWERUPS, POWERUP_MAX_LEVEL, powerupDuration, powerupUpgradeCost } from '@/constants/powerups';
 
 const CHAR_BASE = '/assets/models/characters/';
 const MODEL_PATH = '/assets/models/horse.glb';
@@ -152,6 +153,8 @@ export default function Garage() {
   const armUpgradeDiscount  = useGameStore(s => s.armUpgradeDiscount);
   const customHorses        = useGameStore(s => s.customHorses ?? []);
   const tickFoals           = useGameStore(s => s.tickFoals);
+  const powerupLevels       = useGameStore(s => s.powerupLevels ?? {});
+  const upgradePowerup      = useGameStore(s => s.upgradePowerup);
 
   const allHorses = [...HORSES, ...customHorses];
 
@@ -221,7 +224,7 @@ export default function Garage() {
 
         {/* Tabs */}
         <div style={S.tabs}>
-          {[['jockey','🥷 JOKEYLERİM'],['horse','🐴 ATLARIM'],['hara','🐣 HARA']].map(([id, label]) => (
+          {[['jockey','🥷 JOKEYLERİM'],['horse','🐴 ATLARIM'],['hara','🐣 HARA'],['powerups','⚡ YETENEKLER']].map(([id, label]) => (
             <button
               key={id}
               style={{ ...S.tab, ...(tab === id ? S.tabActive : {}) }}
@@ -425,6 +428,67 @@ export default function Garage() {
 
         {/* ── HARA TAB ── */}
         {tab === 'hara' && <Hara />}
+
+        {/* ── YETENEKLER TAB ── */}
+        {tab === 'powerups' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: 1, textAlign: 'center' }}>
+              Koşuda yolda beliren yetenekleri topla. Havuçla geliştir → süreleri uzasın!
+            </div>
+            {flash && (
+              <div style={{ ...S.actionBtn, background: flash.includes('YETERSİZ') ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{flash}</div>
+            )}
+            {POWERUPS.map(p => {
+              const lvl    = powerupLevels[p.id] ?? 0;
+              const maxed  = lvl >= POWERUP_MAX_LEVEL;
+              const cost   = powerupUpgradeCost(lvl);
+              const canAfford = !maxed && carrots >= cost;
+              const curDur  = powerupDuration(p.id, lvl);
+              const nextDur = powerupDuration(p.id, lvl + 1);
+              return (
+                <div key={p.id} style={{ ...S.statBox, borderColor: `${p.color}44` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+                    <span style={{ fontSize: 24 }}>{p.emoji}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: p.color }}>{p.name}</div>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{p.desc}</div>
+                      <div style={{ display: 'flex', gap: 3, marginTop: 5 }}>
+                        {Array.from({ length: POWERUP_MAX_LEVEL }, (_, i) => (
+                          <div key={i} style={{
+                            flex: 1, height: 4, borderRadius: 2,
+                            background: i < lvl ? p.color : 'rgba(255,255,255,0.15)',
+                            transition: 'background 0.2s',
+                          }} />
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+                        SEVİYE {lvl}/{POWERUP_MAX_LEVEL} — Süre: {curDur.toFixed(1)}s{!maxed && ` → ${nextDur.toFixed(1)}s`}
+                      </div>
+                    </div>
+                  </div>
+                  {maxed ? (
+                    <div style={S.maxBadge}>MAKSİMUM</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 80 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: canAfford ? '#ffd700' : '#ff6666' }}>🥕 {cost}</span>
+                      <button
+                        style={{ ...S.upgradeBtn, background: canAfford ? `linear-gradient(135deg, ${p.color}, ${p.color}99)` : '#3a2a2a', cursor: canAfford ? 'pointer' : 'not-allowed', opacity: canAfford ? 1 : 0.5, color: '#111' }}
+                        onClick={() => {
+                          const ok = upgradePowerup(p.id);
+                          if (!ok) doFlash('YETERSİZ HAVUÇ!');
+                          else doFlash(`${p.name} SEVİYE ${lvl + 1}!`);
+                        }}
+                        disabled={!canAfford}
+                      >
+                        ↑ YÜKSELT
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

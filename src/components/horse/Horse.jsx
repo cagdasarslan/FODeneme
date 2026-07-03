@@ -67,6 +67,37 @@ function Jockey() {
   );
 }
 
+// ── Pegasus Kanatları (uçuş yeteneği görseli) ────────────────────────────────
+const wingMat = new THREE.MeshStandardMaterial({
+  color: '#ffffff', emissive: '#cfe8ff', emissiveIntensity: 0.5,
+  roughness: 0.35, side: THREE.DoubleSide, transparent: true, opacity: 0.95,
+});
+const wingGeo2 = new THREE.BoxGeometry(1.15, 0.06, 0.5);
+
+function PegasusWings() {
+  const visible = useGameStore((s) => s.wingsActive);
+  const lRef = useRef();
+  const rRef = useRef();
+  useFrame(() => {
+    if (!visible) return;
+    const a = Math.sin(performance.now() / 90) * 0.55; // kanat çırpma
+    if (lRef.current) lRef.current.rotation.z =  0.35 + a;
+    if (rRef.current) rRef.current.rotation.z = -0.35 - a;
+  });
+  if (!visible) return null;
+  return (
+    <group position={[0, 0.45, 0.1]}>
+      <group ref={lRef} position={[-0.2, 0, 0]}>
+        <mesh geometry={wingGeo2} material={wingMat} position={[-0.62, 0, 0]} castShadow />
+      </group>
+      <group ref={rRef} position={[0.2, 0, 0]}>
+        <mesh geometry={wingGeo2} material={wingMat} position={[0.62, 0, 0]} castShadow />
+      </group>
+    </group>
+  );
+}
+
+const FLY_Y = 4.2;            // uçuş yüksekliği (RigidBody y)
 const CLOSE_CALL_CD   = 0.8;  // close-call cooldown (saniye)
 const GROUND_Y        = 1.2;  // yol yüzeyindeki rigidBody y yüksekliği
 const JUMP_FORCE      = 9;    // zıplama başlangıç hızı (m/s)
@@ -338,6 +369,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   const mapId     = useGameStore((s) => s.mapId);
   const stumbleId = useGameStore((s) => s.stumbleId);
   const jumpedRef = useRef(new Set()); // bu zıplamada üzerinden atlanan engeller
+  const prevFlyingRef = useRef(false); // Pegasus uçuşu geçiş takibi
 
   // ── Eğilme (slide) durumu ──────────────────────────────────────────────────
   const crouchRef       = useRef();       // model+jokey sarmalayıcı (çömelme görseli)
@@ -406,11 +438,23 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     const clampedX = THREE.MathUtils.clamp(newX, -HALF_TRACK, HALF_TRACK);
     const vx = (clampedX - pos.x) / Math.max(delta, 0.001);
 
+    // ── Yetenek durumları (Pegasus uçuşu / turbo muafiyeti) ────────────────
+    const st0    = useGameStore.getState();
+    const flying = st0.wingsActive;
+    const immune = flying || st0.turboActive;
+    if (flying && !prevFlyingRef.current) {
+      onGroundRef.current = false; // uçuşa geç
+    } else if (!flying && prevFlyingRef.current) {
+      // Uçuş bitti: yere inerken çarpmaması için kısa dokunulmazlık
+      graceRef.current = Math.max(graceRef.current, 0.8);
+    }
+    prevFlyingRef.current = flying;
+
     // ── Eğilme (slide) — üst engellerin altından geçmek için ───────────────
     const nowMs   = performance.now();
-    const sliding = nowMs < slideUntilRef.current;
+    const sliding = !flying && nowMs < slideUntilRef.current;
     const wantsSlide = controls.current.slide;
-    if (wantsSlide && !slidePressedRef.current && onGroundRef.current && !sliding) {
+    if (wantsSlide && !slidePressedRef.current && onGroundRef.current && !sliding && !flying) {
       slideUntilRef.current = nowMs + SLIDE_DURATION_MS;
       sfx.click();
       haptic.light();
@@ -423,7 +467,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
                     * (inSpace ? SPACE_JUMP_MULT : 1);
     const gravity   = JUMP_GRAVITY * (inSpace ? SPACE_GRAVITY_MULT : 1);
     const wantsJump = controls.current.jump;
-    if (wantsJump && !jumpPressedRef.current && onGroundRef.current && !sliding) {
+    if (wantsJump && !jumpPressedRef.current && onGroundRef.current && !sliding && !flying) {
       velYRef.current     = JUMP_FORCE * jumpMult;
       onGroundRef.current = false;
       sfx.jump();
@@ -432,7 +476,12 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     jumpPressedRef.current = wantsJump;
 
     let newY = pos.y;
-    if (!onGroundRef.current) {
+    if (flying) {
+      // Pegasus uçuşu: sabit yüksekliğe süzül
+      velYRef.current     = 0;
+      onGroundRef.current = false;
+      newY = THREE.MathUtils.lerp(pos.y, FLY_Y, Math.min(1, 5 * delta));
+    } else if (!onGroundRef.current) {
       velYRef.current += gravity * delta;
       newY += velYRef.current * delta;
       if (newY <= GROUND_Y) {
@@ -468,7 +517,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     closeCoolRef.current = Math.max(0, closeCoolRef.current - delta);
 
     // ── Engel üzerinden atlama → adrenalin ödülü (yalnız ZEMİN engelleri) ──
-    if (!onGroundRef.current && newY > GROUND_Y + 1.0) {
+    if (!immune && !onGroundRef.current && newY > GROUND_Y + 1.0) {
       for (const [id, obs] of obstacleRegistry) {
         if (!obs.active || jumpedRef.current.has(id)) continue;
         if (getKind(obs.TypeFn) === 'overhead') continue;
@@ -484,7 +533,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
 
     // ── ÜST ENGELLER: her yükseklikte kontrol — zıplayarak geçilmez! ───────
     // Eğilerek geçmek serbesttir ve ödül verir.
-    if (graceRef.current <= 0) {
+    if (!immune && graceRef.current <= 0) {
       for (const [id, obs] of obstacleRegistry) {
         if (!obs.active || getKind(obs.TypeFn) !== 'overhead') continue;
         if (obs.z > 2) { slidUnderRef.current.delete(id); continue; } // geçti → işareti temizle (pool id'si yeniden kullanılır)
@@ -498,6 +547,11 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
               useGameStore.getState().registerSlideUnder();
             }
           } else {
+            // Nal Zırhı: ilk çarpmayı emer
+            if (useGameStore.getState().consumeShield()) {
+              graceRef.current = 1.0;
+              return;
+            }
             registerCollision();
             return;
           }
@@ -506,6 +560,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     }
 
     // ── Zemin çarpışması — yeterince yüksekteyken atla ─────────────────────
+    if (immune) return;
     if (!onGroundRef.current && newY > GROUND_Y + 1.0) return;
     if (graceRef.current > 0) return;
     for (const [, obs] of obstacleRegistry) {
@@ -514,7 +569,15 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       const [hbDx, hbDz] = getHitbox(obs.TypeFn);
       const dx = Math.abs(pos.x - obs.x);
       const dz = Math.abs(pos.z - obs.z);
-      if (dx < hbDx && dz < hbDz) { registerCollision(); return; }
+      if (dx < hbDx && dz < hbDz) {
+        // Nal Zırhı: ilk çarpmayı emer
+        if (useGameStore.getState().consumeShield()) {
+          graceRef.current = 1.0;
+          return;
+        }
+        registerCollision();
+        return;
+      }
       if (dx < CLOSE_CALL_RADIUS && dz < CLOSE_CALL_RADIUS && closeCoolRef.current <= 0) {
         registerCloseCall();
         closeCoolRef.current = CLOSE_CALL_CD;
@@ -542,6 +605,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
         </HorseErrorBoundary>
 
         <Jockey />
+        <PegasusWings />
       </group>
     </RigidBody>
   );

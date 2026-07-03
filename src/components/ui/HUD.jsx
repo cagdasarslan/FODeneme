@@ -6,6 +6,7 @@ import { HORSES } from '@/constants/horses';
 // Gösterge skalası: en hızlı atın boost'lu üst hızına göre (40'ta doygunlaşmasın)
 const TOP_SPEED = Math.max(...HORSES.map(h => h.baseMaxSpeed ?? 40)) * 1.3;
 import TouchPad from '@/components/ui/TouchPad';
+import { POWERUP_IDS, POWERUP_BY_ID } from '@/constants/powerups';
 
 const isMobile = 'ontouchstart' in window;
 
@@ -52,7 +53,13 @@ export default function HUD() {
   const adrenaline = useGameStore((s) => Math.floor(s.adrenaline));
   const speed      = useGameStore((s) => Math.floor(s.speed));
   const phase      = useGameStore((s) => s.phase);
-  const magnetActive      = useGameStore((s) => s.magnetActive);
+  // Aktif yetenekler — string selector: yalnız saniye değişince render olur
+  const powerupLine = useGameStore((s) =>
+    POWERUP_IDS
+      .filter((id) => s[id + 'Active'])
+      .map((id) => `${POWERUP_BY_ID[id].emoji} ${Math.ceil(s[id + 'Timer'])}s`)
+      .join('   ')
+  );
   const adrenalinBoosting = useGameStore((s) => s.adrenalinBoosting);
   const comboMult         = useGameStore((s) => s.comboMult);
   const stumbleActive     = useGameStore((s) => s.stumbleActive);
@@ -105,12 +112,12 @@ export default function HUD() {
         </div>
       </div>
 
-      {magnetActive && (
+      {powerupLine && (
         <div style={{ position:'fixed', top:70, left:'50%', transform:'translateX(-50%)',
-          fontFamily:'monospace', fontSize:18, fontWeight:900, color:'#00aaff',
-          textShadow:'0 0 15px #00aaff', letterSpacing:3, pointerEvents:'none',
-          animation:'pulse 0.5s infinite alternate' }}>
-          🧲 SÜPER NAL AKTİF
+          fontFamily:'monospace', fontSize:18, fontWeight:900, color:'#00e5ff',
+          textShadow:'0 0 15px #00aaff', letterSpacing:2, pointerEvents:'none',
+          whiteSpace:'nowrap' }}>
+          {powerupLine}
         </div>
       )}
 
