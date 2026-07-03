@@ -311,6 +311,9 @@ const useGameStore = create(
     tick: (delta) => {
       const { phase, speed, score, distance, adrenaline, magnetTimer, horseUpgrades, adrenalinBoosting, adrenalinBoostTimer } = get();
       if (phase !== 'playing') return;
+      // Arka plandan dönüşte rAF'ın biriktirdiği dev delta skoru/mesafeyi
+      // zıplatmasın — tek kare asla 100ms'den uzun sayılmaz.
+      delta = Math.min(delta, 0.1);
 
       const allHorsesForTick = [...HORSES, ...(get().customHorses ?? [])];
       const horse = allHorsesForTick.find(h => h.id === get().selectedHorseId);

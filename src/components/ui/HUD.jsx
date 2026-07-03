@@ -90,6 +90,31 @@ export default function HUD() {
 
   return (
     <>
+      {/* Duraklatma ekranı */}
+      {phase === 'paused' && (
+        <div style={styles.pauseOverlay}>
+          <div style={styles.pauseTitle}>⏸ DURAKLATILDI</div>
+          <div style={styles.pauseScore}>SKOR: {Math.floor(score).toLocaleString()}</div>
+          <button style={styles.pauseResume} onClick={() => useGameStore.getState().resumeRun()}>
+            ▶ DEVAM ET
+          </button>
+          <button style={styles.pauseQuit} onClick={() => useGameStore.getState().endRun()}>
+            🏁 KOŞUYU BİTİR
+          </button>
+        </div>
+      )}
+
+      {/* Duraklat düğmesi */}
+      {phase === 'playing' && (
+        <button
+          style={styles.pauseBtn}
+          onClick={() => useGameStore.getState().pauseRun()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
+          ⏸
+        </button>
+      )}
+
       {/* Üst bar */}
       <div style={styles.topBar}>
         <div style={styles.statBlock}>
@@ -210,6 +235,32 @@ export default function HUD() {
 
 // ── Stiller ───────────────────────────────────────────────────────────────────
 const styles = {
+  pauseOverlay: {
+    position: 'fixed', inset: 0, zIndex: 300,
+    background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    gap: 18, fontFamily: 'monospace', userSelect: 'none',
+  },
+  pauseTitle: { fontSize: 26, fontWeight: 900, letterSpacing: 4, color: '#fff' },
+  pauseScore: { fontSize: 15, fontWeight: 700, letterSpacing: 2, color: '#f5d060' },
+  pauseResume: {
+    padding: '14px 52px', fontSize: 18, fontWeight: 900, letterSpacing: 3,
+    fontFamily: 'monospace', color: '#fff', border: 'none', borderRadius: 12,
+    background: 'linear-gradient(135deg,#2a8a4a,#1a6a30)', cursor: 'pointer',
+    boxShadow: '0 4px 20px rgba(42,138,74,0.5)',
+  },
+  pauseQuit: {
+    padding: '10px 36px', fontSize: 12, fontWeight: 700, letterSpacing: 2,
+    fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)', borderRadius: 10,
+    border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)',
+    cursor: 'pointer',
+  },
+  pauseBtn: {
+    position: 'fixed', top: 'calc(8px + env(safe-area-inset-top, 0px))', right: 10, zIndex: 60,
+    width: 40, height: 40, borderRadius: 10, fontSize: 18, lineHeight: 1,
+    background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.25)',
+    color: '#fff', cursor: 'pointer', fontFamily: 'monospace',
+  },
   topBar: {
     position: 'fixed',
     top: 0,

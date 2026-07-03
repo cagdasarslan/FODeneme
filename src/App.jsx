@@ -50,12 +50,19 @@ export default function App() {
   useEffect(() => {
     const onHide = () => {
       if (document.visibilityState === 'hidden') {
+        // OYUN ARKA PLANDA KOŞMASIN: telefon alta indirilince otomatik duraklat
+        // (aksi halde skor akmaya, müzik çalmaya devam ediyordu).
+        if (useGameStore.getState().phase === 'playing') useGameStore.getState().pauseRun();
         const hasFoals = (useGameStore.getState().foals?.length ?? 0) > 0;
         scheduleReminders({ hasFoals });
       }
     };
     document.addEventListener('visibilitychange', onHide);
-    return () => document.removeEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', onHide);
+    };
   }, []);
 
   // Müzik + nal sesi: koşuda harita müziği; çiftlikte sakin çiftlik müziği
