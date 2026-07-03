@@ -31,7 +31,7 @@ export const COMBO_MAX_MULT  = 4;
 export const STUMBLE_WINDOW_MS = 15000;
 
 // Harita kilitleri: herhangi bir haritadaki en iyi skorun eşiği
-export const MAP_UNLOCKS = { 2: 1000, 3: 3000, 4: 6000, 5: 10000 };
+export const MAP_UNLOCKS = { 2: 1000, 3: 3000, 4: 6000, 5: 10000, 6: 15000 };
 
 // Uzay imza mekaniği: düşük yerçekimi
 export const SPACE_GRAVITY_MULT = 0.62;

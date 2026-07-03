@@ -72,6 +72,7 @@ const MAP_INFO = {
   3: { emoji: '🌵', name: 'ÇÖLLER',     color: '#d4a020' },
   4: { emoji: '🚀', name: 'UZAY',       color: '#aa44ff' },
   5: { emoji: '🏰', name: 'ORTAÇAĞ',    color: '#c8843c' },
+  6: { emoji: '💀', name: 'ZİNDAN',     color: '#9a6cff' },
 };
 
 function getDailyChallenge() {
@@ -116,7 +117,7 @@ export default function MainMenu() {
   const {
     phase, sessionReady, sessionError, score, carrots,
     startRun, openGarage, selectedCharacterId, selectedHorseId,
-    mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5,
+    mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5, highScoreMap6,
     horseLevels, nightMode, toggleNightMode,
     runCarrots, carrotsDoubled, doubleRunCarrots, claimAdCarrots, adBonusToday, armStartBoost,
   } = useGameStore(s => ({
@@ -136,6 +137,7 @@ export default function MainMenu() {
     highScoreMap3:       s.highScoreMap3,
     highScoreMap4:       s.highScoreMap4,
     highScoreMap5:       s.highScoreMap5,
+    highScoreMap6:       s.highScoreMap6,
     horseLevels:         s.horseLevels,
     nightMode:           s.nightMode,
     toggleNightMode:     s.toggleNightMode,
@@ -191,7 +193,7 @@ export default function MainMenu() {
 
   const activeChar  = CHARACTERS.find(c => c.id === selectedCharacterId) ?? CHARACTERS[0];
   const activeHorse = HORSES.find(h => h.id === selectedHorseId) ?? HORSES[0];
-  const mapHs       = mapId === 5 ? (highScoreMap5 ?? 0) : mapId === 4 ? (highScoreMap4 ?? 0) : mapId === 3 ? highScoreMap3 : mapId === 2 ? highScoreMap2 : highScoreMap1;
+  const mapHs       = mapId === 6 ? (highScoreMap6 ?? 0) : mapId === 5 ? (highScoreMap5 ?? 0) : mapId === 4 ? (highScoreMap4 ?? 0) : mapId === 3 ? highScoreMap3 : mapId === 2 ? highScoreMap2 : highScoreMap1;
   const mapInfo     = MAP_INFO[mapId] ?? MAP_INFO[1];
   const horseLevel  = (horseLevels && horseLevels[selectedHorseId]) ?? 1;
 
@@ -309,9 +311,10 @@ export default function MainMenu() {
               { id: 3, emoji: '🌵', name: 'ÇÖLLER',        sub: 'Çöl Koşusu',        color: '#d4a020', rgb: '212,160,32', hs: highScoreMap3 },
               { id: 4, emoji: '🚀', name: 'UZAY KOLONİSİ', sub: "Mars'ta At Yarışı", color: '#aa44ff', rgb: '170,68,255', hs: highScoreMap4 ?? 0 },
               { id: 5, emoji: '🏰', name: 'ORTAÇAĞ KÖYÜ',  sub: 'Köy Yolu',          color: '#c8843c', rgb: '200,132,60',  hs: highScoreMap5 ?? 0 },
+              { id: 6, emoji: '💀', name: 'ZİNDAN',        sub: 'Karanlık Koridor',  color: '#9a6cff', rgb: '154,108,255', hs: highScoreMap6 ?? 0 },
             ].map(m => {
               // Harita kilidi: herhangi bir haritadaki en iyi skor eşiği geçmeli
-              const maxHS = Math.max(highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4 ?? 0, highScoreMap5 ?? 0);
+              const maxHS = Math.max(highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4 ?? 0, highScoreMap5 ?? 0, highScoreMap6 ?? 0);
               const need  = MAP_UNLOCKS[m.id] ?? 0;
               const locked = need > 0 && maxHS < need;
               return (

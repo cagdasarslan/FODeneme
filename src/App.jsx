@@ -10,6 +10,7 @@ import CityEnvironment from '@/components/track/CityEnvironment';
 import DesertEnvironment from '@/components/track/DesertEnvironment';
 import SpaceEnvironment from '@/components/track/SpaceEnvironment';
 import MedievalEnvironment from '@/components/track/MedievalEnvironment';
+import DungeonEnvironment from '@/components/track/DungeonEnvironment';
 import ObstacleSpawner from '@/components/obstacles/ObstacleSpawner';
 import CarrotSpawner from '@/components/track/CarrotSpawner';
 import Weather from '@/components/track/Weather';
@@ -29,6 +30,7 @@ import PaddockScene, { PaddockUI } from '@/components/paddock/Paddock';
 // reference every render → React unmounts/remounts the entire environment
 // subtree, causing asset flickering and wrong-map assets appearing.
 function EnvLayer({ mapId }) {
+  if (mapId === 6) return <DungeonEnvironment />;
   if (mapId === 5) return <MedievalEnvironment />;
   if (mapId === 4) return <SpaceEnvironment />;
   if (mapId === 3) return <DesertEnvironment />;
@@ -115,9 +117,10 @@ export default function App() {
   const isSpace  = mapId === 4;
   const isMars   = mapId === 3;
   const isMedieval = mapId === 5;
-  const selfLit  = isSpace || isMars || isMedieval; // env yönetir kendi ışığını
+  const isDungeon = mapId === 6;
+  const selfLit  = isSpace || isMars || isMedieval || isDungeon; // env yönetir kendi ışığını
   const isNight  = nightMode && !selfLit;
-  const fogColor = mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a'
+  const fogColor = mapId === 6 ? '#0b0910' : mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a'
     : mapId === 5 ? '#9fd0e8'
     : isNight ? '#0a0e1e'
     : mapId === 2 ? '#88b8e0' : '#a8d4e8';
@@ -129,7 +132,7 @@ export default function App() {
         style={{ width:'100vw', height:'100vh' }}
         gl={{ antialias, powerPreference:'high-performance' }}
         dpr={[1,dprMax]} performance={{ min:0.5 }}>
-        {!isPaddock && <fog attach="fog" args={[fogColor, selfLit ? 120 : isNight ? 60 : 90, selfLit ? 500 : isNight ? 280 : 420]} />}
+        {!isPaddock && <fog attach="fog" args={[fogColor, isDungeon ? 55 : selfLit ? 120 : isNight ? 60 : 90, isDungeon ? 230 : selfLit ? 500 : isNight ? 280 : 420]} />}
         <CameraRig />
         {isPaddock ? (
           <PaddockScene />

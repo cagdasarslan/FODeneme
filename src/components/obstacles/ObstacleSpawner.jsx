@@ -48,6 +48,16 @@ const M_MED_TREE_B  = MED + 'detail_treeB.glb';
 const M_MED_FARM    = MED + 'farm_plot.glb';
 [M_MED_WELL, M_MED_ROCKS, M_MED_ROCKS_S, M_MED_TREE_A, M_MED_TREE_B, M_MED_FARM].forEach(p => useGLTF.preload(p));
 
+// ── Dungeon obstacle models (KayKit Dungeon Pack) ─────────────────────────────
+const DUN = '/assets/models/dungeon/';
+const M_DUN_CRATE   = DUN + 'crate.glb';
+const M_DUN_BARREL  = DUN + 'barrel.glb';
+const M_DUN_CHEST   = DUN + 'chest_common.glb';
+const M_DUN_SPIKES  = DUN + 'tileSpikes_large.glb';
+const M_DUN_BRICKS  = DUN + 'bricks.glb';
+const M_DUN_TABLE   = DUN + 'tableSmall.glb';
+[M_DUN_CRATE, M_DUN_BARREL, M_DUN_CHEST, M_DUN_SPIKES, M_DUN_BRICKS, M_DUN_TABLE].forEach(p => useGLTF.preload(p));
+
 const BASE_TIMER = 2.0;
 const POOL       = 18;
 
@@ -207,6 +217,14 @@ function MedievalGLB({ path, scale = 1, yOffset = 0 }) {
     </group>
   );
 }
+// Zindan engelleri MedievalGLB ile aynı merkezleme/parlatma mantığını kullanır
+function DunCrate()  { return <MedievalGLB path={M_DUN_CRATE}  scale={1.8} />; }
+function DunBarrel() { return <MedievalGLB path={M_DUN_BARREL} scale={1.8} />; }
+function DunChest()  { return <MedievalGLB path={M_DUN_CHEST}  scale={1.6} />; }
+function DunSpikes() { return <MedievalGLB path={M_DUN_SPIKES} scale={0.7} />; }
+function DunBricks() { return <MedievalGLB path={M_DUN_BRICKS} scale={1.6} />; }
+function DunTable()  { return <MedievalGLB path={M_DUN_TABLE}  scale={1.6} />; }
+
 function MedWell()    { return <MedievalGLB path={M_MED_WELL}    scale={3.0} />; }
 function MedRocks()   { return <MedievalGLB path={M_MED_ROCKS}   scale={3.0} />; }
 function MedRocksSm() { return <MedievalGLB path={M_MED_ROCKS_S} scale={3.4} />; }
@@ -240,11 +258,12 @@ function OverheadCity()     { return <OverheadGate post="#666" beam="#d8b400" />
 function OverheadDesert()   { return <OverheadGate post="#8a4a20" beam="#a05a28" />; }
 function OverheadSpace()    { return <OverheadGate post="#556" beam="#66ccff" glow="#2288ff" />; }
 function OverheadMedieval() { return <OverheadGate post="#7a7a7a" beam="#909090" />; }
+function OverheadDungeon()  { return <OverheadGate post="#4a4454" beam="#6a6278" glow="#ff9a3c" />; }
 
 // Tip → tür: 'overhead' = altından eğilerek geçilir; diğerleri zemin engeli
 const KIND_MAP = new Map([
   [OverheadFarm, 'overhead'], [OverheadCity, 'overhead'], [OverheadDesert, 'overhead'],
-  [OverheadSpace, 'overhead'], [OverheadMedieval, 'overhead'],
+  [OverheadSpace, 'overhead'], [OverheadMedieval, 'overhead'], [OverheadDungeon, 'overhead'],
 ]);
 export function getKind(TypeFn) { return KIND_MAP.get(TypeFn) ?? 'ground'; }
 
@@ -271,6 +290,10 @@ const TYPES_SPACE = [
 const TYPES_MEDIEVAL = [
   MedWell, MedRocks, MedRocksSm, MedTreeA, MedTreeB, MedFarm,
   MedRocks, MedTreeA, MedRocksSm, MedTreeB, OverheadMedieval, OverheadMedieval,
+];
+const TYPES_DUNGEON = [
+  DunCrate, DunBarrel, DunChest, DunSpikes, DunBricks, DunTable,
+  DunCrate, DunBarrel, DunSpikes, DunChest, OverheadDungeon, OverheadDungeon,
 ];
 
 // ── Tip → hitbox [dx, dz] eşlemesi (function ref, minification-safe) ──────────
@@ -314,11 +337,19 @@ const _setMedieval = () => {
   HITBOX_MAP.set(MedTreeB,   [0.90, 0.90]);
   HITBOX_MAP.set(MedFarm,    [1.50, 1.50]);
 };
+const _setDungeon = () => {
+  HITBOX_MAP.set(DunCrate,  [1.00, 1.00]);
+  HITBOX_MAP.set(DunBarrel, [0.90, 0.90]);
+  HITBOX_MAP.set(DunChest,  [1.20, 0.90]);
+  HITBOX_MAP.set(DunSpikes, [1.40, 1.40]);
+  HITBOX_MAP.set(DunBricks, [1.10, 1.05]);
+  HITBOX_MAP.set(DunTable,  [0.85, 0.90]);
+};
 const _setOverhead = () => {
-  [OverheadFarm, OverheadCity, OverheadDesert, OverheadSpace, OverheadMedieval]
+  [OverheadFarm, OverheadCity, OverheadDesert, OverheadSpace, OverheadMedieval, OverheadDungeon]
     .forEach(T => HITBOX_MAP.set(T, [1.70, 0.45]));
 };
-_setFarm(); _setCity(); _setDesert(); _setSpace(); _setMedieval(); _setOverhead();
+_setFarm(); _setCity(); _setDesert(); _setSpace(); _setMedieval(); _setDungeon(); _setOverhead();
 export function getHitbox(TypeFnOrName) {
   if (typeof TypeFnOrName === 'function') return HITBOX_MAP.get(TypeFnOrName) ?? [1.00, 1.00];
   return [1.00, 1.00];
@@ -345,7 +376,7 @@ function Obstacle({ data, onRef }) {
 export default function ObstacleSpawner() {
   const phase   = useGameStore((s) => s.phase);
   const mapId   = useGameStore((s) => s.mapId);
-  const types   = mapId === 5 ? TYPES_MEDIEVAL : mapId === 4 ? TYPES_SPACE : mapId === 3 ? TYPES_DESERT : mapId === 2 ? TYPES_CITY : TYPES_FARM;
+  const types   = mapId === 6 ? TYPES_DUNGEON : mapId === 5 ? TYPES_MEDIEVAL : mapId === 4 ? TYPES_SPACE : mapId === 3 ? TYPES_DESERT : mapId === 2 ? TYPES_CITY : TYPES_FARM;
   // Component is keyed by runId in App, so this always runs with current types.
   const poolRef = useRef(
     Array.from({ length: POOL }, (_, i) => ({

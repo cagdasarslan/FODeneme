@@ -114,7 +114,7 @@ export function stopGallop() {
 }
 
 // ── Harita müziği (her haritaya özgü prosedürel döngü) ────────────────────────
-// mapId: 1 çiftlik, 2 şehir, 3 çöl, 4 uzay, 5 ortaçağ
+// mapId: 1 çiftlik, 2 şehir, 3 çöl, 4 uzay, 5 ortaçağ, 6 zindan
 const N = (n) => 440 * Math.pow(2, (n - 9) / 12); // MIDI-ish nota → frekans
 const MUSIC = {
   1: { tempo: 420, type: 'triangle', gain: 0.05, notes: [60,64,67,72,67,64, 62,65,69,65, 60,64,67,64] },
@@ -122,6 +122,7 @@ const MUSIC = {
   3: { tempo: 460, type: 'sawtooth', gain: 0.035, notes: [62,63,66,68,66,63, 61,63,66,63, 62,65,63] },
   4: { tempo: 1300,type: 'sine',     gain: 0.05, notes: [55,62,67,69, 60,64,71,67] }, // uzay: yavaş pad
   5: { tempo: 480, type: 'triangle', gain: 0.045, notes: [57,60,62,64,62,60, 55,59,62,59, 57,60,64,62] },
+  6: { tempo: 560, type: 'sawtooth', gain: 0.03, notes: [45,48,51,48, 44,47,50,47, 45,48,52,51, 43,46,50,48] }, // zindan: karanlık minör
 };
 
 let musicTimer = null;
