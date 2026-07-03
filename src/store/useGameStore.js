@@ -146,6 +146,7 @@ const useGameStore = create(
     stumbleUntil: 0,
     stumbleId: 0,
     stumbleActive: false,
+    stumbleRecover: 0, // tökezleme sonrası dönülecek hız (0 = yok)
     runCarrots: 0,      // bu koşuda toplanan havuç (oyun sonu 2x için)
     carrotsDoubled: false, // oyun sonu havuç katlama kullanıldı mı
     startBoost: false,  // sonraki koşuya boost (mıknatıs) ile başla
@@ -262,7 +263,7 @@ const useGameStore = create(
         adrenalinBoosting: false,
         adrenalinBoostTimer: 0,
         combo: 0, comboExpire: 0, comboMult: 1,
-        stumbleUntil: 0, stumbleActive: false,
+        stumbleUntil: 0, stumbleActive: false, stumbleRecover: 0,
       })),
 
     pauseRun: () => set({ phase: 'paused' }),
@@ -351,7 +352,13 @@ const useGameStore = create(
 
       // Hız: gerçek ilerleme speedBase'te; turbo/slowmo geçici bindirme yapar
       const boostCap = adrenalinBoosting ? Math.min(cap * 1.3, MAX_SPEED * 1.3) : cap;
-      const speedBase = Math.min((get().speedBase ?? speed) + SPEED_INCREMENT * delta, boostCap);
+      let speedBase = Math.min((get().speedBase ?? speed) + SPEED_INCREMENT * delta, boostCap);
+      // Tökezleme sonrası HIZLI toparlanma: ~2 saniyede eski hıza dön
+      const recoverTo = get().stumbleRecover ?? 0;
+      if (recoverTo > speedBase) {
+        speedBase = Math.min(recoverTo, speedBase + (recoverTo - speedBase) * Math.min(1, delta * 2.2));
+        if (recoverTo - speedBase < 0.2) puUpdate.stumbleRecover = 0;
+      }
       let effSpeed = speedBase;
       if (puActive('turbo'))  effSpeed = boostCap * 1.15;      // turbo: tavan üstü hız
       if (puActive('slowmo')) effSpeed = effSpeed * 0.5;       // zaman büyüsü: dünya yavaş
@@ -470,12 +477,15 @@ const useGameStore = create(
       } else {
         sfx.crash();
         haptic.heavy();
+        const slowed = Math.max(INITIAL_SPEED, s.speedBase * 0.55);
         set({
           stumbleUntil: now + STUMBLE_WINDOW_MS,
           stumbleId: s.stumbleId + 1,
           stumbleActive: true,
-          speed: Math.max(INITIAL_SPEED, s.speed * 0.55), // tökezleme: yavaşla
-          combo: 0, comboMult: 1,                          // combo kırılır
+          speed: slowed,
+          speedBase: slowed,           // tökezleme: gerçek hız da düşer
+          stumbleRecover: s.speedBase, // ~2 sn'de eski hıza toparlan (tick)
+          combo: 0, comboMult: 1,      // combo kırılır
         });
       }
     },

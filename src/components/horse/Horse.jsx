@@ -98,6 +98,10 @@ function PegasusWings() {
 }
 
 const FLY_Y = 4.2;            // uçuş yüksekliği (RigidBody y)
+// Çarpışma toleransı: hitbox'ın kenarına sürtmek öldürmesin — yalnızca
+// gerçekten engelin İÇİNE girince çarpma sayılır (yanlardan %25, önden %12 pay)
+const HIT_TOL_X = 0.75;
+const HIT_TOL_Z = 0.88;
 const CLOSE_CALL_CD   = 0.8;  // close-call cooldown (saniye)
 const GROUND_Y        = 1.2;  // yol yüzeyindeki rigidBody y yüksekliği
 const JUMP_FORCE      = 9;    // zıplama başlangıç hızı (m/s)
@@ -540,7 +544,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
         const [hbDx, hbDz] = getHitbox(obs.TypeFn);
         const dx = Math.abs(pos.x - obs.x);
         const dz = Math.abs(pos.z - obs.z);
-        if (dx < hbDx && dz < hbDz) {
+        if (dx < hbDx * HIT_TOL_X && dz < hbDz * HIT_TOL_Z) {
           if (sliding) {
             if (!slidUnderRef.current.has(id)) {
               slidUnderRef.current.add(id);
@@ -569,7 +573,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       const [hbDx, hbDz] = getHitbox(obs.TypeFn);
       const dx = Math.abs(pos.x - obs.x);
       const dz = Math.abs(pos.z - obs.z);
-      if (dx < hbDx && dz < hbDz) {
+      if (dx < hbDx * HIT_TOL_X && dz < hbDz * HIT_TOL_Z) {
         // Nal Zırhı: ilk çarpmayı emer
         if (useGameStore.getState().consumeShield()) {
           graceRef.current = 1.0;

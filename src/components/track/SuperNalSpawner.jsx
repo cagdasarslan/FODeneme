@@ -6,12 +6,22 @@ import { horseRef } from '@/utils/horseRef';
 import { POWERUPS } from '@/constants/powerups';
 
 // ── Genel YETENEK spawner'ı ───────────────────────────────────────────────────
-// 5-10 saniyede bir (rastgele) yolda rastgele bir yetenek belirir (her tipin
-// kendine özgü şekli/rengi vardır). Alınca store.activatePowerup(id) tetiklenir.
+// 10-15 saniyede bir (rastgele) yolda bir yetenek belirir. Tip seçimi "karışık
+// torba" ile yapılır: 6 yeteneğin hepsi rastgele sırayla bir kez çıkmadan
+// hiçbiri tekrarlanmaz — böylece her yetenek mutlaka görülür.
 const SPAWN_Z   = -90;
 const RECYCLE_Z = 12;
 const LANES     = [-4, 0, 4];
-const nextInterval = () => 5 + Math.random() * 5; // saniye
+const nextInterval = () => 10 + Math.random() * 5; // saniye
+
+function shuffledBag() {
+  const bag = POWERUPS.map(p => p.id);
+  for (let i = bag.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [bag[i], bag[j]] = [bag[j], bag[i]];
+  }
+  return bag;
+}
 
 // ── Tip başına ayırt edici mini-meshler ──────────────────────────────────────
 const mats = Object.fromEntries(POWERUPS.map(p => [p.id,
@@ -57,6 +67,7 @@ export default function SuperNalSpawner() {
   const timerRef  = useRef(0);
   const nextAtRef = useRef(nextInterval());
   const spinRef   = useRef(0);
+  const bagRef    = useRef(shuffledBag());
 
   useFrame((_, delta) => {
     if (phase !== 'playing') return;
@@ -99,8 +110,9 @@ export default function SuperNalSpawner() {
       s.x = LANES[Math.floor(Math.random() * LANES.length)];
       s.z = SPAWN_Z;
       s.active = true;
-      // Rastgele yetenek seç
-      setType(POWERUPS[Math.floor(Math.random() * POWERUPS.length)].id);
+      // Karışık torbadan sıradaki yetenek (torba bitince yeniden karılır)
+      if (bagRef.current.length === 0) bagRef.current = shuffledBag();
+      setType(bagRef.current.pop());
     }
   });
 
