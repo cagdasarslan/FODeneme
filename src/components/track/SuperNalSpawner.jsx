@@ -6,12 +6,12 @@ import { horseRef } from '@/utils/horseRef';
 import { POWERUPS } from '@/constants/powerups';
 
 // ── Genel YETENEK spawner'ı ───────────────────────────────────────────────────
-// ~40 saniyede bir yolda rastgele bir yetenek belirir (her tipin kendine özgü
-// şekli/rengi vardır). Alınca store.activatePowerup(id) tetiklenir.
+// 5-10 saniyede bir (rastgele) yolda rastgele bir yetenek belirir (her tipin
+// kendine özgü şekli/rengi vardır). Alınca store.activatePowerup(id) tetiklenir.
 const SPAWN_Z   = -90;
 const RECYCLE_Z = 12;
 const LANES     = [-4, 0, 4];
-const SPAWN_INTERVAL = 40; // saniye
+const nextInterval = () => 5 + Math.random() * 5; // saniye
 
 // ── Tip başına ayırt edici mini-meshler ──────────────────────────────────────
 const mats = Object.fromEntries(POWERUPS.map(p => [p.id,
@@ -54,8 +54,9 @@ export default function SuperNalSpawner() {
 
   const state = useRef({ x: 0, z: -200, active: false });
   const groupRef = useRef();
-  const timerRef = useRef(SPAWN_INTERVAL * 0.55); // ilk yetenek daha erken gelsin
-  const spinRef  = useRef(0);
+  const timerRef  = useRef(0);
+  const nextAtRef = useRef(nextInterval());
+  const spinRef   = useRef(0);
 
   useFrame((_, delta) => {
     if (phase !== 'playing') return;
@@ -79,6 +80,7 @@ export default function SuperNalSpawner() {
         s.active = false;
         if (grp) grp.visible = false;
         timerRef.current = 0;
+        nextAtRef.current = nextInterval();
         return;
       }
 
@@ -89,9 +91,10 @@ export default function SuperNalSpawner() {
         s.active = false;
         if (grp) grp.visible = false;
         timerRef.current = 0;
+        nextAtRef.current = nextInterval();
         useGameStore.getState().activatePowerup(type);
       }
-    } else if (timerRef.current >= SPAWN_INTERVAL) {
+    } else if (timerRef.current >= nextAtRef.current) {
       timerRef.current = 0;
       s.x = LANES[Math.floor(Math.random() * LANES.length)];
       s.z = SPAWN_Z;
