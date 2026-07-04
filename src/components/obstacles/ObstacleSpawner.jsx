@@ -145,22 +145,23 @@ function LogPile() {
 }
 
 // ── KayKit city obstacles ────────────────────────────────────────────────────
-function CityGLB({ path, scale = 1, yOffset = 0, rotY = 0 }) {
+function CityGLB({ path, scale = 1, yOffset = 0, rotY = 0, brighten = false }) {
   const { scene } = useGLTF(path);
   const cloned = useRef(null);
   if (!cloned.current) {
     cloned.current = scene.clone(true);
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    ensureVisible(cloned.current, { minLight: 0.34, glow: 0.28 }); // siyah asfaltta kaybolmasın
+    // Araç renkleri orijinal kalır; yalnız koyu konteyner/kutular aydınlatılır
+    if (brighten) ensureVisible(cloned.current, { minLight: 0.34, glow: 0.28 });
   }
   return <primitive object={cloned.current} scale={scale} position={[0, yOffset, 0]} rotation={[0, rotY, 0]} />;
 }
 function CityCar()    { return <CityGLB path={M_CAR_S} scale={3.5} yOffset={0.25} />; }
 function CityTaxi()   { return <CityGLB path={M_CAR_T} scale={3.5} yOffset={0.25} />; }
 function CityPolice() { return <CityGLB path={M_CAR_P} scale={3.5} yOffset={0.25} />; }
-function CityDump()   { return <CityGLB path={M_DUMP}  scale={2.5} yOffset={0.0}  />; }
-function CityBoxA()   { return <CityGLB path={M_BOX_A} scale={4.0} yOffset={0.0}  />; }
-function CityBoxB()   { return <CityGLB path={M_BOX_B} scale={4.0} yOffset={0.0}  />; }
+function CityDump()   { return <CityGLB path={M_DUMP}  scale={2.5} yOffset={0.0} brighten />; }
+function CityBoxA()   { return <CityGLB path={M_BOX_A} scale={4.0} yOffset={0.0} brighten />; }
+function CityBoxB()   { return <CityGLB path={M_BOX_B} scale={4.0} yOffset={0.0} brighten />; }
 
 // ── Desert GLB obstacles ─────────────────────────────────────────────────────
 // Scale goes on a wrapper <group>; centering offset goes on the <primitive>
