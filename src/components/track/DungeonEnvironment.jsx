@@ -65,7 +65,7 @@ function pr(a, b = 0) {
 const ROAD_W = 18;
 const tileGeo = new THREE.BoxGeometry(0.94, 0.2, 0.94);
 const tileMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 });
-const TILE_COLORS = ['#3a3542', '#332e3b', '#413b4a', '#2d2935', '#38333f', '#443e4e'].map(c => new THREE.Color(c));
+const TILE_COLORS = ['#8a8494', '#7d7789', '#948da0', '#736d80', '#867f93', '#9a93a8'].map(c => new THREE.Color(c));
 
 function StoneFloor({ segIdx }) {
   const ref = useRef();
@@ -119,7 +119,7 @@ function TorchFlame({ position, withLight }) {
   useFrame(() => {
     const t = performance.now() / 1000;
     const flick = 0.85 + Math.sin(t * 11 + seed) * 0.1 + Math.sin(t * 23 + seed * 2) * 0.05;
-    if (lightRef.current) lightRef.current.intensity = 3.6 * flick;
+    if (lightRef.current) lightRef.current.intensity = 1.6 * flick;
     if (flameRef.current) flameRef.current.scale.setScalar(0.9 + flick * 0.2);
   });
   return (
@@ -127,7 +127,7 @@ function TorchFlame({ position, withLight }) {
       <mesh ref={flameRef} material={flameMat}>
         <sphereGeometry args={[0.22, 6, 5]} />
       </mesh>
-      {withLight && <pointLight ref={lightRef} color="#ff9a3c" intensity={3.6} distance={26} decay={1.6} />}
+      {withLight && <pointLight ref={lightRef} color="#ff9a3c" intensity={1.6} distance={16} decay={1.6} />}
     </group>
   );
 }
@@ -138,16 +138,16 @@ function RoadSegment({ segIdx }) {
       {/* Koyu taban — koridor dışı zifiri karanlık */}
       <mesh receiveShadow position={[-109, 0.05, 0]}>
         <boxGeometry args={[200, 0.10, SEG_LEN + 0.6]} />
-        <meshStandardMaterial color="#0d0b11" roughness={1} />
+        <meshStandardMaterial color="#6a7a5a" roughness={1} />
       </mesh>
       <mesh receiveShadow position={[109, 0.05, 0]}>
         <boxGeometry args={[200, 0.10, SEG_LEN + 0.6]} />
-        <meshStandardMaterial color="#0d0b11" roughness={1} />
+        <meshStandardMaterial color="#6a7a5a" roughness={1} />
       </mesh>
       {/* Derz tabanı */}
       <mesh receiveShadow position={[0, 0.1, 0]}>
         <boxGeometry args={[ROAD_W, 0.2, SEG_LEN + 0.6]} />
-        <meshStandardMaterial color="#1c1922" roughness={1} />
+        <meshStandardMaterial color="#55505f" roughness={1} />
       </mesh>
       <StoneFloor segIdx={segIdx} />
     </group>
@@ -258,16 +258,16 @@ export default function DungeonEnvironment() {
 
   return (
     <>
-      {/* Zifiri zindan karanlığı (sis App'te haritaya göre ayarlanır) */}
-      <color attach="background" args={['#0b0910']} />
+      {/* Gündüz: açık hava harabe zindanı — üstü açık taş koridor */}
+      <color attach="background" args={['#a8c8e8']} />
 
-      {/* Loş zindan ışığı — meşaleler ana ışık kaynağı */}
-      <ambientLight intensity={0.55} color="#9a8ab8" />
+      {/* Gün ışığı — meşaleler dekoratif */}
+      <ambientLight intensity={0.65} color="#fff2e0" />
       <directionalLight
         castShadow
-        position={[-20, 60, 30]}
-        intensity={0.9}
-        color="#aab0ff"
+        position={[-30, 70, 35]}
+        intensity={1.9}
+        color="#fff2d8"
         shadow-mapSize={[SHADOW_MAP, SHADOW_MAP]}
         shadow-camera-near={1}
         shadow-camera-far={300}
@@ -276,7 +276,7 @@ export default function DungeonEnvironment() {
         shadow-camera-top={80}
         shadow-camera-bottom={-80}
       />
-      <hemisphereLight skyColor="#4a4260" groundColor="#241f30" intensity={0.7} />
+      <hemisphereLight skyColor="#bcd8f0" groundColor="#5a5468" intensity={0.65} />
 
       {Array.from({ length: SEG_COUNT }, (_, i) => (
         <group

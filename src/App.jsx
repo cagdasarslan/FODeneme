@@ -23,7 +23,8 @@ import LoadingScreen from '@/components/ui/LoadingScreen';
 import { IS_MOBILE, MAX_DPR, SHADOW_MAP } from '@/utils/device';
 import { startMusic, stopMusic, startGallop, stopGallop } from '@/utils/audio';
 import { initNotifications, scheduleReminders } from '@/services/NotificationService';
-import { initCloudSave } from '@/services/CloudSave';
+import { initCloudSave, linkCloudToAccount } from '@/services/CloudSave';
+import { initAuth, refreshSessionIfNeeded } from '@/services/AuthService';
 import PaddockScene, { PaddockUI } from '@/components/paddock/Paddock';
 
 // ── EnvLayer MUST be defined outside App so React sees the same component
@@ -47,7 +48,11 @@ export default function App() {
   const graphics  = useGameStore((s) => s.graphics);
   const phase = useGameStore((s) => s.phase);
   const initDaily = useGameStore((s) => s.initDaily);
-  useEffect(() => { initSession(); initDaily(); initNotifications(); initCloudSave(); }, [initSession, initDaily]);
+  useEffect(() => {
+    initSession(); initDaily(); initNotifications(); initCloudSave();
+    refreshSessionIfNeeded();
+    initAuth(linkCloudToAccount); // Google/Apple dönüşünü yakala → bulut kaydını bağla
+  }, [initSession, initDaily]);
 
   // Uygulama arka plana alınınca hatırlatma bildirimlerini planla
   useEffect(() => {
@@ -121,7 +126,7 @@ export default function App() {
   const isDungeon = mapId === 6;
   const selfLit  = isSpace || isMars || isMedieval || isDungeon; // env yönetir kendi ışığını
   const isNight  = nightMode && !selfLit;
-  const fogColor = mapId === 6 ? '#0b0910' : mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a'
+  const fogColor = mapId === 6 ? '#a8c8e8' : mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a'
     : mapId === 5 ? '#9fd0e8'
     : isNight ? '#0a0e1e'
     : mapId === 2 ? '#88b8e0' : '#a8d4e8';
@@ -133,7 +138,7 @@ export default function App() {
         style={{ width:'100vw', height:'100vh' }}
         gl={{ antialias, powerPreference:'high-performance' }}
         dpr={[1,dprMax]} performance={{ min:0.5 }}>
-        {!isPaddock && <fog attach="fog" args={[fogColor, isDungeon ? 55 : selfLit ? 120 : isNight ? 60 : 90, isDungeon ? 230 : selfLit ? 500 : isNight ? 280 : 420]} />}
+        {!isPaddock && <fog attach="fog" args={[fogColor, selfLit ? 120 : isNight ? 60 : 90, selfLit ? 500 : isNight ? 280 : 420]} />}
         <CameraRig />
         {isPaddock ? (
           <PaddockScene />

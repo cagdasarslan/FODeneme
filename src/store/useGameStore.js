@@ -198,7 +198,7 @@ const useGameStore = create(
     mapId: parseInt(localStorage.getItem('mapId') ?? '1', 10), // 1=Farm/Race, 2=City
 
     // ── Night mode (maps 1-2; mars/space have their own atmosphere) ──────────
-    nightMode: localStorage.getItem('nightMode') === '1',
+    nightMode: false, // gece modu kaldırıldı (performans)
 
     // ── Ayarlar ───────────────────────────────────────────────────────────────
     soundOn: localStorage.getItem('soundOn') !== '0',          // oyun sesleri (SFX + nal)
@@ -873,12 +873,6 @@ const useGameStore = create(
     },
 
     setMapId: (id) => { localStorage.setItem('mapId', id); set({ mapId: id }); },
-
-    toggleNightMode: () => {
-      const next = !get().nightMode;
-      localStorage.setItem('nightMode', next ? '1' : '0');
-      set({ nightMode: next });
-    },
 
     setSoundOn: (on) => {
       localStorage.setItem('soundOn', on ? '1' : '0');

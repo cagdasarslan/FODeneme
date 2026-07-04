@@ -1,5 +1,6 @@
 import { SUPA_URL, SUPA_KEY } from '@/constants/supabase';
 import { isSupaConfigured, getPlayerLocalId, getPlayerName } from '@/services/SupaLeaderboard';
+import { getAuthUser } from '@/services/AuthService';
 
 /*
   BULUT KAYDI — tüm kalıcı oyuncu verisi Supabase'te 'profiles' tablosunda tutulur.
@@ -28,7 +29,7 @@ const SAVE_KEYS = [
   'hs_map1', 'hs_map2', 'hs_map3', 'hs_map4', 'hs_map5', 'hs_map6',
   'adsRemoved', 'daily_v1', 'life_v1', 'achClaimed',
   'foals', 'stableSlots', 'lastBreedAt', 'trainingXP', 'paddockObstacles',
-  'mapId', 'nightMode', 'soundOn', 'musicOn',
+  'mapId', 'soundOn', 'musicOn',
 ];
 
 const headers = () => ({
@@ -45,6 +46,13 @@ function collectSave() {
     if (v !== null) data[k] = v;
   }
   return data;
+}
+
+// Yedek hangi kimlikle tutulur: Google/Apple girişi varsa hesaba bağlı
+// ('u_<uid>'), yoksa cihazın yerel kimliği (kurtarma kodu)
+function getSaveId() {
+  const u = getAuthUser();
+  return u ? 'u_' + u.id : getPlayerLocalId();
 }
 
 // Kullanıcıya gösterilen kod: p_ öneki olmadan, büyük harf (girişte normalize edilir)
@@ -76,7 +84,7 @@ export async function pushCloudSave() {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({
-        id: getPlayerLocalId(),
+        id: getSaveId(),
         name: getPlayerName(),
         data,
         updated_at: new Date().toISOString(),
@@ -111,6 +119,36 @@ export async function restoreFromCloud(code) {
   } catch (e) {
     return { ok: false, reason: 'Bağlantı hatası — internetini kontrol et' };
   }
+}
+
+// ── Google/Apple girişi tamamlanınca çağrılır ────────────────────────────────
+// Hesapta yedek VARSA indir (yeniden kurulum senaryosu), YOKSA mevcut
+// ilerlemeyi hesaba bağlayarak yükle (ilk giriş senaryosu).
+export async function linkCloudToAccount(user) {
+  try {
+    const id = 'u_' + user.id;
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&select=data`,
+      { headers: headers() }
+    );
+    const rows = await res.json();
+    const remote = Array.isArray(rows) && rows[0]?.data;
+    const localHasProgress = !!localStorage.getItem('nameSet');
+    if (remote && Object.keys(remote).length > 0 && !localHasProgress) {
+      // Temiz kurulum + hesapta yedek var → indir
+      for (const [k, v] of Object.entries(remote)) {
+        if (typeof v === 'string') localStorage.setItem(k, v);
+      }
+      localStorage.setItem('nameSet', '1');
+      window.location.reload();
+      return 'restored';
+    }
+    // Mevcut ilerlemeyi hesaba yaz (hesapta yedek yoksa ya da yerel daha güncelse
+    // yerel kazanır — oyuncu aktif cihazında oynuyordur)
+    _lastPushed = '';
+    await pushCloudSave();
+    return 'linked';
+  } catch (e) { return 'error'; }
 }
 
 // ── Otomatik yedekleme kancaları ─────────────────────────────────────────────

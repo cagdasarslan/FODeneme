@@ -15,6 +15,7 @@ import { getActiveEvent } from '@/constants/events';
 import { fetchLeaderboard } from '@/services/LeaderboardService';
 import { Capacitor } from '@capacitor/core';
 import { restoreFromCloud } from '@/services/CloudSave';
+import { signInWith } from '@/services/AuthService';
 
 const isNative = Capacitor.getPlatform() !== 'web';
 
@@ -134,7 +135,7 @@ export default function MainMenu() {
     phase, sessionReady, sessionError, score, carrots,
     startRun, openGarage, selectedCharacterId, selectedHorseId,
     mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5, highScoreMap6,
-    horseLevels, nightMode, toggleNightMode,
+    horseLevels,
     runCarrots, carrotsDoubled, doubleRunCarrots, claimAdCarrots, adBonusToday, armStartBoost,
   } = useGameStore(s => ({
     phase:               s.phase,
@@ -155,8 +156,6 @@ export default function MainMenu() {
     highScoreMap5:       s.highScoreMap5,
     highScoreMap6:       s.highScoreMap6,
     horseLevels:         s.horseLevels,
-    nightMode:           s.nightMode,
-    toggleNightMode:     s.toggleNightMode,
     runCarrots:          s.runCarrots,
     carrotsDoubled:      s.carrotsDoubled,
     doubleRunCarrots:    s.doubleRunCarrots,
@@ -357,20 +356,6 @@ export default function MainMenu() {
             })}
           </div>
 
-          {(mapId === 1 || mapId === 2) && (
-            <button
-              style={{
-                ...styles.nightBtn,
-                borderColor: nightMode ? '#8fa8e0' : 'rgba(255,255,255,0.15)',
-                color: nightMode ? '#8fa8e0' : 'rgba(255,255,255,0.5)',
-                background: nightMode ? 'rgba(143,168,224,0.1)' : 'transparent',
-              }}
-              onClick={toggleNightMode}
-            >
-              {nightMode ? '🌙 GECE MODU: AÇIK' : '☀️ GECE MODU: KAPALI'}
-            </button>
-          )}
-
           {/* Aktif jokey + at */}
           <div style={styles.activeRow} onClick={openGarage}>
             <div style={styles.activeItem}>
@@ -457,7 +442,7 @@ export default function MainMenu() {
                 style={{ marginTop: 12, fontSize: 11, color: '#7fd4ff', textDecoration: 'underline', cursor: 'pointer', fontWeight: 700 }}
                 onClick={() => setRestoreMode(true)}
               >
-                ☁️ Daha önce oynadın mı? Kurtarma kodunla geri yükle
+                ☁️ Daha önce oynadın mı? İlerlemeni geri yükle
               </div>
             ) : (
               <div style={{ marginTop: 12, width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -475,6 +460,12 @@ export default function MainMenu() {
                   onClick={doRestore}
                 >
                   ☁️ GERİ YÜKLE
+                </button>
+                <button
+                  style={{ ...styles.nameBtn, background: '#fff', color: '#1a1a2a' }}
+                  onClick={() => signInWith('google')}
+                >
+                  🇬 Google hesabımla geri yükle
                 </button>
                 {restoreMsg && <div style={{ fontSize: 10, fontWeight: 700, color: restoreMsg.startsWith('⚠') ? '#ff8866' : '#33ff99' }}>{restoreMsg}</div>}
               </div>

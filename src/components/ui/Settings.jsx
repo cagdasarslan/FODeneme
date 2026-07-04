@@ -2,6 +2,7 @@ import { useState } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { sfx } from '@/utils/audio';
 import { getRecoveryCode, restoreFromCloud, pushCloudSave } from '@/services/CloudSave';
+import { getAuthUser, signInWith, signOut } from '@/services/AuthService';
 
 // Ayarlar: ses aç/kapat + görüntü kalitesi (DÜŞÜK / YÜKSEK)
 export default function Settings({ onClose }) {
@@ -11,17 +12,6 @@ export default function Settings({ onClose }) {
   const setSoundOn = useGameStore(s => s.setSoundOn);
   const setMusicOn = useGameStore(s => s.setMusicOn);
   const setGraphics = useGameStore(s => s.setGraphics);
-
-  // Kullanıcı adı (liderlikte görünür)
-  const [pname, setPname] = useState(() => localStorage.getItem('playerName') || '');
-  const savePname = () => {
-    const n = pname.trim();
-    if (n.length >= 3) {
-      localStorage.setItem('playerName', n.slice(0, 16));
-      localStorage.setItem('nameSet', '1');
-      sfx.click();
-    }
-  };
 
   return (
     <div style={S.modal}>
@@ -77,25 +67,6 @@ export default function Settings({ onClose }) {
           </div>
         </div>
 
-        {/* Kullanıcı adı */}
-        <div style={{ ...S.row, flexDirection: 'column', alignItems: 'stretch', gap: 6 }}>
-          <span style={S.label}>🏷️ Kullanıcı Adı <span style={{ fontSize: 9, opacity: 0.5 }}>(liderlikte görünür)</span></span>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <input
-              value={pname}
-              maxLength={16}
-              onChange={e => setPname(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') savePname(); }}
-              style={S.nameInput}
-            />
-            <button
-              style={{ ...S.segBtn, ...S.segOn, minWidth: 70, opacity: pname.trim().length < 3 ? 0.4 : 1 }}
-              disabled={pname.trim().length < 3}
-              onClick={savePname}
-            >KAYDET</button>
-          </div>
-        </div>
-
         {/* Bulut kaydı — kurtarma kodu + geri yükleme */}
         <CloudSection />
 
@@ -129,14 +100,49 @@ function CloudSection() {
     }
   };
 
+  const user = getAuthUser();
+
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12, marginBottom: 12 }}>
       <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 700, marginBottom: 6 }}>
         ☁️ Bulut Kaydı
       </div>
+
+      {/* Google / Apple hesabı: yedek hesaba bağlanır, kod gerekmez */}
+      {user ? (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: 'rgba(51,255,153,0.08)', border: '1px solid rgba(51,255,153,0.35)',
+          borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: '#33ff99', fontWeight: 700 }}>✓ HESABA BAĞLI</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{user.email || user.name || user.provider}</div>
+          </div>
+          <button
+            style={{ ...S.segBtn, minWidth: 60, border: '1px solid rgba(255,255,255,0.2)' }}
+            onClick={() => { signOut(); sfx.click(); window.location.reload(); }}
+          >ÇIKIŞ</button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          <button
+            style={{ flex: 1, padding: '10px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1,
+              fontFamily: 'monospace', borderRadius: 8, cursor: 'pointer',
+              background: '#fff', color: '#1a1a2a', border: 'none' }}
+            onClick={() => { sfx.click(); signInWith('google'); }}
+          >🇬 Google ile Giriş</button>
+          <button
+            style={{ flex: 1, padding: '10px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1,
+              fontFamily: 'monospace', borderRadius: 8, cursor: 'pointer',
+              background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
+            onClick={() => { sfx.click(); signInWith('apple'); }}
+          > Apple ile Giriş</button>
+        </div>
+      )}
+
       <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: 8 }}>
-        İlerlemen otomatik yedeklenir. Oyunu silersen bu kodla her şeyi geri alırsın —
-        <b style={{ color: '#ffd700' }}> kodu bir yere not et!</b>
+        {user
+          ? 'İlerlemen hesabına otomatik yedekleniyor. Oyunu silsen bile giriş yapınca her şey geri gelir.'
+          : <>Giriş yaparsan ilerlemen hesabına bağlanır. Giriş yapmazsan da bu kodla geri alabilirsin — <b style={{ color: '#ffd700' }}>kodu bir yere not et!</b></>}
       </div>
       <div
         style={{
