@@ -117,12 +117,25 @@ function PaddockHorseModel({ variant, animRef }) {
     });
   }
 
+  // Klip adı çözümleyici: bazı modellerde 'walk/run' yerine 'horse.walk/
+  // horse.gallop' gibi adlar var. Aday listesinden ilk bulunanı döndür.
+  const pick = (cands) => { for (const c of cands) if (actions[c]) return c; return null; };
+  const clipFor = useRef(null);
+  if (skeletal && !clipFor.current) {
+    clipFor.current = {
+      idle: pick(['idle', 'Idle', 'horse.idle']),
+      walk: pick(['walk', 'Walk', 'horse.walk']),
+      run:  pick(['run', 'Run', 'gallop', 'horse.gallop', 'horse.canter', 'horse.trot']),
+    };
+  }
+
   useFrame(() => {
     const speed = animRef.current.speed;
     if (skeletal) {
-      // idle / walk / run klipleri arasında geçiş
-      const want = speed === 0 ? 'idle' : speed <= WALK_SPEED + 0.1 ? 'walk' : 'run';
-      if (cur.current !== want && actions[want]) {
+      // idle / walk / run klipleri arasında geçiş (model-özel adlarla)
+      const key = speed === 0 ? 'idle' : speed <= WALK_SPEED + 0.1 ? 'walk' : 'run';
+      const want = clipFor.current?.[key] ?? clipFor.current?.walk ?? clipFor.current?.run;
+      if (want && cur.current !== want && actions[want]) {
         if (actions[cur.current]) actions[cur.current].fadeOut(0.2);
         actions[want].reset().fadeIn(0.2).play();
         cur.current = want;
