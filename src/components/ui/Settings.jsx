@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { sfx } from '@/utils/audio';
+import { getRecoveryCode, restoreFromCloud, pushCloudSave } from '@/services/CloudSave';
 
 // Ayarlar: ses aç/kapat + görüntü kalitesi (DÜŞÜK / YÜKSEK)
 export default function Settings({ onClose }) {
@@ -95,10 +96,80 @@ export default function Settings({ onClose }) {
           </div>
         </div>
 
+        {/* Bulut kaydı — kurtarma kodu + geri yükleme */}
+        <CloudSection />
+
         <div style={S.note}>
           DÜŞÜK görüntü: gölgeler kapalı, daha akıcı (yavaş telefonlar için).
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Bulut kaydı bölümü ────────────────────────────────────────────────────────
+// İlerleme otomatik yedeklenir; oyunu silen oyuncu KURTARMA KODU ile geri alır.
+function CloudSection() {
+  const [code, setCode]   = useState('');
+  const [msg, setMsg]     = useState('');
+  const [busy, setBusy]   = useState(false);
+  const myCode = getRecoveryCode();
+
+  const doRestore = async () => {
+    if (busy || code.trim().length < 6) return;
+    setBusy(true);
+    setMsg('Yükleniyor…');
+    const r = await restoreFromCloud(code);
+    if (r.ok) {
+      setMsg('✓ Geri yüklendi! Oyun yeniden başlatılıyor…');
+      setTimeout(() => window.location.reload(), 1200);
+    } else {
+      setMsg('⚠ ' + r.reason);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12, marginBottom: 12 }}>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 700, marginBottom: 6 }}>
+        ☁️ Bulut Kaydı
+      </div>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: 8 }}>
+        İlerlemen otomatik yedeklenir. Oyunu silersen bu kodla her şeyi geri alırsın —
+        <b style={{ color: '#ffd700' }}> kodu bir yere not et!</b>
+      </div>
+      <div
+        style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: 'rgba(255,215,0,0.08)', border: '1px dashed rgba(255,215,0,0.4)',
+          borderRadius: 8, padding: '8px 12px', marginBottom: 10, cursor: 'pointer',
+        }}
+        onClick={() => {
+          navigator.clipboard?.writeText(myCode).catch(() => {});
+          pushCloudSave();
+          sfx.click();
+          setMsg('✓ Kod kopyalandı + yedek alındı');
+        }}
+      >
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>KURTARMA KODUN</span>
+        <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: 3, color: '#ffd700' }}>{myCode}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          value={code}
+          maxLength={12}
+          placeholder="Eski kodunu gir…"
+          onChange={e => setCode(e.target.value.toUpperCase())}
+          onKeyDown={e => { if (e.key === 'Enter') doRestore(); }}
+          style={{ ...S.nameInput, letterSpacing: 2 }}
+        />
+        <button
+          style={{ ...S.segBtn, ...S.segOn, minWidth: 90, opacity: code.trim().length < 6 || busy ? 0.4 : 1 }}
+          disabled={code.trim().length < 6 || busy}
+          onClick={doRestore}
+        >GERİ YÜKLE</button>
+      </div>
+      {msg && <div style={{ fontSize: 10, marginTop: 6, color: msg.startsWith('⚠') ? '#ff8866' : '#33ff99', fontWeight: 700 }}>{msg}</div>}
     </div>
   );
 }

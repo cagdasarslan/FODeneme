@@ -14,6 +14,7 @@ import { AD_DAILY_CARROTS, AD_DAILY_MAX, MAP_UNLOCKS } from '@/constants/game';
 import { getActiveEvent } from '@/constants/events';
 import { fetchLeaderboard } from '@/services/LeaderboardService';
 import { Capacitor } from '@capacitor/core';
+import { restoreFromCloud } from '@/services/CloudSave';
 
 const isNative = Capacitor.getPlatform() !== 'web';
 
@@ -112,6 +113,21 @@ export default function MainMenu() {
     localStorage.setItem('playerName', n.slice(0, 16));
     localStorage.setItem('nameSet', '1');
     setShowNameModal(false);
+  };
+  // Yeniden kurulumda eski hesabı kurtarma koduyla geri al
+  const [restoreMode, setRestoreMode] = useState(false);
+  const [restoreCode, setRestoreCode] = useState('');
+  const [restoreMsg, setRestoreMsg]   = useState('');
+  const doRestore = async () => {
+    if (restoreCode.trim().length < 6) return;
+    setRestoreMsg('Yükleniyor…');
+    const r = await restoreFromCloud(restoreCode);
+    if (r.ok) {
+      setRestoreMsg('✓ Hesabın geri yüklendi!');
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      setRestoreMsg('⚠ ' + r.reason);
+    }
   };
 
   const {
@@ -434,6 +450,35 @@ export default function MainMenu() {
             >
               BAŞLA 🏁
             </button>
+
+            {/* Daha önce oynadıysa: kurtarma koduyla ilerlemeyi geri al */}
+            {!restoreMode ? (
+              <div
+                style={{ marginTop: 12, fontSize: 11, color: '#7fd4ff', textDecoration: 'underline', cursor: 'pointer', fontWeight: 700 }}
+                onClick={() => setRestoreMode(true)}
+              >
+                ☁️ Daha önce oynadın mı? Kurtarma kodunla geri yükle
+              </div>
+            ) : (
+              <div style={{ marginTop: 12, width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <input
+                  value={restoreCode}
+                  maxLength={12}
+                  placeholder="Kurtarma kodun (Ayarlar'daydı)"
+                  onChange={e => setRestoreCode(e.target.value.toUpperCase())}
+                  onKeyDown={e => { if (e.key === 'Enter') doRestore(); }}
+                  style={{ ...styles.nameInput, letterSpacing: 2 }}
+                />
+                <button
+                  style={{ ...styles.nameBtn, background: 'linear-gradient(135deg,#3a9aff,#1a6ad0)', opacity: restoreCode.trim().length < 6 ? 0.4 : 1 }}
+                  disabled={restoreCode.trim().length < 6}
+                  onClick={doRestore}
+                >
+                  ☁️ GERİ YÜKLE
+                </button>
+                {restoreMsg && <div style={{ fontSize: 10, fontWeight: 700, color: restoreMsg.startsWith('⚠') ? '#ff8866' : '#33ff99' }}>{restoreMsg}</div>}
+              </div>
+            )}
           </div>
         </div>
       )}

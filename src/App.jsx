@@ -23,6 +23,7 @@ import LoadingScreen from '@/components/ui/LoadingScreen';
 import { IS_MOBILE, MAX_DPR, SHADOW_MAP } from '@/utils/device';
 import { startMusic, stopMusic, startGallop, stopGallop } from '@/utils/audio';
 import { initNotifications, scheduleReminders } from '@/services/NotificationService';
+import { initCloudSave } from '@/services/CloudSave';
 import PaddockScene, { PaddockUI } from '@/components/paddock/Paddock';
 
 // ── EnvLayer MUST be defined outside App so React sees the same component
@@ -46,7 +47,7 @@ export default function App() {
   const graphics  = useGameStore((s) => s.graphics);
   const phase = useGameStore((s) => s.phase);
   const initDaily = useGameStore((s) => s.initDaily);
-  useEffect(() => { initSession(); initDaily(); initNotifications(); }, [initSession, initDaily]);
+  useEffect(() => { initSession(); initDaily(); initNotifications(); initCloudSave(); }, [initSession, initDaily]);
 
   // Uygulama arka plana alınınca hatırlatma bildirimlerini planla
   useEffect(() => {

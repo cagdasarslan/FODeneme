@@ -3,6 +3,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import { setSfxEnabled, setMusicEnabled, sfx, startMusic, startGallop } from '@/utils/audio';
 import { STREAK_REWARDS, STREAK_MAX_REWARD, pickDailyMissions, pickWeeklyMissions, weekKey } from '@/constants/daily';
 import { submitScoreSupa } from '@/services/SupaLeaderboard';
+import { scheduleCloudSave } from '@/services/CloudSave';
 import { HORSES } from '@/constants/horses';
 import {
   INITIAL_SPEED,
@@ -298,6 +299,7 @@ const useGameStore = create(
 
       set({ phase: 'gameover', highScore: newHighScore, ...mapHsUpdate });
       get().addRunBP(get().distance);
+      scheduleCloudSave(); // koşu bitti → ilerlemeyi buluta yedekle
 
       if (sessionReady) {
         try {
