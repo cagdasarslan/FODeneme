@@ -61,6 +61,7 @@ function HorseModel3DInner({ variant }) {
   const path     = variant?.model ?? MODEL_PATH;
   const useScale = variant?.modelScale ?? 0.013;
   const useY     = variant?.modelY ?? -1.05;
+  const useZ     = variant?.modelZ ?? 0;
   const clipName = variant?.animClip ?? 'horse_A_';
   const skeletal = !!variant?.skeletal;
   const noTint   = !!variant?.noTint;
@@ -104,7 +105,7 @@ function HorseModel3DInner({ variant }) {
   });
 
   return (
-    <group ref={groupRef} scale={useScale} rotation={[0, Math.PI, 0]} position={[0, useY, 0]}>
+    <group ref={groupRef} scale={useScale} rotation={[0, Math.PI, 0]} position={[0, useY, useZ]}>
       <primitive object={cloned.current} />
     </group>
   );

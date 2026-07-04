@@ -276,6 +276,7 @@ function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
   const path      = horseVariant?.model ?? modelPath;
   const useScale  = horseVariant?.modelScale ?? scale;
   const useY      = horseVariant?.modelY ?? -1.05;
+  const useZ      = horseVariant?.modelZ ?? 0;
   const clipName  = horseVariant?.animClip ?? 'horse_A_';
   const skeletal  = !!horseVariant?.skeletal;
   const noTint    = !!horseVariant?.noTint;
@@ -336,7 +337,7 @@ function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
   });
 
   return (
-    <group ref={groupRef} scale={useScale} rotation={[0, Math.PI, 0]} position={[0, useY, 0]}>
+    <group ref={groupRef} scale={useScale} rotation={[0, Math.PI, 0]} position={[0, useY, useZ]}>
       <primitive object={clonedScene.current} />
     </group>
   );
