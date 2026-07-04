@@ -30,10 +30,10 @@ const D_POTS       = DUN + 'pots.glb';
 const D_LOOT       = DUN + 'lootSackA.glb';
 const D_BRICKS     = DUN + 'bricks.glb';
 
+// Yalnızca gerçekten kullanılan modeller preload edilir (bellek/yük için).
 const ALL_MODELS = [
-  D_WALL, D_WALL_BROKE, D_WALL_GATE, D_PILLAR, D_PILLAR_BRK, D_TORCH, D_BANNER,
-  D_BARREL, D_CRATE, D_CHEST, D_BOOKCASE, D_BOOKCASE_W, D_TABLE, D_BENCH,
-  D_WEAPONRACK, D_POTS, D_LOOT, D_BRICKS,
+  D_WALL_BROKE, D_WALL_GATE, D_PILLAR, D_PILLAR_BRK, D_TORCH, D_BANNER,
+  D_BARREL, D_CRATE, D_CHEST, D_WEAPONRACK, D_POTS, D_LOOT,
 ];
 ALL_MODELS.forEach((p) => useGLTF.preload(p));
 
@@ -110,26 +110,20 @@ function StoneFloor({ segIdx }) {
   return <instancedMesh ref={ref} args={[tileGeo, tileMat, count]} receiveShadow />;
 }
 
-// ── Meşale alevi — emissive küre + hafif titreşen ışık ────────────────────────
+// ── Meşale alevi — SADECE emissive küre (dinamik ışık YOK) ────────────────────
+// Gündüz zindanında point-light'a gerek yok; onlarca dinamik ışık GPU'yu aşırı
+// zorluyor ve WebGL context kaybına (oyun çökmesine) yol açıyordu. Alev, gün
+// ışığında öz-parlayan bir küre olarak dekoratif kalır.
+const flameGeo = new THREE.SphereGeometry(0.22, 6, 5);
 const flameMat = new THREE.MeshBasicMaterial({ color: '#ffb347' });
-function TorchFlame({ position, withLight }) {
-  const lightRef = useRef();
+function TorchFlame({ position }) {
   const flameRef = useRef();
   const seed = useMemo(() => Math.random() * 100, []);
   useFrame(() => {
-    const t = performance.now() / 1000;
-    const flick = 0.85 + Math.sin(t * 11 + seed) * 0.1 + Math.sin(t * 23 + seed * 2) * 0.05;
-    if (lightRef.current) lightRef.current.intensity = 1.6 * flick;
-    if (flameRef.current) flameRef.current.scale.setScalar(0.9 + flick * 0.2);
+    const flick = 0.9 + Math.sin(performance.now() / 1000 * 11 + seed) * 0.15;
+    if (flameRef.current) flameRef.current.scale.setScalar(flick);
   });
-  return (
-    <group position={position}>
-      <mesh ref={flameRef} material={flameMat}>
-        <sphereGeometry args={[0.22, 6, 5]} />
-      </mesh>
-      {withLight && <pointLight ref={lightRef} color="#ff9a3c" intensity={1.6} distance={16} decay={1.6} />}
-    </group>
-  );
+  return <mesh ref={flameRef} geometry={flameGeo} material={flameMat} position={position} />;
 }
 
 function RoadSegment({ segIdx }) {
@@ -149,6 +143,14 @@ function RoadSegment({ segIdx }) {
         <boxGeometry args={[ROAD_W, 0.2, SEG_LEN + 0.6]} />
         <meshStandardMaterial color="#55505f" roughness={1} />
       </mesh>
+      {/* Sürekli taş duvar — GLB yerine tek uzun kutu (çizim sayısı düşük).
+          Yüzlerce ayrı duvar GLB'si WebGL context kaybına yol açıyordu. */}
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * 13.2, 2.4, 0]} castShadow receiveShadow>
+          <boxGeometry args={[1.2, 4.8, SEG_LEN + 0.6]} />
+          <meshStandardMaterial color="#8f8998" roughness={1} />
+        </mesh>
+      ))}
       <StoneFloor segIdx={segIdx} />
     </group>
   );
@@ -159,29 +161,23 @@ function getSideProps(segIdx) {
   const props = [];
   const half = SEG_LEN / 2;
 
-  // Sürekli duvar hattı — her iki yanda, ~12 birim aralıkla
-  const WALL_STEP = 8.8; // duvar modeli 4 birim × ölçek 2.2
-  const wallCount = Math.floor(SEG_LEN / WALL_STEP);
-  for (let i = 0; i < wallCount; i++) {
-    const z = -half + i * WALL_STEP + WALL_STEP / 2;
-    for (const side of [-1, 1]) {
-      const r = pr(i * 2 + (side + 1), segIdx);
-      const m = r < 0.15 ? D_WALL_BROKE : r < 0.25 ? D_WALL_GATE : D_WALL;
-      props.push({
-        id: `w${i}s${side}`, x: side * 12.5, z, m, scale: 2.2,
-        ry: side < 0 ? Math.PI / 2 : -Math.PI / 2,
-      });
-    }
+  // Duvar üstü SEYREK dekor GLB'leri (kapı/kırık/pano) — sürekli kutu duvarın
+  // üstüne serpiştirilir. Az sayıda: performans için (eskiden 26/segment vardı).
+  const wallDecor = [D_WALL_GATE, D_WALL_BROKE, D_BANNER];
+  const decorCount = IS_MOBILE ? 3 : 5;
+  for (let i = 0; i < decorCount; i++) {
+    const z = -half + (i + 0.5) * (SEG_LEN / decorCount) + (pr(i + 10, segIdx) - 0.5) * 4;
+    const side = pr(i + 20, segIdx) > 0.5 ? 1 : -1;
+    const m = wallDecor[Math.floor(pr(i + 25, segIdx * 3) * wallDecor.length) % wallDecor.length];
+    props.push({ id: `w${i}`, x: side * 12.6, z, m, scale: 2.2, ry: side < 0 ? Math.PI / 2 : -Math.PI / 2 });
   }
 
-  // Duvar dibi dekoru — sandıklar, fıçılar, kitaplıklar, raflar
+  // Duvar dibi dekoru — az sayıda çeşit, seyrek
   const fillers = [
     { m: D_BARREL, s: 2.6 }, { m: D_CRATE, s: 2.6 }, { m: D_CHEST, s: 2.8 },
-    { m: D_BOOKCASE, s: 2.2 }, { m: D_BOOKCASE_W, s: 2.2 }, { m: D_TABLE, s: 2.4 },
-    { m: D_BENCH, s: 2.4 }, { m: D_WEAPONRACK, s: 2.4 }, { m: D_POTS, s: 2.4 },
-    { m: D_LOOT, s: 2.4 }, { m: D_BRICKS, s: 2.4 }, { m: D_BANNER, s: 2.2 },
+    { m: D_POTS, s: 2.4 }, { m: D_LOOT, s: 2.4 }, { m: D_WEAPONRACK, s: 2.4 },
   ];
-  const fillerCount = IS_MOBILE ? 8 : 14;
+  const fillerCount = IS_MOBILE ? 5 : 8;
   for (let i = 0; i < fillerCount; i++) {
     const z    = -half + i * (SEG_LEN / fillerCount) + (pr(i + 40, segIdx) - 0.5) * 4;
     const side = pr(i + 60, segIdx) > 0.5 ? 1 : -1;
@@ -190,14 +186,14 @@ function getSideProps(segIdx) {
     props.push({ id: `f${i}`, x: dx, z, m: f.m, scale: f.s, ry: side < 0 ? Math.PI / 2 : -Math.PI / 2 });
   }
 
-  // Sütunlar — koridor ritmi
-  const pillarStep = 24;
+  // Sütunlar — daha seyrek
+  const pillarStep = 40;
   const pillarCount = Math.floor(SEG_LEN / pillarStep);
   for (let i = 0; i < pillarCount; i++) {
     const z = -half + i * pillarStep + pillarStep / 2;
     for (const side of [-1, 1]) {
       const broken = pr(i * 3 + side + 200, segIdx) < 0.25;
-      props.push({ id: `p${i}s${side}`, x: side * 9.6, z, m: broken ? D_PILLAR_BRK : D_PILLAR, scale: 2.0, ry: 0 });
+      props.push({ id: `p${i}s${side}`, x: side * 11.5, z, m: broken ? D_PILLAR_BRK : D_PILLAR, scale: 2.0, ry: 0 });
     }
   }
 
@@ -208,7 +204,7 @@ function getSideProps(segIdx) {
 function getTorches(segIdx) {
   const torches = [];
   const half = SEG_LEN / 2;
-  const step = IS_MOBILE ? 40 : 24;
+  const step = IS_MOBILE ? 50 : 40;
   const n = Math.floor(SEG_LEN / step);
   for (let i = 0; i < n; i++) {
     const z = -half + i * step + step / 2;
@@ -230,7 +226,7 @@ function SegmentContent({ segIdx }) {
       {torches.map((t) => (
         <group key={t.id} position={[t.x, 0, t.z]}>
           <Model path={D_TORCH} position={[0, 0, 0]} scale={2.2} />
-          <TorchFlame position={[0, 3.0, 0]} withLight={t.withLight} />
+          <TorchFlame position={[0, 3.0, 0]} />
         </group>
       ))}
     </>
@@ -261,22 +257,11 @@ export default function DungeonEnvironment() {
       {/* Gündüz: açık hava harabe zindanı — üstü açık taş koridor */}
       <color attach="background" args={['#a8c8e8']} />
 
-      {/* Gün ışığı — meşaleler dekoratif */}
-      <ambientLight intensity={0.65} color="#fff2e0" />
-      <directionalLight
-        castShadow
-        position={[-30, 70, 35]}
-        intensity={1.9}
-        color="#fff2d8"
-        shadow-mapSize={[SHADOW_MAP, SHADOW_MAP]}
-        shadow-camera-near={1}
-        shadow-camera-far={300}
-        shadow-camera-left={-80}
-        shadow-camera-right={80}
-        shadow-camera-top={80}
-        shadow-camera-bottom={-80}
-      />
-      <hemisphereLight skyColor="#bcd8f0" groundColor="#5a5468" intensity={0.65} />
+      {/* Gün ışığı — gölge YOK (gölge haritası büyük GPU yükü + context kaybı
+          riski; düz gündüz ışığında görsel fark yok). Meşaleler dekoratif. */}
+      <ambientLight intensity={0.85} color="#fff2e0" />
+      <directionalLight position={[-30, 70, 35]} intensity={1.7} color="#fff2d8" />
+      <hemisphereLight skyColor="#bcd8f0" groundColor="#5a5468" intensity={0.7} />
 
       {Array.from({ length: SEG_COUNT }, (_, i) => (
         <group
