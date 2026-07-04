@@ -106,8 +106,8 @@ const HIT_TOL_Z = 0.88;
 // engelleri artık çarpmaz. Eskiden 1.0 idi — yakından zıplayınca at daha bu
 // yüksekliğe tırmanamadan hitbox'a giriyor, "değmeden yanıyordun". Havadayken
 // hitbox da daralır: kalkış/iniş kenarları affedilir.
-const CLEAR_JUMP_Y  = 0.55;
-const AIR_TOL       = 0.72;
+const CLEAR_JUMP_Y  = 0.4;
+const AIR_TOL       = 0.7;
 const CLOSE_CALL_CD   = 0.8;  // close-call cooldown (saniye)
 const GROUND_Y        = 1.2;  // yol yüzeyindeki rigidBody y yüksekliği
 const JUMP_FORCE      = 9;    // zıplama başlangıç hızı (m/s)
@@ -380,6 +380,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   const mapId     = useGameStore((s) => s.mapId);
   const stumbleId = useGameStore((s) => s.stumbleId);
   const jumpedRef = useRef(new Set()); // bu zıplamada üzerinden atlanan engeller
+  const clearedJumpRef = useRef(false); // bu zıplamada muafiyet yüksekliğine ulaşıldı mı
   const prevFlyingRef = useRef(false); // Pegasus uçuşu geçiş takibi
 
   // ── Eğilme (slide) durumu ──────────────────────────────────────────────────
@@ -495,10 +496,14 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     } else if (!onGroundRef.current) {
       velYRef.current += gravity * delta;
       newY += velYRef.current * delta;
+      // Bu zıplamada muafiyet yüksekliğine ulaşıldıysa işaretle → iniş dahil
+      // tüm yay boyunca zemin engellerine muaf kal ("üstünden geçtim" hissi)
+      if (newY > GROUND_Y + CLEAR_JUMP_Y) clearedJumpRef.current = true;
       if (newY <= GROUND_Y) {
         newY            = GROUND_Y;
         velYRef.current = 0;
         onGroundRef.current = true;
+        clearedJumpRef.current = false; // yere inince sıfırla
       }
     }
 
@@ -573,7 +578,9 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     // ── Zemin çarpışması — yeterince yüksekteyken atla ─────────────────────
     if (immune) return;
     const airborne = !onGroundRef.current;
-    if (airborne && newY > GROUND_Y + CLEAR_JUMP_Y) return;
+    // Muafiyet: eşiğin üstündeysen VEYA bu zıplamada bir kez tepeye ulaştıysan
+    // (iniş boyunca da güvenli) → zemin engeli çarpmaz
+    if (airborne && (newY > GROUND_Y + CLEAR_JUMP_Y || clearedJumpRef.current)) return;
     if (graceRef.current > 0) return;
     // Havada ama eşiğin altında (kalkış/iniş anı): hitbox'ı daralt — kenara
     // sürtmek değil, ancak tam üstüne inmek çarpma sayılır

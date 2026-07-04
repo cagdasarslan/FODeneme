@@ -335,7 +335,7 @@ const _setCity = () => {
   HITBOX_MAP.set(CityCar,   [1.10, 1.80]);
   HITBOX_MAP.set(CityTaxi,  [1.10, 1.80]);
   HITBOX_MAP.set(CityPolice,[1.10, 1.80]);
-  HITBOX_MAP.set(CityDump,  [0.90, 1.20]);
+  HITBOX_MAP.set(CityDump,  [0.85, 0.70]); // eskiden dz=1.20 → görselinin ~3 katıydı (değmeden çarpma)
 };
 // Hitbox'lar görsel scale'lerle senkron tutulmalı — modeller büyütüldüğünde
 // burası da orantılı güncellenmeli, yoksa "havada ölme / içinden geçme" olur.
@@ -348,7 +348,7 @@ const _setDesert = () => {
 };
 const _setSpace = () => {
   HITBOX_MAP.set(SpaceBarrels,   [0.96, 0.96]);
-  HITBOX_MAP.set(SpaceRover,     [1.47, 1.96]);
+  HITBOX_MAP.set(SpaceRover,     [1.05, 1.15]); // eskiden görselinin ~4 katıydı (değmeden çarpma)
   HITBOX_MAP.set(SpaceMeteor,    [1.28, 1.28]);
   HITBOX_MAP.set(SpaceMeteorDet, [1.18, 1.18]);
   HITBOX_MAP.set(SpacePlatLow,   [1.50, 0.90]);
