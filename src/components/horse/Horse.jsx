@@ -102,6 +102,12 @@ const FLY_Y = 4.2;            // uçuş yüksekliği (RigidBody y)
 // gerçekten engelin İÇİNE girince çarpma sayılır (yanlardan %25, önden %12 pay)
 const HIT_TOL_X = 0.75;
 const HIT_TOL_Z = 0.88;
+// Zıplama muafiyeti (jump clearance): at zeminden bu kadar yükseldiyse zemin
+// engelleri artık çarpmaz. Eskiden 1.0 idi — yakından zıplayınca at daha bu
+// yüksekliğe tırmanamadan hitbox'a giriyor, "değmeden yanıyordun". Havadayken
+// hitbox da daralır: kalkış/iniş kenarları affedilir.
+const CLEAR_JUMP_Y  = 0.55;
+const AIR_TOL       = 0.72;
 const CLOSE_CALL_CD   = 0.8;  // close-call cooldown (saniye)
 const GROUND_Y        = 1.2;  // yol yüzeyindeki rigidBody y yüksekliği
 const JUMP_FORCE      = 9;    // zıplama başlangıç hızı (m/s)
@@ -521,7 +527,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     closeCoolRef.current = Math.max(0, closeCoolRef.current - delta);
 
     // ── Engel üzerinden atlama → adrenalin ödülü (yalnız ZEMİN engelleri) ──
-    if (!immune && !onGroundRef.current && newY > GROUND_Y + 1.0) {
+    if (!immune && !onGroundRef.current && newY > GROUND_Y + CLEAR_JUMP_Y) {
       for (const [id, obs] of obstacleRegistry) {
         if (!obs.active || jumpedRef.current.has(id)) continue;
         if (getKind(obs.TypeFn) === 'overhead') continue;
@@ -565,15 +571,20 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
 
     // ── Zemin çarpışması — yeterince yüksekteyken atla ─────────────────────
     if (immune) return;
-    if (!onGroundRef.current && newY > GROUND_Y + 1.0) return;
+    const airborne = !onGroundRef.current;
+    if (airborne && newY > GROUND_Y + CLEAR_JUMP_Y) return;
     if (graceRef.current > 0) return;
+    // Havada ama eşiğin altında (kalkış/iniş anı): hitbox'ı daralt — kenara
+    // sürtmek değil, ancak tam üstüne inmek çarpma sayılır
+    const tolX = HIT_TOL_X * (airborne ? AIR_TOL : 1);
+    const tolZ = HIT_TOL_Z * (airborne ? AIR_TOL : 1);
     for (const [, obs] of obstacleRegistry) {
       if (!obs.active) continue;
       if (getKind(obs.TypeFn) === 'overhead') continue; // yukarıda ele alındı
       const [hbDx, hbDz] = getHitbox(obs.TypeFn);
       const dx = Math.abs(pos.x - obs.x);
       const dz = Math.abs(pos.z - obs.z);
-      if (dx < hbDx * HIT_TOL_X && dz < hbDz * HIT_TOL_Z) {
+      if (dx < hbDx * tolX && dz < hbDz * tolZ) {
         // Nal Zırhı: ilk çarpmayı emer
         if (useGameStore.getState().consumeShield()) {
           graceRef.current = 1.0;
