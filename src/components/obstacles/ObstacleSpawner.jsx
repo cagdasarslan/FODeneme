@@ -76,6 +76,22 @@ const MAT = {
   logRing: new THREE.MeshStandardMaterial({ color: '#6a4a22' }),
 };
 
+// Çok koyu materyalleri zemin renginde kaybolmaktan kurtar: rengi minimum
+// açıklığa çek + hafif öz-ışıma ver. Klonlar; paylaşılan orijinali bozmaz.
+function ensureVisible(root, { minLight = 0.32, glow = 0.3 } = {}) {
+  root.traverse((o) => {
+    if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
+    const m = o.material.clone();
+    if (m.color) {
+      const hsl = { h: 0, s: 0, l: 0 };
+      m.color.getHSL(hsl);
+      if (hsl.l < minLight) m.color.setHSL(hsl.h, Math.max(hsl.s, 0.3), minLight);
+      if (m.emissive) { m.emissive.copy(m.color); m.emissiveIntensity = glow; }
+    }
+    o.material = m;
+  });
+}
+
 // Engel materyallerini hafif öz-aydınlat (koyu modeller yolla aynı renge düşmesin).
 // Materyali KLONLAYIP değiştirir; yan dekorla paylaşılan orijinali bozmaz.
 function brightenObstacle(root) {
@@ -135,6 +151,7 @@ function CityGLB({ path, scale = 1, yOffset = 0, rotY = 0 }) {
   if (!cloned.current) {
     cloned.current = scene.clone(true);
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    ensureVisible(cloned.current, { minLight: 0.34, glow: 0.28 }); // siyah asfaltta kaybolmasın
   }
   return <primitive object={cloned.current} scale={scale} position={[0, yOffset, 0]} rotation={[0, rotY, 0]} />;
 }
@@ -159,7 +176,8 @@ function DesertGLB({ path, scale = 1 }) {
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const box = new THREE.Box3().setFromObject(cloned.current);
     off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
-    // Çöl: renkler eski haline döndü (emissive aydınlatma yok)
+    // Çöl ışığı loş + yol koyu kırmızı: koyu kaya/kaktüs görünmez oluyordu
+    ensureVisible(cloned.current, { minLight: 0.4, glow: 0.35 });
   }
   return (
     <group scale={scale}>
@@ -200,7 +218,7 @@ function SpaceRockA()     { return <SpaceGLB path={M_SP_ROCK_A}     scale={3.3} 
 function SpaceRockB()     { return <SpaceGLB path={M_SP_ROCK_B}     scale={3.3} />; }
 
 // ── Medieval GLB obstacles ────────────────────────────────────────────────────
-function MedievalGLB({ path, scale = 1, yOffset = 0 }) {
+function MedievalGLB({ path, scale = 1, yOffset = 0, tint = null }) {
   const { scene } = useGLTF(path);
   const cloned = useRef(null);
   const off    = useRef([0, 0]);
@@ -210,6 +228,13 @@ function MedievalGLB({ path, scale = 1, yOffset = 0 }) {
     const box = new THREE.Box3().setFromObject(cloned.current);
     off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
     brightenObstacle(cloned.current);
+    if (tint) { // zeminle aynı renkte kalan modeli haritaya uygun renge boya
+      cloned.current.traverse(o => {
+        if (!o.isMesh || !o.material) return;
+        o.material.color.set(tint);
+        if (o.material.emissive) o.material.emissive.set(tint);
+      });
+    }
   }
   return (
     <group scale={scale} position={[0, yOffset, 0]}>
@@ -221,8 +246,8 @@ function MedievalGLB({ path, scale = 1, yOffset = 0 }) {
 function DunCrate()  { return <MedievalGLB path={M_DUN_CRATE}  scale={1.8} />; }
 function DunBarrel() { return <MedievalGLB path={M_DUN_BARREL} scale={1.8} />; }
 function DunChest()  { return <MedievalGLB path={M_DUN_CHEST}  scale={1.6} />; }
-function DunSpikes() { return <MedievalGLB path={M_DUN_SPIKES} scale={0.7} />; }
-function DunBricks() { return <MedievalGLB path={M_DUN_BRICKS} scale={1.6} />; }
+function DunSpikes() { return <MedievalGLB path={M_DUN_SPIKES} scale={0.7} tint="#9a4a30" />; }
+function DunBricks() { return <MedievalGLB path={M_DUN_BRICKS} scale={1.6} tint="#b4633f" />; }
 function DunTable()  { return <MedievalGLB path={M_DUN_TABLE}  scale={1.6} />; }
 
 function MedWell()    { return <MedievalGLB path={M_MED_WELL}    scale={3.0} />; }
