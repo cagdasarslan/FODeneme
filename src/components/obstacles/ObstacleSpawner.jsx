@@ -222,12 +222,15 @@ function SpaceRockB()     { return <SpaceGLB path={M_SP_ROCK_B}     scale={3.3} 
 function MedievalGLB({ path, scale = 1, yOffset = 0, tint = null }) {
   const { scene } = useGLTF(path);
   const cloned = useRef(null);
-  const off    = useRef([0, 0]);
+  const off    = useRef([0, 0, 0]);
   if (!cloned.current) {
     cloned.current = scene.clone(true);
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const box = new THREE.Box3().setFromObject(cloned.current);
-    off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
+    // X/Z merkezle + TABANI y=0'a hizala. Bazı zindan modellerinin pivotu
+    // merkezde (ör. diken tuzağı minY=-1.0) → yarısı zeminin altında kalıp
+    // "görünmez engel"e çarpma yaratıyordu. -minY ile tabana oturtulur.
+    off.current = [(box.min.x + box.max.x) / 2, box.min.y, (box.min.z + box.max.z) / 2];
     brightenObstacle(cloned.current);
     if (tint) { // zeminle aynı renkte kalan modeli haritaya uygun renge boya
       cloned.current.traverse(o => {
@@ -239,7 +242,7 @@ function MedievalGLB({ path, scale = 1, yOffset = 0, tint = null }) {
   }
   return (
     <group scale={scale} position={[0, yOffset, 0]}>
-      <primitive object={cloned.current} position={[-off.current[0], 0, -off.current[1]]} />
+      <primitive object={cloned.current} position={[-off.current[0], -off.current[1], -off.current[2]]} />
     </group>
   );
 }
