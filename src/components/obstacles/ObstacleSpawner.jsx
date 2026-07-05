@@ -333,16 +333,16 @@ const _setFarm = () => {
 // City
 const _setCity = () => {
   // Arabalar uzun; derinlik biraz kısaltıldı ki zıplanabilsin (yatay korundu)
-  HITBOX_MAP.set(CityCar,   [1.10, 1.40]);
-  HITBOX_MAP.set(CityTaxi,  [1.10, 1.40]);
-  HITBOX_MAP.set(CityPolice,[1.10, 1.40]);
-  HITBOX_MAP.set(CityDump,  [0.85, 0.70]); // eskiden dz=1.20 → görselinin ~3 katıydı (değmeden çarpma)
+  HITBOX_MAP.set(CityCar,   [0.85, 1.35]);
+  HITBOX_MAP.set(CityTaxi,  [0.85, 1.35]);
+  HITBOX_MAP.set(CityPolice,[0.85, 1.35]);
+  HITBOX_MAP.set(CityDump,  [0.80, 0.55]); // görsele oturtuldu (küçük çöp kutusu)
 };
 // Hitbox'lar görsel scale'lerle senkron tutulmalı — modeller büyütüldüğünde
 // burası da orantılı güncellenmeli, yoksa "havada ölme / içinden geçme" olur.
 const _setDesert = () => {
   HITBOX_MAP.set(DesertCactusShort, [0.68, 0.68]);
-  HITBOX_MAP.set(DesertCactusTall,  [0.62, 0.62]);
+  HITBOX_MAP.set(DesertCactusTall,  [0.60, 0.55]);
   // Kayalar derindi (dz 1.32) → zıplayınca ön kenar erken yakalıyordu. Derinlik
   // diğer haritalarla tutarlı hale getirildi (zıplanabilir), yatay korundu.
   HITBOX_MAP.set(DesertRockA,       [1.15, 0.92]);
@@ -361,9 +361,11 @@ const _setSpace = () => {
 const _setMedieval = () => {
   HITBOX_MAP.set(MedWell,    [1.05, 0.95]);
   HITBOX_MAP.set(MedRocks,   [1.25, 1.02]);
-  HITBOX_MAP.set(MedRocksSm, [0.95, 0.90]);
-  HITBOX_MAP.set(MedTreeA,   [0.90, 0.82]);
-  HITBOX_MAP.set(MedTreeB,   [0.90, 0.82]);
+  HITBOX_MAP.set(MedRocksSm, [0.85, 0.78]);
+  // Ağaçlar YÜKSEK ama gövde İNCE; hitbox derinliği gövdeyle eşitlendi
+  // (eskiden görselin ~1.3 katıydı → gövdeye değmeden ölünüyordu)
+  HITBOX_MAP.set(MedTreeA,   [0.80, 0.62]);
+  HITBOX_MAP.set(MedTreeB,   [0.75, 0.58]);
   HITBOX_MAP.set(MedFarm,    [1.35, 1.05]);
 };
 const _setDungeon = () => {
