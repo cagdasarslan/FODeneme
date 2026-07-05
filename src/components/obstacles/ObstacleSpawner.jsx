@@ -336,10 +336,10 @@ const _setFarm = () => {
 // City
 const _setCity = () => {
   // Arabalar uzun; derinlik biraz kısaltıldı ki zıplanabilsin (yatay korundu)
-  HITBOX_MAP.set(CityCar,   [0.85, 1.35]);
-  HITBOX_MAP.set(CityTaxi,  [0.85, 1.35]);
-  HITBOX_MAP.set(CityPolice,[0.85, 1.35]);
-  HITBOX_MAP.set(CityDump,  [0.80, 0.55]); // görsele oturtuldu (küçük çöp kutusu)
+  HITBOX_MAP.set(CityCar,   [0.78, 1.30]);
+  HITBOX_MAP.set(CityTaxi,  [0.78, 1.30]);
+  HITBOX_MAP.set(CityPolice,[0.78, 1.30]);
+  HITBOX_MAP.set(CityDump,  [0.72, 0.50]); // görsele oturtuldu (küçük çöp kutusu)
 };
 // Hitbox'lar görsel scale'lerle senkron tutulmalı — modeller büyütüldüğünde
 // burası da orantılı güncellenmeli, yoksa "havada ölme / içinden geçme" olur.
@@ -354,7 +354,7 @@ const _setDesert = () => {
 };
 const _setSpace = () => {
   HITBOX_MAP.set(SpaceBarrels,   [0.96, 0.92]);
-  HITBOX_MAP.set(SpaceRover,     [1.05, 1.05]); // eskiden görselinin ~4 katıydı (değmeden çarpma)
+  HITBOX_MAP.set(SpaceRover,     [0.60, 0.65]); // rover küçük model (~0.8 birim); görsele oturtuldu
   HITBOX_MAP.set(SpaceMeteor,    [1.20, 1.00]);
   HITBOX_MAP.set(SpaceMeteorDet, [1.10, 0.95]);
   HITBOX_MAP.set(SpacePlatLow,   [1.40, 0.90]);
