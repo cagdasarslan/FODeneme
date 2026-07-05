@@ -44,6 +44,61 @@ export async function submitScoreSupa(score, mapId) {
   } catch (e) { /* offline — sorun değil */ }
 }
 
+// ── KÜMÜLATİF TOPLAM SKOR (TÜMÜ sekmesi) ─────────────────────────────────────
+// Rekor DEĞİL: oyuncunun oynadığı TÜM koşuların skorları (1 de olsa 250.000 de
+// olsa) üst üste eklenir. Yerelde biriktirilir, Supabase 'totals' tablosuna
+// upsert edilir. Liderlik bu toplama göre sıralanır.
+//
+// ── Supabase SQL Editor'da bir kez çalıştır: ────────────────────────────────
+//   create table if not exists totals (
+//     player_id text primary key,
+//     player_name text,
+//     total bigint not null default 0,
+//     updated_at timestamptz not null default now()
+//   );
+//   alter table totals enable row level security;
+//   create policy "anon insert" on totals for insert to anon with check (true);
+//   create policy "anon update" on totals for update to anon using (true);
+//   create policy "anon select" on totals for select to anon using (true);
+// ────────────────────────────────────────────────────────────────────────────
+
+export function getTotalScore() {
+  return parseInt(localStorage.getItem('totalScore') ?? '0', 10);
+}
+
+// Her koşu sonunda çağrılır: bu koşunun skorunu toplama ekler (yerel + bulut)
+export async function addTotalScore(runScore) {
+  const add = Math.max(0, Math.floor(runScore || 0));
+  const newTotal = getTotalScore() + add;
+  localStorage.setItem('totalScore', String(newTotal));
+  if (!isSupaConfigured()) return newTotal;
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/totals`, {
+      method: 'POST',
+      headers: { ...headers(), Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        player_id: getPlayerLocalId(),
+        player_name: getPlayerName(),
+        total: newTotal,
+        updated_at: new Date().toISOString(),
+      }),
+    });
+  } catch (e) { /* çevrimdışı — yerel toplam korunur, sonra tekrar denenir */ }
+  return newTotal;
+}
+
+// Toplam skora göre en iyiler (TÜMÜ sekmesi)
+export async function fetchTotalTop(limit = 20) {
+  if (!isSupaConfigured()) return [];
+  try {
+    const url = `${SUPA_URL}/rest/v1/totals` +
+      `?select=player_id,player_name,total&order=total.desc&limit=${limit}`;
+    const res = await fetch(url, { headers: headers() });
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) { return []; }
+}
+
 function sinceFor(period) {
   const d = new Date();
   if (period === 'day')  { d.setHours(0, 0, 0, 0); return d; }

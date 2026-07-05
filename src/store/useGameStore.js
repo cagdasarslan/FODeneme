@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { setSfxEnabled, setMusicEnabled, sfx, startMusic, startGallop } from '@/utils/audio';
 import { STREAK_REWARDS, STREAK_MAX_REWARD, pickDailyMissions, pickWeeklyMissions, weekKey } from '@/constants/daily';
-import { submitScoreSupa } from '@/services/SupaLeaderboard';
+import { submitScoreSupa, addTotalScore } from '@/services/SupaLeaderboard';
 import { scheduleCloudSave } from '@/services/CloudSave';
 import { HORSES } from '@/constants/horses';
 import {
@@ -279,6 +279,8 @@ const useGameStore = create(
       saveDaily(get());
       // Sezonluk liderlik (Supabase yapılandırıldıysa) — arka planda gönder
       submitScoreSupa(get().score, get().mapId);
+      // TÜMÜ liderliği: bu koşunun skorunu kümülatif toplama ekle (rekor değil)
+      addTotalScore(get().score);
       const { score, highScore, mapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5, highScoreMap6, sessionReady } = get();
       const newHighScore = Math.max(score, highScore);
       const hsKey = mapId === 6 ? 'hs_map6' : mapId === 5 ? 'hs_map5' : mapId === 4 ? 'hs_map4' : mapId === 3 ? 'hs_map3' : mapId === 2 ? 'hs_map2' : 'hs_map1';

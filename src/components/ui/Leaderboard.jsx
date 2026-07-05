@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { fetchLeaderboard } from '@/services/LeaderboardService';
-import { fetchPeriodTop, isSupaConfigured, getPlayerLocalId } from '@/services/SupaLeaderboard';
+import { fetchPeriodTop, fetchTotalTop, getTotalScore, getPlayerName, isSupaConfigured, getPlayerLocalId } from '@/services/SupaLeaderboard';
 
 // Sekmeler: sezonluk tablolar (Supabase) + TÜMÜ (LootLocker, tüm zamanlar).
 // Sezonluk tablolar dönem sonunda kendiliğinden "sıfırlanır" (tarih filtresi) —
@@ -24,13 +24,30 @@ export default function Leaderboard({ onClose }) {
   useEffect(() => {
     let on = true;
     setLoading(true); setError(null); setEntries([]);
+    // TÜMÜ: her oynayışın skorunu toplayan kümülatif toplam (Supabase 'totals').
+    // Supabase yoksa eski tüm-zamanlar rekor tablosuna (LootLocker) düşer.
     const load = tab === 'all'
-      ? fetchLeaderboard(20).then(data => data.map((e, i) => ({
-          key: e.rank ?? i,
-          name: e.player?.name || `Oyuncu ${e.player?.id}`,
-          score: e.score ?? 0,
-          isMe: String(e.player?.id) === String(playerId),
-        })))
+      ? (isSupaConfigured()
+          ? fetchTotalTop(20).then(rows => {
+              const me = getPlayerLocalId();
+              let list = rows.map((r, i) => ({
+                key: r.player_id + i,
+                name: r.player_name,
+                score: r.total ?? 0,
+                isMe: r.player_id === me,
+              }));
+              // Kendi toplamım listede yoksa (ilk 20 dışında) en alta ekle
+              if (!list.some(e => e.isMe) && getTotalScore() > 0) {
+                list = [...list, { key: 'me', name: getPlayerName(), score: getTotalScore(), isMe: true }];
+              }
+              return list;
+            })
+          : fetchLeaderboard(20).then(data => data.map((e, i) => ({
+              key: e.rank ?? i,
+              name: e.player?.name || `Oyuncu ${e.player?.id}`,
+              score: e.score ?? 0,
+              isMe: String(e.player?.id) === String(playerId),
+            }))))
       : fetchPeriodTop(tab, 20).then(rows => rows.map((r, i) => ({
           key: r.player_id + i,
           name: r.player_name,
@@ -64,6 +81,12 @@ export default function Leaderboard({ onClose }) {
             >{t.label}</button>
           ))}
         </div>
+
+        {tab === 'all' && isSupaConfigured() && (
+          <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 8, letterSpacing: 1 }}>
+            🧮 Tüm haritalardaki her oynayışın TOPLAM skoru
+          </div>
+        )}
 
         {seasonalUnavailable ? (
           <div style={S.status}>
