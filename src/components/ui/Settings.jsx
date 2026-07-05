@@ -126,13 +126,13 @@ function CloudSection() {
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
           <button
             style={{ flex: 1, padding: '10px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1,
-              fontFamily: 'monospace', borderRadius: 8, cursor: 'pointer',
+              fontFamily: 'var(--game-font)', borderRadius: 8, cursor: 'pointer',
               background: '#fff', color: '#1a1a2a', border: 'none' }}
             onClick={() => { sfx.click(); signInWith('google'); }}
           >🇬 Google ile Giriş</button>
           <button
             style={{ flex: 1, padding: '10px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1,
-              fontFamily: 'monospace', borderRadius: 8, cursor: 'pointer',
+              fontFamily: 'var(--game-font)', borderRadius: 8, cursor: 'pointer',
               background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
             onClick={() => { sfx.click(); signInWith('apple'); }}
           > Apple ile Giriş</button>
@@ -189,7 +189,7 @@ const S = {
     width: '100%', maxWidth: 360,
     background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))',
     border: '1px solid rgba(255,255,255,0.15)', borderRadius: 16, padding: '18px 18px',
-    fontFamily: 'monospace',
+    fontFamily: 'var(--game-font)',
   },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#fff' },
@@ -200,11 +200,11 @@ const S = {
   segBtn: {
     minWidth: 64, padding: '8px 12px', fontSize: 11, fontWeight: 700, letterSpacing: 1,
     background: 'transparent', color: 'rgba(255,255,255,0.5)', border: 'none', borderRadius: 7,
-    cursor: 'pointer', fontFamily: 'monospace', transition: 'all 0.15s',
+    cursor: 'pointer', fontFamily: 'var(--game-font)', transition: 'all 0.15s',
   },
   segOn: { background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', color: '#0a0a14' },
   nameInput: {
-    flex: 1, minWidth: 0, padding: '9px 12px', fontSize: 13, fontFamily: 'monospace',
+    flex: 1, minWidth: 0, padding: '9px 12px', fontSize: 13, fontFamily: 'var(--game-font)',
     fontWeight: 700, background: 'rgba(0,0,0,0.4)', color: '#ffd700',
     border: '1px solid rgba(255,215,0,0.35)', borderRadius: 8, outline: 'none',
   },

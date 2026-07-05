@@ -1,2 +1,17 @@
+/* Modern oyun fontu — Rajdhani (SIL OFL): temiz, sporty, çok okunaklı */
+@font-face {
+  font-family: 'Rajdhani';
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/rajdhani-600.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Rajdhani';
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/rajdhani-700.ttf') format('truetype');
+}
+:root { --game-font: 'Rajdhani', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif; }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { overflow: hidden; background: #0d0d1a; }
+body { overflow: hidden; background: #0d0d1a; font-family: var(--game-font); }

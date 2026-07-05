@@ -375,7 +375,7 @@ const s = {
     position: 'fixed', inset: 0, zIndex: 200,
     background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(4px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontFamily: 'monospace',
+    fontFamily: 'var(--game-font)',
   },
   modal: {
     width: '92vw', maxWidth: 820,
@@ -393,7 +393,7 @@ const s = {
   closeBtn: {
     background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
     color: '#fff', borderRadius: 6, padding: '4px 12px', cursor: 'pointer',
-    fontSize: 14, fontFamily: 'monospace',
+    fontSize: 14, fontFamily: 'var(--game-font)',
   },
   body: { display: 'flex', flex: 1, overflow: 'hidden' },
   sidebar: {
@@ -404,7 +404,7 @@ const s = {
   sideBtn: {
     display: 'flex', alignItems: 'center', gap: 8,
     padding: '10px 16px', border: 'none', cursor: 'pointer',
-    fontFamily: 'monospace', fontSize: 11, letterSpacing: 1,
+    fontFamily: 'var(--game-font)', fontSize: 11, letterSpacing: 1,
     transition: 'all 0.12s', textAlign: 'left',
   },
   sideBtnIcon: { fontSize: 16, minWidth: 20 },

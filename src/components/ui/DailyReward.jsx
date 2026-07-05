@@ -64,7 +64,7 @@ export default function DailyReward({ onClose }) {
 
 const S = {
   modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 680, padding: 14 },
-  box: { width: '100%', maxWidth: 380, background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))', border: '1px solid rgba(255,215,0,0.3)', borderRadius: 16, padding: '18px 16px', fontFamily: 'monospace' },
+  box: { width: '100%', maxWidth: 380, background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))', border: '1px solid rgba(255,215,0,0.3)', borderRadius: 16, padding: '18px 16px', fontFamily: 'var(--game-font)' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#ffd700' },
   close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 30, height: 30, fontSize: 14, cursor: 'pointer' },
@@ -79,6 +79,6 @@ const S = {
   dayAmt: { fontSize: 11, fontWeight: 800, color: '#ffd700' },
   tick: { position: 'absolute', top: 2, right: 4, color: '#33ff99', fontWeight: 900, fontSize: 12 },
   flash: { textAlign: 'center', color: '#33ff99', fontWeight: 700, fontSize: 13, marginTop: 12 },
-  claimBtn: { marginTop: 14, width: '100%', padding: '13px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 800, letterSpacing: 1, fontSize: 13, color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)' },
+  claimBtn: { marginTop: 14, width: '100%', padding: '13px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'var(--game-font)', fontWeight: 800, letterSpacing: 1, fontSize: 13, color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)' },
   done: { marginTop: 14, textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, padding: '10px' },
 };

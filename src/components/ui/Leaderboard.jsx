@@ -133,14 +133,14 @@ const S = {
     borderRadius: 16, padding: '24px 28px',
     width: 420, maxWidth: '95vw',
     maxHeight: '80vh', display: 'flex', flexDirection: 'column',
-    fontFamily: 'monospace', boxShadow: '0 12px 60px rgba(0,0,0,0.7)',
+    fontFamily: 'var(--game-font)', boxShadow: '0 12px 60px rgba(0,0,0,0.7)',
   },
   header: {
     display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12,
   },
   title: {
     flex: 1, margin: 0, color: '#ffd700', fontSize: 20,
-    letterSpacing: 4, fontFamily: 'monospace',
+    letterSpacing: 4, fontFamily: 'var(--game-font)',
   },
   closeBtn: {
     background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)',
@@ -150,7 +150,7 @@ const S = {
   tab: {
     flex: 1, padding: '7px 2px', fontSize: 10, fontWeight: 700, letterSpacing: 1,
     background: 'transparent', color: 'rgba(255,255,255,0.5)', border: 'none',
-    borderRadius: 7, cursor: 'pointer', fontFamily: 'monospace',
+    borderRadius: 7, cursor: 'pointer', fontFamily: 'var(--game-font)',
   },
   tabOn: { background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', color: '#0a0a14' },
   list: { overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 },
@@ -162,5 +162,5 @@ const S = {
   rank:  { width: 28, fontWeight: 700, fontSize: 14, color: 'rgba(255,255,255,0.6)', flexShrink: 0 },
   name:  { flex: 1, fontSize: 13, letterSpacing: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   score: { fontWeight: 700, fontSize: 15, color: '#33ff99', letterSpacing: 1, flexShrink: 0 },
-  status: { textAlign: 'center', color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', padding: 24, lineHeight: 1.7 },
+  status: { textAlign: 'center', color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--game-font)', padding: 24, lineHeight: 1.7 },
 };

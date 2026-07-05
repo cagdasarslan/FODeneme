@@ -104,12 +104,12 @@ const S = {
     border: '1px solid rgba(255,215,0,0.25)', borderRadius: 16, padding: '18px 16px',
   },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#ffd700', fontFamily: 'monospace' },
+  title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#ffd700', fontFamily: 'var(--game-font)' },
   close: {
     background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6,
     width: 30, height: 30, fontSize: 14, cursor: 'pointer',
   },
-  balance: { textAlign: 'center', color: '#ffd700', fontWeight: 700, fontFamily: 'monospace', fontSize: 13, marginBottom: 10 },
+  balance: { textAlign: 'center', color: '#ffd700', fontWeight: 700, fontFamily: 'var(--game-font)', fontSize: 13, marginBottom: 10 },
   flash: {
     textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#33ff99',
     background: 'rgba(51,255,153,0.1)', border: '1px solid #33ff9955',
@@ -118,11 +118,11 @@ const S = {
   removeAds: {
     display: 'flex', alignItems: 'center', gap: 10, width: '100%', marginBottom: 12,
     background: 'rgba(120,80,255,0.12)', border: '1px solid rgba(150,110,255,0.5)',
-    borderRadius: 12, padding: '12px 12px', color: '#c9b8ff', fontFamily: 'monospace',
+    borderRadius: 12, padding: '12px 12px', color: '#c9b8ff', fontFamily: 'var(--game-font)',
     fontSize: 12, cursor: 'pointer',
   },
   adsDone: {
-    textAlign: 'center', color: '#33ff99', fontFamily: 'monospace', fontSize: 12,
+    textAlign: 'center', color: '#33ff99', fontFamily: 'var(--game-font)', fontSize: 12,
     fontWeight: 700, marginBottom: 12, padding: 8,
     border: '1px solid rgba(51,255,153,0.35)', borderRadius: 10,
   },
@@ -131,7 +131,7 @@ const S = {
     position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
     padding: '14px 8px 10px', minHeight: 96, borderRadius: 12, cursor: 'pointer',
     background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-    fontFamily: 'monospace', transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
+    fontFamily: 'var(--game-font)', transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
   },
   pkgHot: { border: '1px solid rgba(255,215,0,0.55)', background: 'rgba(255,215,0,0.08)' },
   badge: {

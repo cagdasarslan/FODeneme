@@ -114,7 +114,7 @@ const S = {
     background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)',
     padding: 16,
   },
-  countWrap: { textAlign: 'center', fontFamily: 'monospace' },
+  countWrap: { textAlign: 'center', fontFamily: 'var(--game-font)' },
   countNum: { fontSize: 96, fontWeight: 900, color: '#ffd54a', textShadow: '0 0 30px rgba(255,200,50,0.7)', lineHeight: 1 },
   countText: { fontSize: 14, letterSpacing: 3, color: 'rgba(255,255,255,0.7)', marginTop: 8 },
   panel: {
@@ -126,15 +126,15 @@ const S = {
     boxShadow: '0 10px 50px rgba(0,0,0,0.7)',
   },
   title: {
-    fontFamily: 'monospace', fontSize: 28, fontWeight: 900, letterSpacing: 3,
+    fontFamily: 'var(--game-font)', fontSize: 28, fontWeight: 900, letterSpacing: 3,
     color: '#ff4422', textShadow: '0 0 18px rgba(255,68,34,0.6)',
   },
-  sub: { fontFamily: 'monospace', fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 4 },
+  sub: { fontFamily: 'var(--game-font)', fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 4 },
   btn: {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
     border: '2px solid', borderRadius: 10, padding: '12px 14px',
     cursor: 'pointer', width: '100%', transition: 'all 0.15s',
-    fontFamily: 'monospace',
+    fontFamily: 'var(--game-font)',
   },
   carrotBtn: { background: 'rgba(255,165,0,0.14)', borderColor: 'rgba(255,165,0,0.5)', color: '#ffcf66' },
   adBtn:     { background: 'rgba(60,180,90,0.14)', borderColor: 'rgba(80,200,110,0.5)', color: '#7ce29a' },
@@ -143,8 +143,8 @@ const S = {
   btnSubText: { fontSize: 10, opacity: 0.75, letterSpacing: 1 },
   giveUp: {
     marginTop: 4, background: 'transparent', border: 'none',
-    color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace', fontSize: 12,
+    color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--game-font)', fontSize: 12,
     letterSpacing: 2, cursor: 'pointer', padding: 8,
   },
-  note: { fontFamily: 'monospace', fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 },
+  note: { fontFamily: 'var(--game-font)', fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 },
 };

@@ -304,7 +304,7 @@ function BreedModal({ onClose, onDone }) {
               <select
                 value={sel ?? ''}
                 onChange={e => setSel(e.target.value)}
-                style={{ width: '100%', background: '#1a1a2e', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 6, padding: '6px 8px', fontFamily: 'monospace', fontSize: 11 }}
+                style={{ width: '100%', background: '#1a1a2e', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 6, padding: '6px 8px', fontFamily: 'var(--game-font)', fontSize: 11 }}
               >
                 {available.filter(h => h.id !== other).map(h => (
                   <option key={h.id} value={h.id}>{h.name}</option>
@@ -491,7 +491,7 @@ const SC = {
   },
   actionBtn: {
     padding: '8px 12px', fontSize: 11, fontWeight: 700, letterSpacing: 1,
-    color: '#fff', border: 'none', borderRadius: 6, fontFamily: 'monospace',
+    color: '#fff', border: 'none', borderRadius: 6, fontFamily: 'var(--game-font)',
     cursor: 'pointer', transition: 'opacity 0.15s', textAlign: 'center',
   },
   emptySlot: {

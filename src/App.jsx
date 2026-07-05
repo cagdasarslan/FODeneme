@@ -200,7 +200,7 @@ export default function App() {
       {autoLowMsg && (
         <div style={{ position:'fixed', top:14, left:'50%', transform:'translateX(-50%)', zIndex:9500,
           background:'rgba(0,0,0,0.85)', border:'1px solid rgba(255,215,0,0.5)', color:'#ffd700',
-          fontFamily:'monospace', fontSize:12, fontWeight:700, padding:'10px 16px', borderRadius:10 }}>
+          fontFamily:'var(--game-font)', fontSize:12, fontWeight:700, padding:'10px 16px', borderRadius:10 }}>
           ⚡ Akıcılık için grafik kalitesi düşürüldü (Ayarlar'dan değiştirebilirsin)
         </div>
       )}

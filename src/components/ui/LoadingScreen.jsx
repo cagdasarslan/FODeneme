@@ -48,7 +48,7 @@ const S = {
     justifyContent: 'center',
     zIndex: 999,
     transition: 'opacity 0.5s ease',
-    fontFamily: 'monospace',
+    fontFamily: 'var(--game-font)',
     userSelect: 'none',
   },
   box: {

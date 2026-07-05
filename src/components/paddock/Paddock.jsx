@@ -506,11 +506,11 @@ const S = {
     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 5000,
     display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
     background: 'linear-gradient(180deg, rgba(0,0,0,0.55), transparent)',
-    fontFamily: 'monospace', userSelect: 'none',
+    fontFamily: 'var(--game-font)', userSelect: 'none',
   },
   exitBtn: {
     background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.25)',
-    color: '#fff', borderRadius: 8, padding: '8px 12px', fontFamily: 'monospace',
+    color: '#fff', borderRadius: 8, padding: '8px 12px', fontFamily: 'var(--game-font)',
     fontWeight: 700, fontSize: 12, letterSpacing: 1, cursor: 'pointer',
   },
   horseInfo: { flex: 1, minWidth: 0 },
@@ -523,31 +523,31 @@ const S = {
   placingHint: {
     position: 'fixed', top: 74, left: '50%', transform: 'translateX(-50%)', zIndex: 5001,
     background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,215,0,0.5)', color: '#ffd700',
-    borderRadius: 10, padding: '10px 14px', fontFamily: 'monospace', fontSize: 12, fontWeight: 700,
+    borderRadius: 10, padding: '10px 14px', fontFamily: 'var(--game-font)', fontSize: 12, fontWeight: 700,
     display: 'flex', alignItems: 'center', gap: 10,
   },
-  cancelPlace: { background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'monospace', fontSize: 11 },
+  cancelPlace: { background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontFamily: 'var(--game-font)', fontSize: 11 },
   toast: {
     position: 'fixed', top: '30%', left: '50%', transform: 'translateX(-50%)', zIndex: 5002,
-    color: '#33ff99', fontFamily: 'monospace', fontSize: 22, fontWeight: 900,
+    color: '#33ff99', fontFamily: 'var(--game-font)', fontSize: 22, fontWeight: 900,
     textShadow: '0 0 14px rgba(51,255,153,0.7), 0 2px 4px #000', pointerEvents: 'none',
   },
   hint: {
     position: 'fixed', bottom: 'calc(14px + env(safe-area-inset-bottom, 0px))', left: 14, zIndex: 5000,
-    color: 'rgba(255,255,255,0.65)', fontFamily: 'monospace', fontSize: 11, pointerEvents: 'none',
+    color: 'rgba(255,255,255,0.65)', fontFamily: 'var(--game-font)', fontSize: 11, pointerEvents: 'none',
     textShadow: '0 1px 3px #000',
   },
   jumpBtn: {
     position: 'fixed', right: 16, bottom: 'calc(20px + env(safe-area-inset-bottom, 0px))', zIndex: 5000,
     width: 76, height: 76, borderRadius: '50%',
     background: 'rgba(255,165,0,0.25)', border: '2px solid rgba(255,165,0,0.6)', color: '#fff',
-    fontSize: 22, fontFamily: 'monospace', fontWeight: 800, cursor: 'pointer',
+    fontSize: 22, fontFamily: 'var(--game-font)', fontWeight: 800, cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent',
   },
   shopBtn: {
     position: 'fixed', bottom: 'calc(20px + env(safe-area-inset-bottom, 0px))', left: '50%', transform: 'translateX(-50%)', zIndex: 5000,
     background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,215,0,0.5)', color: '#ffd700',
-    borderRadius: 22, padding: '11px 18px', fontFamily: 'monospace', fontWeight: 800, fontSize: 12,
+    borderRadius: 22, padding: '11px 18px', fontFamily: 'var(--game-font)', fontWeight: 800, fontSize: 12,
     letterSpacing: 1, cursor: 'pointer',
   },
   shopModal: {
@@ -556,7 +556,7 @@ const S = {
   },
   shopBox: {
     width: '100%', maxWidth: 360, background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))',
-    border: '1px solid rgba(255,215,0,0.3)', borderRadius: 16, padding: '16px 14px', fontFamily: 'monospace',
+    border: '1px solid rgba(255,215,0,0.3)', borderRadius: 16, padding: '16px 14px', fontFamily: 'var(--game-font)',
   },
   shopHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   shopTitle: { color: '#ffd700', fontWeight: 800, fontSize: 15, letterSpacing: 1 },
@@ -565,7 +565,7 @@ const S = {
   shopItem: {
     display: 'flex', alignItems: 'center', gap: 10, width: '100%', marginBottom: 8,
     background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 10, padding: '12px 12px', color: '#fff', fontFamily: 'monospace',
+    borderRadius: 10, padding: '12px 12px', color: '#fff', fontFamily: 'var(--game-font)',
     fontWeight: 700, fontSize: 13, cursor: 'pointer',
   },
 };

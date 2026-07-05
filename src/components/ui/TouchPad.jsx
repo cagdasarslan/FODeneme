@@ -77,7 +77,7 @@ const hint = {
   left: '50%',
   transform: 'translateX(-50%)',
   color: 'rgba(255,255,255,0.5)',
-  fontFamily: 'monospace',
+  fontFamily: 'var(--game-font)',
   fontSize: 12,
   letterSpacing: 1,
   pointerEvents: 'none',

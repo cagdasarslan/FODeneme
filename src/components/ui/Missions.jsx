@@ -105,11 +105,11 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
 
 const S = {
   modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 640, padding: 14 },
-  box: { width: '100%', maxWidth: 400, maxHeight: '88vh', overflowY: 'auto', background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 16, padding: '18px 16px', fontFamily: 'monospace' },
+  box: { width: '100%', maxWidth: 400, maxHeight: '88vh', overflowY: 'auto', background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 16, padding: '18px 16px', fontFamily: 'var(--game-font)' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#fff' },
   close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 30, height: 30, fontSize: 14, cursor: 'pointer' },
-  bigBtn: { position: 'relative', width: '100%', padding: '12px', borderRadius: 10, cursor: 'pointer', fontFamily: 'monospace', fontWeight: 800, letterSpacing: 2, fontSize: 12 },
+  bigBtn: { position: 'relative', width: '100%', padding: '12px', borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--game-font)', fontWeight: 800, letterSpacing: 2, fontSize: 12 },
   dailyBtn: { background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,160,0,0.12))', border: '1px solid rgba(255,215,0,0.4)', color: '#ffd700', marginBottom: 14 },
   dot: { position: 'absolute', top: 9, right: 12, width: 10, height: 10, borderRadius: '50%', background: '#ff3b3b', boxShadow: '0 0 8px #ff3b3b' },
   sectionLabel: { fontSize: 10, letterSpacing: 2, color: 'rgba(255,215,0,0.7)', fontWeight: 700, marginBottom: 6 },
@@ -119,7 +119,7 @@ const S = {
   barFill: { height: '100%', borderRadius: 2, transition: 'width 0.4s' },
   prog: { fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 3 },
   reward: { fontSize: 11, color: 'rgba(255,215,0,0.55)', fontWeight: 700, whiteSpace: 'nowrap' },
-  claim: { fontSize: 11, fontWeight: 800, color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', border: 'none', borderRadius: 7, padding: '7px 11px', cursor: 'pointer', fontFamily: 'monospace', whiteSpace: 'nowrap' },
+  claim: { fontSize: 11, fontWeight: 800, color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', border: 'none', borderRadius: 7, padding: '7px 11px', cursor: 'pointer', fontFamily: 'var(--game-font)', whiteSpace: 'nowrap' },
   doneTick: { fontSize: 16, color: '#33ff99', fontWeight: 900 },
   lbBtn: { marginTop: 16, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: '#ffd060' },
 };

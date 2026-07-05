@@ -139,7 +139,7 @@ export default function HUD() {
 
       {powerupLine && (
         <div style={{ position:'fixed', top:70, left:'50%', transform:'translateX(-50%)',
-          fontFamily:'monospace', fontSize:18, fontWeight:900, color:'#00e5ff',
+          fontFamily:'var(--game-font)', fontSize:18, fontWeight:900, color:'#00e5ff',
           textShadow:'0 0 15px #00aaff', letterSpacing:2, pointerEvents:'none',
           whiteSpace:'nowrap' }}>
           {powerupLine}
@@ -148,7 +148,7 @@ export default function HUD() {
 
       {adrenalinBoosting && (
         <div style={{ position:'fixed', top:100, left:'50%', transform:'translateX(-50%)',
-          fontFamily:'monospace', fontSize:22, fontWeight:900, color:'#ff4400',
+          fontFamily:'var(--game-font)', fontSize:22, fontWeight:900, color:'#ff4400',
           textShadow:'0 0 20px #ff6600, 0 0 40px #ff2200', letterSpacing:3, pointerEvents:'none',
           animation:'pulse 0.3s infinite alternate' }}>
           ⚡ ADRENALİN PATLAMASI — 2X SKOR!
@@ -158,7 +158,7 @@ export default function HUD() {
       {/* Combo çarpanı — art arda riskli hamleler skoru katlar */}
       {comboMult > 1 && (
         <div style={{ position:'fixed', top:132, left:'50%', transform:'translateX(-50%)',
-          fontFamily:'monospace', fontSize:18, fontWeight:900, color:'#ffd54a',
+          fontFamily:'var(--game-font)', fontSize:18, fontWeight:900, color:'#ffd54a',
           textShadow:'0 0 14px #ffb300', letterSpacing:3, pointerEvents:'none',
           animation:'pulse 0.4s infinite alternate' }}>
           🔥 COMBO x{comboMult}
@@ -168,7 +168,7 @@ export default function HUD() {
       {/* Tökezleme uyarısı — pencere içinde ikinci çarpma öldürür */}
       {stumbleActive && (
         <div style={{ position:'fixed', top:160, left:'50%', transform:'translateX(-50%)',
-          fontFamily:'monospace', fontSize:14, fontWeight:900, color:'#ff5544',
+          fontFamily:'var(--game-font)', fontSize:14, fontWeight:900, color:'#ff5544',
           textShadow:'0 0 12px #ff2200', letterSpacing:2, pointerEvents:'none',
           background:'rgba(0,0,0,0.45)', padding:'6px 14px', borderRadius:8,
           border:'1px solid rgba(255,60,40,0.5)',
@@ -180,7 +180,7 @@ export default function HUD() {
       {/* İlk oyun eğitimi */}
       {tutStep < 3 && (
         <div style={{ position:'fixed', top:'46%', left:'50%', transform:'translateX(-50%)',
-          fontFamily:'monospace', fontSize:17, fontWeight:800, color:'#fff',
+          fontFamily:'var(--game-font)', fontSize:17, fontWeight:800, color:'#fff',
           textShadow:'0 2px 6px #000', letterSpacing:1, pointerEvents:'none',
           background:'rgba(0,0,0,0.55)', padding:'12px 20px', borderRadius:12,
           border:'1px solid rgba(255,215,0,0.4)', whiteSpace:'nowrap' }}>
@@ -239,19 +239,19 @@ const styles = {
     position: 'fixed', inset: 0, zIndex: 300,
     background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)',
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-    gap: 18, fontFamily: 'monospace', userSelect: 'none',
+    gap: 18, fontFamily: 'var(--game-font)', userSelect: 'none',
   },
-  pauseTitle: { fontSize: 26, fontWeight: 900, letterSpacing: 4, color: '#fff' },
+  pauseTitle: { fontSize: 30, fontWeight: 700, letterSpacing: 3, color: '#fff', textShadow:'0 2px 8px rgba(0,0,0,0.6)' },
   pauseScore: { fontSize: 15, fontWeight: 700, letterSpacing: 2, color: '#f5d060' },
   pauseResume: {
     padding: '14px 52px', fontSize: 18, fontWeight: 900, letterSpacing: 3,
-    fontFamily: 'monospace', color: '#fff', border: 'none', borderRadius: 12,
+    fontFamily: 'var(--game-font)', color: '#fff', border: 'none', borderRadius: 12,
     background: 'linear-gradient(135deg,#2a8a4a,#1a6a30)', cursor: 'pointer',
     boxShadow: '0 4px 20px rgba(42,138,74,0.5)',
   },
   pauseQuit: {
     padding: '10px 36px', fontSize: 12, fontWeight: 700, letterSpacing: 2,
-    fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)', borderRadius: 10,
+    fontFamily: 'var(--game-font)', color: 'rgba(255,255,255,0.7)', borderRadius: 10,
     border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)',
     cursor: 'pointer',
   },
@@ -259,7 +259,7 @@ const styles = {
     position: 'fixed', top: 'calc(8px + env(safe-area-inset-top, 0px))', right: 10, zIndex: 60,
     width: 40, height: 40, borderRadius: 10, fontSize: 18, lineHeight: 1,
     background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.25)',
-    color: '#fff', cursor: 'pointer', fontFamily: 'monospace',
+    color: '#fff', cursor: 'pointer', fontFamily: 'var(--game-font)',
   },
   topBar: {
     position: 'fixed',
@@ -283,20 +283,22 @@ const styles = {
   },
   label: {
     color: 'rgba(255,255,255,0.5)',
-    fontFamily: 'monospace',
-    fontSize: 9,
-    letterSpacing: 2,
+    fontFamily: 'var(--game-font)',
+    fontSize: 10,
+    letterSpacing: 1.5,
     marginBottom: 2,
+    fontWeight: 600,
   },
   value: {
     color: '#fff',
-    fontFamily: 'monospace',
-    fontSize: 18,
+    fontFamily: 'var(--game-font)',
+    fontSize: 19,
     fontWeight: 700,
-    textShadow: '0 0 8px rgba(255,255,255,0.4)',
+    letterSpacing: 0.5,
+    textShadow: '0 1px 3px rgba(0,0,0,0.7)',
   },
   speedLine: {
-    fontFamily: 'monospace',
+    fontFamily: 'var(--game-font)',
     fontSize: 13,
     fontWeight: 700,
     letterSpacing: 1,
@@ -313,7 +315,7 @@ const styles = {
     pointerEvents: 'none',
   },
   adrLabel: {
-    fontFamily: 'monospace',
+    fontFamily: 'var(--game-font)',
     fontSize: 11,
     letterSpacing: 2,
     textAlign: 'center',
@@ -347,7 +349,7 @@ const styles = {
     bottom: 16,
     left: 16,
     color: 'rgba(255,255,255,0.45)',
-    fontFamily: 'monospace',
+    fontFamily: 'var(--game-font)',
     fontSize: 12,
     userSelect: 'none',
     pointerEvents: 'none',
@@ -358,12 +360,12 @@ const styles = {
     top: '38%',
     left: '50%',
     transform: 'translateX(-50%)',
-    fontFamily: 'monospace',
-    fontSize: 36,
-    fontWeight: 900,
-    color: '#ff4400',
-    textShadow: '0 0 20px #ff4400, 0 2px 4px #000',
-    letterSpacing: 4,
+    fontFamily: 'var(--game-font)',
+    fontSize: 27,
+    fontWeight: 700,
+    color: '#ff7a2a',
+    textShadow: '0 2px 6px rgba(0,0,0,0.9), 0 0 14px #ff5500',
+    letterSpacing: 2,
     pointerEvents: 'none',
     userSelect: 'none',
     animation: 'flashIn 0.15s ease-out',

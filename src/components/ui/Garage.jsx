@@ -505,7 +505,7 @@ const S = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 200,
-    fontFamily: 'monospace',
+    fontFamily: 'var(--game-font)',
     userSelect: 'none',
   },
   panel: {
@@ -536,12 +536,12 @@ const S = {
   closeBtn: {
     background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
     borderRadius: 6, color: '#fff', fontSize: 16, padding: '4px 10px',
-    cursor: 'pointer', fontFamily: 'monospace',
+    cursor: 'pointer', fontFamily: 'var(--game-font)',
   },
   tabs: { display: 'flex', gap: 8 },
   tab: {
     flex: 1, padding: '10px 0', fontSize: 13, fontWeight: 700, letterSpacing: 2,
-    fontFamily: 'monospace', cursor: 'pointer', borderRadius: 8,
+    fontFamily: 'var(--game-font)', cursor: 'pointer', borderRadius: 8,
     border: '2px solid rgba(255,255,255,0.1)',
     background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)',
     transition: 'all 0.15s',
@@ -576,7 +576,7 @@ const S = {
   actionBtn: {
     marginTop: 6, padding: '11px 44px', fontSize: 14,
     fontWeight: 700, letterSpacing: 3, color: '#fff',
-    border: 'none', borderRadius: 8, fontFamily: 'monospace',
+    border: 'none', borderRadius: 8, fontFamily: 'var(--game-font)',
     transition: 'opacity 0.15s', width: '100%', textAlign: 'center',
   },
   levelBox: {
@@ -595,7 +595,7 @@ const S = {
   },
   upgradeBtn: {
     padding: '6px 14px', fontSize: 10, fontWeight: 700, letterSpacing: 1,
-    color: '#fff', border: 'none', borderRadius: 6, fontFamily: 'monospace',
+    color: '#fff', border: 'none', borderRadius: 6, fontFamily: 'var(--game-font)',
     transition: 'opacity 0.15s',
   },
   statBox: {
