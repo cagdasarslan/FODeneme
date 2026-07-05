@@ -585,14 +585,26 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     // ── Zemin çarpışması — yeterince yüksekteyken atla ─────────────────────
     if (immune) return;
     const airborne = !onGroundRef.current;
-    // Muafiyet: eşiğin üstündeysen VEYA bu zıplamada bir kez tepeye ulaştıysan
-    // (iniş boyunca da güvenli) → zemin engeli çarpmaz
-    if (airborne && (newY > GROUND_Y + CLEAR_JUMP_Y || clearedJumpRef.current)) return;
+    // Havadayken (zıplarken) HİÇBİR zemin engeline çarpma — endless-runner
+    // standardı. Kalkış/iniş anındaki haksız ölümleri tamamen ortadan kaldırır.
+    // Sadece üstten geçen (overhead) engeller eğilmeyi gerektirir; onlar yukarıda
+    // ayrı ele alınıyor. Yakın geçiş (close-call) ödülü aşağıda korunuyor.
+    if (airborne) {
+      for (const [, obs] of obstacleRegistry) {
+        if (!obs.active) continue;
+        if (getKind(obs.TypeFn) === 'overhead') continue;
+        const dx = Math.abs(pos.x - obs.x);
+        const dz = Math.abs(pos.z - obs.z);
+        if (dx < CLOSE_CALL_RADIUS && dz < CLOSE_CALL_RADIUS && closeCoolRef.current <= 0) {
+          registerCloseCall();
+          closeCoolRef.current = CLOSE_CALL_CD;
+        }
+      }
+      return;
+    }
     if (graceRef.current > 0) return;
-    // Havada ama eşiğin altında (kalkış/iniş anı): hitbox'ı daralt — kenara
-    // sürtmek değil, ancak tam üstüne inmek çarpma sayılır
-    const tolX = HIT_TOL_X * (airborne ? AIR_TOL : 1);
-    const tolZ = HIT_TOL_Z * (airborne ? AIR_TOL : 1);
+    const tolX = HIT_TOL_X;
+    const tolZ = HIT_TOL_Z;
     for (const [, obs] of obstacleRegistry) {
       if (!obs.active) continue;
       if (getKind(obs.TypeFn) === 'overhead') continue; // yukarıda ele alındı
