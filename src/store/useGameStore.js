@@ -25,6 +25,7 @@ import {
   COMBO_PER_STEP,
   COMBO_MAX_MULT,
   STUMBLE_WINDOW_MS,
+  PADDOCK_TRAIN_CAP,
 } from '@/constants/game';
 import { ACHIEVEMENTS } from '@/constants/achievements';
 import { POWERUP_IDS, powerupDuration, powerupUpgradeCost, POWERUP_MAX_LEVEL } from '@/constants/powerups';
@@ -656,13 +657,24 @@ const useGameStore = create(
       set({ paddockObstacles: next, paddockPlacing: null });
     },
 
-    // Antrenman XP'si: her 100 XP'de en düşük seviyeli stat +1 (bedava gelişim)
+    // Antrenman XP'si: her 100 XP'de en düşük seviyeli stat +1 (bedava gelişim).
+    // Antrenman toplam SEVİYE 10'da durur (eskiden 15'ti). 10'dan sonrası
+    // günlük ücretsiz yükseltme (claimFreeUpgrade) ile açılır.
     addTrainingXP: (horseId, amount) => {
       const s = get();
-      let xp = (s.trainingXP[horseId] ?? 0) + amount;
       const ups = { ...(s.horseUpgrades[horseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 }) };
+      const total = () => (ups.speedLevel ?? 0) + (ups.maneuvLevel ?? 0) + (ups.jumpLevel ?? 0);
+      if (total() >= PADDOCK_TRAIN_CAP) {
+        // antrenman tamam — XP'yi dolu tut, seviye verme (günlük ödül devrede)
+        const trainingXP = { ...s.trainingXP, [horseId]: 100 };
+        localStorage.setItem('trainingXP', JSON.stringify(trainingXP));
+        set({ trainingXP });
+        return [];
+      }
+      let xp = (s.trainingXP[horseId] ?? 0) + amount;
       const leveled = [];
       while (xp >= 100) {
+        if (total() >= PADDOCK_TRAIN_CAP) { xp = 100; break; } // antrenman tavanı (10)
         const order = ['jumpLevel', 'speedLevel', 'maneuvLevel'];
         const open = order.filter((k) => (ups[k] ?? 0) < 5);
         if (!open.length) { xp = 99; break; } // hepsi maksimum
@@ -677,6 +689,32 @@ const useGameStore = create(
       localStorage.setItem('horseUpgrades', JSON.stringify(horseUpgrades));
       set({ trainingXP, horseUpgrades });
       return leveled;
+    },
+
+    // ── Günlük ücretsiz yükseltme ──────────────────────────────────────────
+    // Antrenman seviyesi 10'a ulaşan at için: günde 1 kez, seçilen bir stat'ı
+    // ücretsiz +1 yükselt (stat başı max 5). 10→15 arası bu ödülle ilerler.
+    freeUpgradeDate: localStorage.getItem('freeUpgradeDate') ?? '',
+    canClaimFreeUpgrade: (horseId) => {
+      const s = get();
+      const ups = s.horseUpgrades[horseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
+      const total = (ups.speedLevel ?? 0) + (ups.maneuvLevel ?? 0) + (ups.jumpLevel ?? 0);
+      const anyOpen = ['speedLevel','maneuvLevel','jumpLevel'].some(k => (ups[k] ?? 0) < 5);
+      return total >= PADDOCK_TRAIN_CAP && anyOpen && s.freeUpgradeDate !== todayStr();
+    },
+    claimFreeUpgrade: (horseId, statKey) => {
+      const s = get();
+      if (!get().canClaimFreeUpgrade(horseId)) return false;
+      const ups = { ...(s.horseUpgrades[horseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 }) };
+      if ((ups[statKey] ?? 0) >= 5) return false;
+      ups[statKey] = (ups[statKey] ?? 0) + 1;
+      const horseUpgrades = { ...s.horseUpgrades, [horseId]: ups };
+      const date = todayStr();
+      localStorage.setItem('horseUpgrades', JSON.stringify(horseUpgrades));
+      localStorage.setItem('freeUpgradeDate', date);
+      set({ horseUpgrades, freeUpgradeDate: date });
+      sfx.powerup?.(); haptic.success?.();
+      return true;
     },
 
     // =========================================================================

@@ -27,8 +27,13 @@ export const COMBO_WINDOW_MS = 5000;  // bu süre içinde yeni aksiyon gelmezse 
 export const COMBO_PER_STEP  = 3;     // her 3 combo'da çarpan +1
 export const COMBO_MAX_MULT  = 4;
 
-// Tökezleme (stumble): ilk çarpma affedilir — bu pencere içinde ikinci çarpma öldürür
-export const STUMBLE_WINDOW_MS = 15000;
+// Tökezleme (stumble): ilk çarpma affedilir — bu pencere içinde ikinci çarpma öldürür.
+// Uyarı + tehlike penceresi ~2 sn (eskiden 15 sn çok uzundu).
+export const STUMBLE_WINDOW_MS = 2000;
+
+// Çiftlik antrenman tavanı: ücretsiz XP eğitimi toplam bu seviyeye kadar
+// (eskiden 15). Üstü (10→15) günlük ücretsiz yükseltme ödülüyle açılır.
+export const PADDOCK_TRAIN_CAP = 10;
 
 // Harita kilitleri: herhangi bir haritadaki en iyi skorun eşiği
 export const MAP_UNLOCKS = { 2: 1000, 3: 3000, 4: 6000, 5: 10000, 6: 15000 };

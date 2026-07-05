@@ -121,7 +121,11 @@ function PaddockHorseModel({ variant, animRef }) {
   // horse.gallop' gibi adlar var. Aday listesinden ilk bulunanı döndür.
   const pick = (cands) => { for (const c of cands) if (actions[c]) return c; return null; };
   const clipFor = useRef(null);
-  if (skeletal && !clipFor.current) {
+  // ÖNEMLİ: GLTF ilk render'da henüz yüklenmemişse `actions` boş olur; bu yüzden
+  // klip çözümlemesini ÇÖZÜLENE KADAR tekrarla (yoksa null'lar cache'lenip
+  // animasyon hiç oynamıyordu — Ahal Teke gibi preload'suz atlarda ayaklar
+  // hareket etmiyordu).
+  if (skeletal && (!clipFor.current || !(clipFor.current.idle || clipFor.current.walk || clipFor.current.run))) {
     clipFor.current = {
       idle: pick(['idle', 'Idle', 'horse.idle']),
       walk: pick(['walk', 'Walk', 'horse.walk']),
@@ -353,9 +357,13 @@ export function PaddockUI() {
   const toast   = useGameStore((s) => s.paddockToast);
   const toastId = useGameStore((s) => s.paddockToastId);
   const customHorses = useGameStore((s) => s.customHorses ?? []);
+  const freeUpgradeDate = useGameStore((s) => s.freeUpgradeDate);
+  const canClaimFreeUpgrade = useGameStore((s) => s.canClaimFreeUpgrade);
+  const claimFreeUpgrade = useGameStore((s) => s.claimFreeUpgrade);
   const horse = [...HORSES, ...customHorses].find((h) => h.id === selectedHorseId) ?? HORSES[0];
 
   const [shopOpen, setShopOpen] = useState(false);
+  const [freeOpen, setFreeOpen] = useState(false); // günlük ücretsiz yükseltme modalı
   const [toastVisible, setToastVisible] = useState(false);
   const dragRef = useRef(null);
 
@@ -441,9 +449,15 @@ export function PaddockUI() {
       <div style={S.topBar}>
         <button style={S.exitBtn} onClick={exitPaddock}>← ÇIK</button>
         <div style={S.horseInfo}>
-          <div style={S.horseName}>🐎 {horse.name} <span style={S.lv}>SV {totalLv}/15</span></div>
-          <div style={S.xpBarBg}><div style={{ ...S.xpBarFill, width: `${xp}%` }} /></div>
-          <div style={S.xpText}>Antrenman: {xp}/100 XP</div>
+          <div style={S.horseName}>🐎 {horse.name} <span style={S.lv}>SV {Math.min(totalLv, 10)}/10{totalLv >= 10 ? ' ✓' : ''}</span></div>
+          {totalLv < 10 ? (
+            <>
+              <div style={S.xpBarBg}><div style={{ ...S.xpBarFill, width: `${xp}%` }} /></div>
+              <div style={S.xpText}>Antrenman: {xp}/100 XP</div>
+            </>
+          ) : (
+            <div style={S.xpText}>🏆 Antrenman tamamlandı! Günlük ücretsiz yükseltme aç.</div>
+          )}
         </div>
         <div style={S.carrots}>🥕 {carrots.toLocaleString()}</div>
       </div>
@@ -470,6 +484,64 @@ export function PaddockUI() {
         ⬆<br /><span style={{ fontSize: 10 }}>ZIPLA</span>
       </button>
       <button style={S.shopBtn} onClick={() => setShopOpen(true)}>🛒 ENGEL AL</button>
+
+      {/* Antrenman 10'a ulaştıysa: günlük ücretsiz yükseltme */}
+      {totalLv >= 10 && (
+        <button
+          style={{ ...S.freeBtn, opacity: canClaimFreeUpgrade(selectedHorseId) ? 1 : 0.5 }}
+          onClick={() => setFreeOpen(true)}
+        >
+          🎁 {canClaimFreeUpgrade(selectedHorseId) ? 'ÜCRETSİZ YÜKSELT' : 'BUGÜN KULLANILDI'}
+        </button>
+      )}
+
+      {/* Günlük ücretsiz yükseltme modalı — atın özelliklerini göster, 1'ini seç */}
+      {freeOpen && (
+        <div style={S.shopModal}>
+          <div style={S.shopBox}>
+            <div style={S.shopHeader}>
+              <span style={S.shopTitle}>🎁 GÜNLÜK ÜCRETSİZ YÜKSELTME</span>
+              <button style={S.close} onClick={() => setFreeOpen(false)}>✕</button>
+            </div>
+            <div style={S.shopNote}>
+              {horse.name} antrenmanı tamamladı! Günde 1 kez bir özelliği ücretsiz yükselt.
+            </div>
+            {[
+              { key: 'speedLevel',  icon: '⚡', label: 'HIZ',     color: '#ff9800' },
+              { key: 'maneuvLevel', icon: '🎯', label: 'MANEVRA', color: '#4fc3f7' },
+              { key: 'jumpLevel',   icon: '🌙', label: 'ZIPLAMA', color: '#ce93d8' },
+            ].map(({ key, icon, label, color }) => {
+              const lvl = ups[key] ?? 0;
+              const maxed = lvl >= 5;
+              const canClaim = canClaimFreeUpgrade(selectedHorseId);
+              return (
+                <button
+                  key={key}
+                  style={{ ...S.shopItem, opacity: (maxed || !canClaim) ? 0.45 : 1, cursor: (maxed || !canClaim) ? 'default' : 'pointer' }}
+                  disabled={maxed || !canClaim}
+                  onClick={() => {
+                    if (claimFreeUpgrade(selectedHorseId, key)) setFreeOpen(false);
+                  }}
+                >
+                  <span style={{ fontSize: 22 }}>{icon}</span>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <div style={{ fontWeight: 800, letterSpacing: 1, color }}>{label}</div>
+                    <div style={{ display: 'flex', gap: 3, marginTop: 4 }}>
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <div key={i} style={{ flex: 1, height: 5, borderRadius: 2, background: i < lvl ? color : 'rgba(255,255,255,0.15)' }} />
+                      ))}
+                    </div>
+                  </div>
+                  <span style={{ fontWeight: 800, color: maxed ? '#888' : '#33ff99' }}>{maxed ? 'MAKS' : `+1 →${lvl + 1}`}</span>
+                </button>
+              );
+            })}
+            {!canClaimFreeUpgrade(selectedHorseId) && (
+              <div style={{ ...S.shopNote, color: '#ff9966' }}>Bugünkü ücretsiz yükseltme kullanıldı — yarın tekrar gel!</div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Engel mağazası */}
       {shopOpen && (
@@ -549,6 +621,12 @@ const S = {
     background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,215,0,0.5)', color: '#ffd700',
     borderRadius: 22, padding: '11px 18px', fontFamily: 'var(--game-font)', fontWeight: 800, fontSize: 12,
     letterSpacing: 1, cursor: 'pointer',
+  },
+  freeBtn: {
+    position: 'fixed', bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))', left: '50%', transform: 'translateX(-50%)', zIndex: 5000,
+    background: 'linear-gradient(135deg,#2a8a4a,#1a6a30)', border: '1px solid rgba(51,255,153,0.6)', color: '#eafff2',
+    borderRadius: 22, padding: '11px 20px', fontFamily: 'var(--game-font)', fontWeight: 800, fontSize: 12,
+    letterSpacing: 1, cursor: 'pointer', boxShadow: '0 0 20px rgba(51,255,153,0.35)',
   },
   shopModal: {
     position: 'fixed', inset: 0, zIndex: 6000, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)',
