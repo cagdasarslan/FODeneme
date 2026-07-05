@@ -4,6 +4,7 @@ import { setSfxEnabled, setMusicEnabled, sfx, startMusic, startGallop } from '@/
 import { STREAK_REWARDS, STREAK_MAX_REWARD, pickDailyMissions, pickWeeklyMissions, weekKey } from '@/constants/daily';
 import { submitScoreSupa, addTotalScore } from '@/services/SupaLeaderboard';
 import { scheduleCloudSave } from '@/services/CloudSave';
+import { triggerSlowmo, getTimeScale, resetSlowmo } from '@/utils/slowmo';
 import { HORSES } from '@/constants/horses';
 import {
   INITIAL_SPEED,
@@ -148,6 +149,7 @@ const useGameStore = create(
     stumbleId: 0,
     stumbleActive: false,
     stumbleRecover: 0, // tökezleme sonrası dönülecek hız (0 = yok)
+    dying: false,      // ölümcül çarpma sonrası slow-mo penceresi (overlay gecikir)
     runCarrots: 0,      // bu koşuda toplanan havuç (oyun sonu 2x için)
     carrotsDoubled: false, // oyun sonu havuç katlama kullanıldı mı
     startBoost: false,  // sonraki koşuya boost (mıknatıs) ile başla
@@ -240,8 +242,9 @@ const useGameStore = create(
     // Run lifecycle actions
     // =========================================================================
 
-    startRun: () =>
-      set((s) => ({
+    startRun: () => {
+      resetSlowmo(); // önceki koşudan kalan slow-mo'yu temizle
+      return set((s) => ({
         phase: 'playing',
         score: 0,
         speed: INITIAL_SPEED,
@@ -264,8 +267,9 @@ const useGameStore = create(
         adrenalinBoosting: false,
         adrenalinBoostTimer: 0,
         combo: 0, comboExpire: 0, comboMult: 1,
-        stumbleUntil: 0, stumbleActive: false, stumbleRecover: 0,
-      })),
+        stumbleUntil: 0, stumbleActive: false, stumbleRecover: 0, dying: false,
+      }));
+    },
 
     pauseRun: () => set({ phase: 'paused' }),
     resumeRun: () => set({ phase: 'playing' }),
@@ -366,8 +370,13 @@ const useGameStore = create(
       let effSpeed = speedBase;
       if (puActive('turbo'))  effSpeed = boostCap * 1.15;      // turbo: tavan üstü hız
       if (puActive('slowmo')) effSpeed = effSpeed * 0.5;       // zaman büyüsü: dünya yavaş
-      const traveled = effSpeed * delta;                        // dünya/mesafe (yavaşlamış)
-      const scoreSpeed = puActive('slowmo') ? speedBase : effSpeed; // skor normal akar
+      // ── Sinematik yavaş-çekim (çarpışma) ── timeScale controller'da (kamera
+      // frame'inde her karede ilerletilir) hesaplanır; burada yalnız OKUNUR ve
+      // çıkış hızına (dünya kayması + nal sesi tempou) uygulanır. Skor ETKİLENMEZ.
+      const timeScale = getTimeScale();
+      const worldSpeed = effSpeed * timeScale;                  // dünyaya yansıyan hız
+      const traveled = worldSpeed * delta;                      // mesafe dünyayla senkron yavaşlar
+      const scoreSpeed = puActive('slowmo') ? speedBase : effSpeed; // skor normal akar (slow-mo'dan bağımsız)
       const newAdrenaline = adrenalinBoosting ? 0 : Math.max(0, adrenaline - ADRENALINE_DECAY_RATE * delta);
 
       // Combo: pencere doldu mu → sıfırla; çarpanı türet
@@ -377,7 +386,7 @@ const useGameStore = create(
       const comboMult = 1 + Math.min(COMBO_MAX_MULT - 1, Math.floor(combo / COMBO_PER_STEP));
 
       set({
-        speed: effSpeed,
+        speed: worldSpeed,   // dünya kayması + nal sesi slow-mo ile yavaşlar
         speedBase,
         distance: distance + traveled,
         score: score + scoreSpeed * delta * SCORE_PER_METER * scoreMult * comboMult,
@@ -472,15 +481,21 @@ const useGameStore = create(
     // Pencere içinde ikinci çarpma = gerçek çarpış → "devam et" ekranı.
     registerCollision: () => {
       const s = get();
-      if (s.phase !== 'playing') return;
+      if (s.phase !== 'playing' || s.dying) return; // ölüm slow-mo'su sürerken tekrar tetikleme
       const now = Date.now();
       if (now < s.stumbleUntil) {
+        // ── ÖLÜMCÜL çarpma ── sinematik yavaş-çekim OYNA, sonra overlay'i göster
         sfx.crash();
         haptic.heavy();
-        set({ phase: 'crashed' });
+        triggerSlowmo();
+        set({ dying: true });
+        // dünya slow-mo ile kayarken ölüm anını göster; ~620ms sonra devam ekranı
+        setTimeout(() => { if (get().dying) set({ phase: 'crashed', dying: false }); }, 620);
       } else {
+        // ── TÖKEZLEME (hayatta kalınır) ── kısa slow-mo + yavaşlama, oyun sürer
         sfx.crash();
         haptic.heavy();
+        triggerSlowmo();
         const slowed = Math.max(INITIAL_SPEED, s.speedBase * 0.55);
         set({
           stumbleUntil: now + STUMBLE_WINDOW_MS,
@@ -504,9 +519,11 @@ const useGameStore = create(
     },
 
     _doRevive: () => {
+      resetSlowmo(); // slow-mo'yu temizle
       // Son hızdan devam et (speed sıfırlanmaz); engeller spawner'larda temizlenir
       set((s) => ({
         phase: 'playing',
+        dying: false,
         reviveCount: s.reviveCount + 1,
         reviveId: s.reviveId + 1,
         adrenaline: 0,

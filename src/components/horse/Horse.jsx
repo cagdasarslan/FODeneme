@@ -12,6 +12,7 @@ import { obstacleRegistry } from '@/utils/obstacleRegistry';
 import { horseRef } from '@/utils/horseRef';
 import { HALF_TRACK, HORSE_LATERAL_SPEED, LANES, COLLISION_DX, COLLISION_DZ, CLOSE_CALL_RADIUS, SLIDE_DURATION_MS, SPACE_GRAVITY_MULT, SPACE_JUMP_MULT } from '@/constants/game';
 import { getHitbox, getKind } from '@/components/obstacles/ObstacleSpawner';
+import { getTimeScale } from '@/utils/slowmo';
 import { haptic } from '@/utils/haptics';
 import { CHARACTERS } from '@/constants/characters';
 import { HORSES } from '@/constants/horses';
@@ -432,7 +433,11 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   useFrame((_, delta) => {
     if (phase !== 'playing' || !rigidBodyRef.current) return;
     tick(delta);
-    setGallopSpeed(useGameStore.getState().speed); // nal sesi temposu
+    setGallopSpeed(useGameStore.getState().speed); // nal sesi temposu (slow-mo'da store.speed yavaşladığı için otomatik senkron)
+    // Sinematik slow-mo: atın kendi hareketi (şerit + zıplama yayı) dünyayla
+    // uyumlu yavaşlasın. gdt = ölçeklenmiş delta.
+    const gts = getTimeScale();
+    const gdt = delta * gts;
 
     const rb  = rigidBodyRef.current;
     const pos = rb.translation();
@@ -447,7 +452,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     prevLeftRef.current  = leftNow;
     prevRightRef.current = rightNow;
     const targetX  = LANES[laneRef.current];
-    const newX     = THREE.MathUtils.lerp(pos.x, targetX, laneSpeed * delta);
+    const newX     = THREE.MathUtils.lerp(pos.x, targetX, laneSpeed * gdt);
     const clampedX = THREE.MathUtils.clamp(newX, -HALF_TRACK, HALF_TRACK);
     const vx = (clampedX - pos.x) / Math.max(delta, 0.001);
 
@@ -495,8 +500,8 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       onGroundRef.current = false;
       newY = THREE.MathUtils.lerp(pos.y, FLY_Y, Math.min(1, 5 * delta));
     } else if (!onGroundRef.current) {
-      velYRef.current += gravity * delta;
-      newY += velYRef.current * delta;
+      velYRef.current += gravity * gdt;
+      newY += velYRef.current * gdt;
       // Bu zıplamada muafiyet yüksekliğine ulaşıldıysa işaretle → iniş dahil
       // tüm yay boyunca zemin engellerine muaf kal ("üstünden geçtim" hissi)
       if (newY > GROUND_Y + CLEAR_JUMP_Y) clearedJumpRef.current = true;
