@@ -83,28 +83,6 @@ export const HORSES = [
     noTint: true,
   },
   {
-    id: 'war_horse',
-    name: 'SAVAŞ ATI',
-    price: 3000,
-    bodyColor: '#57381f',
-    maneColor: '#2a1c10',
-    hoofColor: '#1a1512',
-    desc: 'Tam koşumlu efsanevi savaş atı — eyer, dizgin, üzengi',
-    accentColor: '#8a3a2a',
-    baseSpeedMult: 1.9,
-    baseManeuvMult: 1.35,
-    baseJumpMult: 1.5,
-    baseMaxSpeed: 85,
-    // Tam rigli model (eyerli/dizginli). 12 gait içinden dörtnal kullanılır.
-    model: '/assets/models/horses/war_horse.glb',
-    modelScale: 1.2,
-    modelY: -1.05,
-    modelZ: -2.89,     // mesh z-merkezi (-2.41) orijinde değil → -2.41×ölçek ile geri çek
-    animClip: 'horse.gallop',
-    skeletal: true,
-    noTint: true,
-  },
-  {
     id: 'pamuk',
     name: 'AKAT',
     price: 1200,
