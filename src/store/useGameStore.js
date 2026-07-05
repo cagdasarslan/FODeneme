@@ -26,6 +26,7 @@ import {
   COMBO_MAX_MULT,
   STUMBLE_WINDOW_MS,
   PADDOCK_TRAIN_CAP,
+  DAILY_SCORE_GOAL,
 } from '@/constants/game';
 import { ACHIEVEMENTS } from '@/constants/achievements';
 import { POWERUP_IDS, powerupDuration, powerupUpgradeCost, POWERUP_MAX_LEVEL } from '@/constants/powerups';
@@ -76,6 +77,9 @@ function loadDaily() {
     statsDate: d.statsDate ?? '',
     dailyStats: d.dailyStats ?? { distance: 0, jumps: 0, jumpover: 0, runs: 0, closecall: 0 },
     missionClaimed: d.missionClaimed ?? [],
+    // Günlük skor görevi (tüm haritalarda toplam) + hediye sandığı
+    dailyScore: d.dailyScore ?? 0,
+    chestClaimedDate: d.chestClaimedDate ?? '',
     // Haftalık görevler (pazartesi sıfırlanır)
     weekDate: d.weekDate ?? '',
     weekStats: d.weekStats ?? { distance: 0, jumps: 0, jumpover: 0, runs: 0, closecall: 0, carrots: 0 },
@@ -86,6 +90,7 @@ function saveDaily(s) {
   localStorage.setItem('daily_v1', JSON.stringify({
     streakDay: s.streakDay, lastClaimDate: s.lastClaimDate,
     statsDate: s.statsDate, dailyStats: s.dailyStats, missionClaimed: s.missionClaimed,
+    dailyScore: s.dailyScore, chestClaimedDate: s.chestClaimedDate,
     weekDate: s.weekDate, weekStats: s.weekStats, weeklyClaimed: s.weeklyClaimed,
   }));
   localStorage.setItem('life_v1', JSON.stringify(s.lifeStats));
@@ -286,6 +291,9 @@ const useGameStore = create(
       submitScoreSupa(get().score, get().mapId);
       // TÜMÜ liderliği: bu koşunun skorunu kümülatif toplama ekle (rekor değil)
       addTotalScore(get().score);
+      // Günlük skor görevi: bu koşunun skorunu bugünkü toplama ekle (tüm haritalar)
+      set({ dailyScore: (get().dailyScore ?? 0) + Math.floor(get().score) });
+      saveDaily(get());
       const { score, highScore, mapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5, highScoreMap6, sessionReady } = get();
       const newHighScore = Math.max(score, highScore);
       const hsKey = mapId === 6 ? 'hs_map6' : mapId === 5 ? 'hs_map5' : mapId === 4 ? 'hs_map4' : mapId === 3 ? 'hs_map3' : mapId === 2 ? 'hs_map2' : 'hs_map1';
@@ -726,12 +734,13 @@ const useGameStore = create(
       const s = get();
       const today = todayStr();
       let { streakDay, lastClaimDate, statsDate, dailyStats, missionClaimed,
-            weekDate, weekStats, weeklyClaimed } = s;
-      // Yeni gün → günlük sayaç ve görev talepleri sıfırla
+            weekDate, weekStats, weeklyClaimed, dailyScore } = s;
+      // Yeni gün → günlük sayaç, görev talepleri ve GÜNLÜK SKOR sıfırla
       if (statsDate !== today) {
         statsDate = today;
         dailyStats = { distance: 0, jumps: 0, jumpover: 0, runs: 0, closecall: 0 };
         missionClaimed = [];
+        dailyScore = 0; // günlük skor görevi sıfırlanır (sandık chestClaimedDate ile)
       }
       // Yeni hafta → haftalık sayaç ve talepleri sıfırla
       const wk = weekKey();
@@ -745,7 +754,7 @@ const useGameStore = create(
         streakDay = 1;
       }
       const next = { streakDay, lastClaimDate, statsDate, dailyStats, missionClaimed,
-                     weekDate, weekStats, weeklyClaimed };
+                     weekDate, weekStats, weeklyClaimed, dailyScore };
       saveDaily({ ...get(), ...next });
       set(next);
 
@@ -815,6 +824,46 @@ const useGameStore = create(
       set({ dailyStats, weekStats, lifeStats });
       // sık çağrılabilir; kaydı debounce et (havuç gibi)
       scheduleDailySave(get);
+    },
+
+    // ── Günlük skor görevi + hediye sandığı ────────────────────────────────
+    // O gün TÜM haritalarda toplam 50.000 puana ulaşınca sandık açılır (günde 1).
+    getDailyGoal: () => {
+      const s = get();
+      const score = Math.floor(s.dailyScore ?? 0);
+      return {
+        score,
+        target: DAILY_SCORE_GOAL,
+        done: score >= DAILY_SCORE_GOAL,
+        claimed: s.chestClaimedDate === todayStr(),
+      };
+    },
+    // Sandık ödül tablosu (ağırlıklı rastgele) — açıldığında bir ödül döner
+    openDailyChest: () => {
+      const g = get().getDailyGoal();
+      if (!g.done || g.claimed) return null;
+      // ağırlıklı çekiliş
+      const roll = Math.random();
+      let reward;
+      if (roll < 0.50)      reward = { type: 'carrots', amount: 300 + Math.floor(Math.random() * 300), icon: '🥕', label: 'Havuç' };
+      else if (roll < 0.80) reward = { type: 'carrots', amount: 800 + Math.floor(Math.random() * 500), icon: '🥕', label: 'Havuç yığını' };
+      else if (roll < 0.93) reward = { type: 'carrots', amount: 1500 + Math.floor(Math.random() * 800), icon: '💰', label: 'Büyük havuç kesesi' };
+      else if (roll < 0.98) reward = { type: 'boost',   amount: 1,   icon: '🧲', label: 'Sonraki koşuya Süper Nal boost' };
+      else                  reward = { type: 'carrots', amount: 3000, icon: '🏆', label: 'JACKPOT! Havuç hazinesi' };
+
+      const patch = { chestClaimedDate: todayStr() };
+      if (reward.type === 'carrots') {
+        const carrots = get().carrots + reward.amount;
+        localStorage.setItem('carrots', String(carrots));
+        patch.carrots = carrots;
+      } else if (reward.type === 'boost') {
+        patch.startBoost = true; // sonraki startRun mıknatısla başlar
+      }
+      set(patch);
+      saveDaily(get());
+      sfx.powerup();
+      haptic.success();
+      return reward;
     },
 
     // Haftalık görevler: bu haftanın 3 görevi + ilerleme/talep durumu

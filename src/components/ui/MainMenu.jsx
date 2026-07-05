@@ -199,6 +199,13 @@ export default function MainMenu() {
   const claimMission   = useGameStore(s => s.claimMission);
   const canClaimStreak = useGameStore(s => s.canClaimStreak)();
   const missions = getMissions(); // dailyCarrots/missionClaimed değişince yenilenir
+  // Günlük skor görevi (50k) + hediye sandığı
+  const dailyScore       = useGameStore(s => s.dailyScore);
+  const chestClaimedDate = useGameStore(s => s.chestClaimedDate);
+  const getDailyGoal     = useGameStore(s => s.getDailyGoal);
+  const openDailyChest   = useGameStore(s => s.openDailyChest);
+  const goal = getDailyGoal(); // dailyScore/chestClaimedDate değişince yenilenir
+  const [chestReward, setChestReward] = useState(null); // sandık açılış modalı
 
   // Banner reklam — yalnızca ana menü/oyun sonu ekranında
   useEffect(() => {
@@ -258,6 +265,35 @@ export default function MainMenu() {
               🏆
             </button>
           </div>
+
+          {/* Günlük skor görevi: bugün tüm haritalarda 50.000 puan → hediye sandık */}
+          {!isGameOver && (
+            <div style={{
+              ...styles.foalCard, cursor: goal.done && !goal.claimed ? 'pointer' : 'default',
+              borderColor: goal.done && !goal.claimed ? '#ffd54a' : 'rgba(255,255,255,0.1)',
+              background: goal.done && !goal.claimed ? 'rgba(255,213,74,0.12)' : 'rgba(255,255,255,0.04)',
+            }} onClick={() => { if (goal.done && !goal.claimed) { const r = openDailyChest(); if (r) setChestReward(r); } }}>
+              <span style={{ fontSize: 26 }}>{goal.claimed ? '✅' : goal.done ? '🎁' : '🎯'}</span>
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <div style={styles.foalName}>Günlük Görev · 50.000 Puan</div>
+                {goal.claimed ? (
+                  <div style={{ ...styles.foalStatus, color: '#8ee69a' }}>Bugünkü sandık alındı — yarın tekrar! 🎁</div>
+                ) : goal.done ? (
+                  <div style={{ ...styles.foalStatus, color: '#ffd54a' }}>Tamamlandı! Sandığı açmak için dokun 👉</div>
+                ) : (
+                  <>
+                    <div style={{ height: 6, background: 'rgba(255,255,255,0.12)', borderRadius: 3, overflow: 'hidden', marginTop: 5 }}>
+                      <div style={{ height: '100%', width: `${Math.min(100, goal.score / goal.target * 100)}%`, background: 'linear-gradient(90deg,#ffd54a,#ff9f00)', borderRadius: 3 }} />
+                    </div>
+                    <div style={{ ...styles.foalStatus, color: 'rgba(255,255,255,0.55)', marginTop: 3 }}>
+                      {goal.score.toLocaleString()} / {goal.target.toLocaleString()} (tüm haritalar)
+                    </div>
+                  </>
+                )}
+              </div>
+              {goal.done && !goal.claimed && <span style={{ ...styles.foalGo, color: '#ffd54a' }}>AÇ →</span>}
+            </div>
+          )}
 
           {/* Tay vitrini — oyunun farkı: koşu + at yetiştiriciliği */}
           {!isGameOver && (foals.length > 0 ? (() => {
@@ -486,6 +522,22 @@ export default function MainMenu() {
           onLeaderboard={() => { setShowMissions(false); setShowLeaderboard(true); }}
         />
       )}
+
+      {/* Hediye sandığı açılış modalı */}
+      {chestReward && (
+        <div style={styles.chestOverlay} onClick={() => setChestReward(null)}>
+          <div style={styles.chestBox} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 64, animation: 'pulse 0.6s ease-out' }}>🎁</div>
+            <div style={styles.chestTitle}>SANDIK AÇILDI!</div>
+            <div style={{ fontSize: 44, margin: '8px 0' }}>{chestReward.icon}</div>
+            <div style={styles.chestReward}>
+              {chestReward.type === 'carrots' ? `+${chestReward.amount.toLocaleString()} 🥕` : chestReward.label}
+            </div>
+            <div style={styles.chestSub}>{chestReward.type === 'carrots' ? chestReward.label : 'Sonraki koşunda aktif!'}</div>
+            <button style={styles.chestBtn} onClick={() => setChestReward(null)}>HARİKA!</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -568,6 +620,25 @@ const styles = {
   foalStage: { fontSize: 9, color: 'rgba(255,255,255,0.45)', fontWeight: 400 },
   foalStatus: { fontFamily: 'var(--game-font)', fontSize: 10, marginTop: 2 },
   foalGo: { fontFamily: 'var(--game-font)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' },
+  // ── Hediye sandığı modalı ──
+  chestOverlay: {
+    position: 'fixed', inset: 0, zIndex: 13000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(5px)', padding: 20,
+  },
+  chestBox: {
+    width: '100%', maxWidth: 320, textAlign: 'center', fontFamily: 'var(--game-font)',
+    background: 'linear-gradient(160deg, rgba(28,22,10,0.98), rgba(12,10,6,0.99))',
+    border: '1px solid rgba(255,213,74,0.5)', borderRadius: 18, padding: '28px 24px',
+    boxShadow: '0 0 50px rgba(255,180,0,0.25)',
+  },
+  chestTitle: { color: '#ffd54a', fontWeight: 800, fontSize: 20, letterSpacing: 3, textShadow: '0 0 16px rgba(255,180,0,0.5)' },
+  chestReward: { color: '#fff', fontWeight: 800, fontSize: 26, letterSpacing: 1 },
+  chestSub: { color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 6, lineHeight: 1.5 },
+  chestBtn: {
+    marginTop: 22, padding: '12px 40px', fontSize: 15, fontWeight: 800, letterSpacing: 2, color: '#0a0a14',
+    border: 'none', borderRadius: 12, background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', cursor: 'pointer',
+    fontFamily: 'var(--game-font)', boxShadow: '0 0 24px rgba(255,180,0,0.4)',
+  },
   rivalRow: {
     marginTop: 8, fontFamily: 'var(--game-font)', fontSize: 11, color: 'rgba(255,255,255,0.8)',
     background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.25)',
