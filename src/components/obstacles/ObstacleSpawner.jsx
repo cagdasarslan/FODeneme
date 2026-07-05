@@ -332,9 +332,10 @@ const _setFarm = () => {
 };
 // City
 const _setCity = () => {
-  HITBOX_MAP.set(CityCar,   [1.10, 1.80]);
-  HITBOX_MAP.set(CityTaxi,  [1.10, 1.80]);
-  HITBOX_MAP.set(CityPolice,[1.10, 1.80]);
+  // Arabalar uzun; derinlik biraz kısaltıldı ki zıplanabilsin (yatay korundu)
+  HITBOX_MAP.set(CityCar,   [1.10, 1.40]);
+  HITBOX_MAP.set(CityTaxi,  [1.10, 1.40]);
+  HITBOX_MAP.set(CityPolice,[1.10, 1.40]);
   HITBOX_MAP.set(CityDump,  [0.85, 0.70]); // eskiden dz=1.20 → görselinin ~3 katıydı (değmeden çarpma)
 };
 // Hitbox'lar görsel scale'lerle senkron tutulmalı — modeller büyütüldüğünde
@@ -342,34 +343,36 @@ const _setCity = () => {
 const _setDesert = () => {
   HITBOX_MAP.set(DesertCactusShort, [0.68, 0.68]);
   HITBOX_MAP.set(DesertCactusTall,  [0.62, 0.62]);
-  HITBOX_MAP.set(DesertRockA,       [1.32, 1.32]);
-  HITBOX_MAP.set(DesertRockB,       [1.32, 1.32]);
-  HITBOX_MAP.set(DesertRockC,       [1.32, 1.32]);
+  // Kayalar derindi (dz 1.32) → zıplayınca ön kenar erken yakalıyordu. Derinlik
+  // diğer haritalarla tutarlı hale getirildi (zıplanabilir), yatay korundu.
+  HITBOX_MAP.set(DesertRockA,       [1.15, 0.92]);
+  HITBOX_MAP.set(DesertRockB,       [1.15, 0.92]);
+  HITBOX_MAP.set(DesertRockC,       [1.15, 0.92]);
 };
 const _setSpace = () => {
-  HITBOX_MAP.set(SpaceBarrels,   [0.96, 0.96]);
-  HITBOX_MAP.set(SpaceRover,     [1.05, 1.15]); // eskiden görselinin ~4 katıydı (değmeden çarpma)
-  HITBOX_MAP.set(SpaceMeteor,    [1.28, 1.28]);
-  HITBOX_MAP.set(SpaceMeteorDet, [1.18, 1.18]);
-  HITBOX_MAP.set(SpacePlatLow,   [1.50, 0.90]);
-  HITBOX_MAP.set(SpaceRockA,     [1.41, 1.41]);
-  HITBOX_MAP.set(SpaceRockB,     [1.41, 1.41]);
+  HITBOX_MAP.set(SpaceBarrels,   [0.96, 0.92]);
+  HITBOX_MAP.set(SpaceRover,     [1.05, 1.05]); // eskiden görselinin ~4 katıydı (değmeden çarpma)
+  HITBOX_MAP.set(SpaceMeteor,    [1.20, 1.00]);
+  HITBOX_MAP.set(SpaceMeteorDet, [1.10, 0.95]);
+  HITBOX_MAP.set(SpacePlatLow,   [1.40, 0.90]);
+  HITBOX_MAP.set(SpaceRockA,     [1.30, 1.02]);
+  HITBOX_MAP.set(SpaceRockB,     [1.30, 1.02]);
 };
 const _setMedieval = () => {
-  HITBOX_MAP.set(MedWell,    [1.10, 1.10]);
-  HITBOX_MAP.set(MedRocks,   [1.38, 1.38]);
-  HITBOX_MAP.set(MedRocksSm, [0.95, 0.95]);
-  HITBOX_MAP.set(MedTreeA,   [0.90, 0.90]);
-  HITBOX_MAP.set(MedTreeB,   [0.90, 0.90]);
-  HITBOX_MAP.set(MedFarm,    [1.50, 1.50]);
+  HITBOX_MAP.set(MedWell,    [1.05, 0.95]);
+  HITBOX_MAP.set(MedRocks,   [1.25, 1.02]);
+  HITBOX_MAP.set(MedRocksSm, [0.95, 0.90]);
+  HITBOX_MAP.set(MedTreeA,   [0.90, 0.82]);
+  HITBOX_MAP.set(MedTreeB,   [0.90, 0.82]);
+  HITBOX_MAP.set(MedFarm,    [1.35, 1.05]);
 };
 const _setDungeon = () => {
-  HITBOX_MAP.set(DunCrate,  [1.00, 1.00]);
-  HITBOX_MAP.set(DunBarrel, [0.90, 0.90]);
-  HITBOX_MAP.set(DunChest,  [1.20, 0.90]);
-  HITBOX_MAP.set(DunSpikes, [1.40, 1.40]);
-  HITBOX_MAP.set(DunBricks, [1.10, 1.05]);
-  HITBOX_MAP.set(DunTable,  [0.85, 0.90]);
+  HITBOX_MAP.set(DunCrate,  [1.00, 0.95]);
+  HITBOX_MAP.set(DunBarrel, [0.90, 0.88]);
+  HITBOX_MAP.set(DunChest,  [1.15, 0.90]);
+  HITBOX_MAP.set(DunSpikes, [1.35, 1.05]);
+  HITBOX_MAP.set(DunBricks, [1.05, 0.98]);
+  HITBOX_MAP.set(DunTable,  [0.85, 0.88]);
 };
 const _setOverhead = () => {
   [OverheadFarm, OverheadCity, OverheadDesert, OverheadSpace, OverheadMedieval, OverheadDungeon]
