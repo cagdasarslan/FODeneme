@@ -203,7 +203,7 @@ const useGameStore = create(
     // ── Ayarlar ───────────────────────────────────────────────────────────────
     soundOn: localStorage.getItem('soundOn') !== '0',          // oyun sesleri (SFX + nal)
     musicOn: localStorage.getItem('musicOn') !== '0',          // harita müziği
-    graphics: localStorage.getItem('graphics') || 'high',       // 'low' | 'high'
+    graphics: localStorage.getItem('graphics') || 'medium',     // 'low' | 'medium' | 'high' (bloom yalnız 'high')
 
     // ── UI phase ──────────────────────────────────────────────────────────────
     showGarage: false,
@@ -891,7 +891,7 @@ const useGameStore = create(
     },
 
     setGraphics: (q) => {
-      const v = q === 'low' ? 'low' : 'high';
+      const v = (q === 'low' || q === 'medium' || q === 'high') ? q : 'high';
       localStorage.setItem('graphics', v);
       set({ graphics: v });
     },

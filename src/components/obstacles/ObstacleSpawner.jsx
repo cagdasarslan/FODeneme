@@ -76,12 +76,27 @@ const MAT = {
   logRing: new THREE.MeshStandardMaterial({ color: '#6a4a22' }),
 };
 
+// Klonlanan materyalleri işaretle → unmount'ta GÜVENLE dispose edilebilir.
+// (Geometriler useGLTF önbelleğiyle PAYLAŞILDIĞI için ASLA dispose edilmez;
+//  yalnız burada .clone() ile ürettiğimiz benzersiz materyaller dispose edilir.)
+function _markCloned(m) { m.userData.__cloned = true; return m; }
+
+// Unmount temizliği: klonladığımız (işaretli) materyalleri serbest bırak.
+function disposeClonedMaterials(root) {
+  if (!root) return;
+  root.traverse((o) => {
+    if (o.isMesh && o.material && !Array.isArray(o.material) && o.material.userData?.__cloned) {
+      o.material.dispose();
+    }
+  });
+}
+
 // Çok koyu materyalleri zemin renginde kaybolmaktan kurtar: rengi minimum
 // açıklığa çek + hafif öz-ışıma ver. Klonlar; paylaşılan orijinali bozmaz.
 function ensureVisible(root, { minLight = 0.32, glow = 0.3 } = {}) {
   root.traverse((o) => {
     if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
-    const m = o.material.clone();
+    const m = _markCloned(o.material.clone());
     if (m.color) {
       const hsl = { h: 0, s: 0, l: 0 };
       m.color.getHSL(hsl);
@@ -97,7 +112,7 @@ function ensureVisible(root, { minLight = 0.32, glow = 0.3 } = {}) {
 function brightenObstacle(root) {
   root.traverse((o) => {
     if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
-    const m = o.material.clone();
+    const m = _markCloned(o.material.clone());
     if (m.color && m.emissive) {
       m.emissive.copy(m.color);
       m.emissiveIntensity = 0.28;
@@ -148,6 +163,7 @@ function LogPile() {
 function CityGLB({ path, scale = 1, yOffset = 0, rotY = 0, brighten = false }) {
   const { scene } = useGLTF(path);
   const cloned = useRef(null);
+  useEffect(() => () => disposeClonedMaterials(cloned.current), []);
   if (!cloned.current) {
     cloned.current = scene.clone(true);
     cloned.current.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
@@ -171,6 +187,7 @@ function CityBoxB()   { return <CityGLB path={M_BOX_B} scale={4.0} yOffset={0.0}
 function DesertGLB({ path, scale = 1 }) {
   const { scene } = useGLTF(path);
   const cloned = useRef(null);
+  useEffect(() => () => disposeClonedMaterials(cloned.current), []);
   const off    = useRef([0, 0]);
   if (!cloned.current) {
     cloned.current = scene.clone(true);
@@ -196,6 +213,7 @@ function DesertRockC()       { return <DesertGLB path={M_DES_ROCK_C} scale={3.0}
 function SpaceGLB({ path, scale = 1, yOffset = 0 }) {
   const { scene } = useGLTF(path);
   const cloned = useRef(null);
+  useEffect(() => () => disposeClonedMaterials(cloned.current), []);
   const off    = useRef([0, 0]);
   if (!cloned.current) {
     cloned.current = scene.clone(true);
@@ -222,6 +240,7 @@ function SpaceRockB()     { return <SpaceGLB path={M_SP_ROCK_B}     scale={3.3} 
 function MedievalGLB({ path, scale = 1, yOffset = 0, tint = null }) {
   const { scene } = useGLTF(path);
   const cloned = useRef(null);
+  useEffect(() => () => disposeClonedMaterials(cloned.current), []);
   const off    = useRef([0, 0, 0]);
   if (!cloned.current) {
     cloned.current = scene.clone(true);

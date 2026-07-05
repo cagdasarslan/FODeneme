@@ -32,8 +32,11 @@ const FORMATIONS = [
   () => Array.from({length:18}, (_,i) => ({ x: LANES[i%3], z: SPAWN_Z - i*2 })),
 ];
 
-const carrotMat  = new THREE.MeshStandardMaterial({ color: '#ff7700', roughness:0.6 });
-const leafMat    = new THREE.MeshStandardMaterial({ color: '#22aa22', roughness:0.8 });
+// Emissive (öz-parlayan) toplanabilirler — ucuz görsel iyileştirme; YÜKSEK
+// kalitede bloom bunları hafifçe parlatır. Düşük/orta'da sadece renk katkısı
+// olduğu için performans maliyeti yok denecek kadar az.
+const carrotMat  = new THREE.MeshStandardMaterial({ color: '#ff7700', roughness:0.55, emissive: '#ff5a00', emissiveIntensity: 0.6 });
+const leafMat    = new THREE.MeshStandardMaterial({ color: '#22aa22', roughness:0.8, emissive: '#1e8a1e', emissiveIntensity: 0.35 });
 const carrotGeo  = new THREE.ConeGeometry(0.22, 0.8, 6);
 const leafGeo    = new THREE.SphereGeometry(0.18, 6, 4);
 
@@ -102,6 +105,7 @@ export default function CarrotSpawner() {
       const grp = groupRefs.current[i];
       if (grp) {
         grp.position.set(c.x, 0.4, c.z);
+        grp.rotation.y += delta * 1.6; // hafif dönüş (allocation yok)
         grp.visible = true;
       }
 

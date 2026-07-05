@@ -98,6 +98,7 @@ function PegasusWings() {
 }
 
 const FLY_Y = 4.2;            // uçuş yüksekliği (RigidBody y)
+const _horseT = { x: 0, y: 0, z: 0 }; // her kare rapier setTranslation için paylaşılan obje (allocation yok)
 // Çarpışma toleransı: hitbox'ın kenarına sürtmek öldürmesin — yalnızca
 // gerçekten engelin İÇİNE girince çarpma sayılır (yanlardan %25, önden %12 pay)
 const HIT_TOL_X = 0.75;
@@ -515,7 +516,8 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       crouchRef.current.position.y = THREE.MathUtils.lerp(crouchRef.current.position.y, tP, 14 * delta);
     }
 
-    rb.setTranslation({ x: clampedX, y: newY, z: pos.z }, true);
+    _horseT.x = clampedX; _horseT.y = newY; _horseT.z = pos.z;
+    rb.setTranslation(_horseT, true); // paylaşılan obje — her karede allocation yok
     horseRef.x = clampedX;
     horseRef.z = pos.z;
 

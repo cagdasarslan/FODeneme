@@ -9,6 +9,7 @@ const MAX_FOV     = 88;
 const BASE_Y      = 8;      // kamera yüksekliği
 const BASE_Z      = 14;     // kamera derinliği
 const LOOK_AT     = new THREE.Vector3(0, 0.5, -6); // kamera hedefi: piste doğru
+const REST_POS    = new THREE.Vector3(0, BASE_Y, BASE_Z); // menü/idle kamera konumu (paylaşılan)
 const BOB_AMP     = 0.07;
 const BOB_FREQ    = 2.2;
 const SHAKE_DECAY = 6;
@@ -44,7 +45,7 @@ export function useDynamicCamera() {
     camera.updateProjectionMatrix();
 
     if (phase !== 'playing') {
-      camera.position.lerp(new THREE.Vector3(0, BASE_Y, BASE_Z), 5 * delta);
+      camera.position.lerp(REST_POS, 5 * delta); // paylaşılan sabit — allocation yok
       camera.lookAt(LOOK_AT);
       return;
     }

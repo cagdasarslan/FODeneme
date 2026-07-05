@@ -21,6 +21,8 @@ import ContinueOverlay from '@/components/ui/ContinueOverlay';
 import Garage from '@/components/ui/Garage';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { IS_MOBILE, MAX_DPR, SHADOW_MAP } from '@/utils/device';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { getQuality } from '@/constants/quality';
 import { startMusic, stopMusic, startGallop, stopGallop } from '@/utils/audio';
 import { initNotifications, scheduleReminders } from '@/services/NotificationService';
 import { initCloudSave, linkCloudToAccount } from '@/services/CloudSave';
@@ -82,13 +84,13 @@ export default function App() {
 
   const isPaddock = phase === 'paddock';
 
-  // OTOMATİK KALİTE: YÜKSEK moddayken oyun sırasında FPS düşükse (2 ölçüm
-  // üst üste <22) bir kereliğine DÜŞÜK moda geç ve kullanıcıya bildir.
-  // Kullanıcı ayarı elle değiştirdiyse (gfx_user) asla karışma.
+  // OTOMATİK KALİTE: oyun sırasında FPS düşükse (2 ölçüm üst üste <22) bir
+  // kademe düşür (YÜKSEK→ORTA→DÜŞÜK) ve kullanıcıya bildir. Kullanıcı ayarı
+  // elle değiştirdiyse (gfx_user) asla karışma.
   const [autoLowMsg, setAutoLowMsg] = useState(false);
   useEffect(() => {
-    if (graphics !== 'high') return;
-    if (localStorage.getItem('gfx_user') || localStorage.getItem('auto_low')) return;
+    if (graphics === 'low') return; // daha düşülemez
+    if (localStorage.getItem('gfx_user')) return;
     let frames = 0, last = performance.now(), bad = 0, raf;
     const loop = (t) => {
       frames++;
@@ -99,11 +101,11 @@ export default function App() {
           if (fps < 22) {
             bad++;
             if (bad >= 2) {
-              localStorage.setItem('auto_low', '1');
-              useGameStore.getState().setGraphics('low');
+              const next = graphics === 'high' ? 'medium' : 'low';
+              useGameStore.getState().setGraphics(next);
               setAutoLowMsg(true);
               setTimeout(() => setAutoLowMsg(false), 5000);
-              return; // döngüyü bitir
+              return; // döngüyü bitir (yeni kalitede tekrar ölçülür)
             }
           } else bad = 0;
         }
@@ -114,11 +116,12 @@ export default function App() {
     return () => cancelAnimationFrame(raf);
   }, [graphics]);
 
-  // Görüntü kalitesi (Ayarlar): low = gölgesiz + düşük dpr, high = tam
-  const lowGfx     = graphics === 'low';
-  const shadowsOn  = !lowGfx;
-  const dprMax     = lowGfx ? 1 : MAX_DPR;
-  const antialias  = !lowGfx && !IS_MOBILE;
+  // Görüntü kalitesi (Ayarlar): DÜŞÜK / ORTA / YÜKSEK ön ayarları
+  const q          = getQuality(graphics);
+  const shadowsOn  = q.shadows;
+  const dprMax     = Math.min(q.dpr, MAX_DPR); // cihaz üst sınırını aşma
+  const antialias  = q.antialias && !IS_MOBILE;
+  const bloomOn    = q.bloom && !isPaddock;
 
   const isSpace  = mapId === 4;
   const isMars   = mapId === 3;
@@ -178,6 +181,14 @@ export default function App() {
             </Physics>
           </>
         )}
+        {/* Hafif bloom — yalnız YÜKSEK kalitede (emissive havuç/nesneler parlar).
+            mipmapBlur + düşük çözünürlük ile ucuz; mobilde YÜKSEK zaten otomatik
+            kaliteyle zayıf cihazlarda kapanır. */}
+        {bloomOn && (
+          <EffectComposer disableNormalPass>
+            <Bloom mipmapBlur intensity={0.55} luminanceThreshold={0.55} luminanceSmoothing={0.25} radius={0.5} />
+          </EffectComposer>
+        )}
       </Canvas>
       <LoadingScreen />
       <HUD />
@@ -190,7 +201,7 @@ export default function App() {
         <div style={{ position:'fixed', top:14, left:'50%', transform:'translateX(-50%)', zIndex:9500,
           background:'rgba(0,0,0,0.85)', border:'1px solid rgba(255,215,0,0.5)', color:'#ffd700',
           fontFamily:'monospace', fontSize:12, fontWeight:700, padding:'10px 16px', borderRadius:10 }}>
-          ⚡ Akıcılık için grafik DÜŞÜK moda alındı (Ayarlar'dan değiştirebilirsin)
+          ⚡ Akıcılık için grafik kalitesi düşürüldü (Ayarlar'dan değiştirebilirsin)
         </div>
       )}
     </>

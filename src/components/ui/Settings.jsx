@@ -49,14 +49,14 @@ export default function Settings({ onClose }) {
           </div>
         </div>
 
-        {/* Görüntü */}
+        {/* Görüntü — 3 kademe: DÜŞÜK / ORTA / YÜKSEK */}
         <div style={S.row}>
           <span style={S.label}>🎮 Görüntü</span>
           <div style={S.seg}>
-            {[['DÜŞÜK', 'low'], ['YÜKSEK', 'high']].map(([txt, val]) => (
+            {[['DÜŞÜK', 'low'], ['ORTA', 'medium'], ['YÜKSEK', 'high']].map(([txt, val]) => (
               <button
                 key={txt}
-                style={{ ...S.segBtn, ...(graphics === val ? S.segOn : {}) }}
+                style={{ ...S.segBtn, minWidth: 52, padding: '8px 6px', ...(graphics === val ? S.segOn : {}) }}
                 onClick={() => {
                   localStorage.setItem('gfx_user', '1'); // otomatik kalite artık karışmaz
                   setGraphics(val);
@@ -71,7 +71,7 @@ export default function Settings({ onClose }) {
         <CloudSection />
 
         <div style={S.note}>
-          DÜŞÜK görüntü: gölgeler kapalı, daha akıcı (yavaş telefonlar için).
+          DÜŞÜK: gölge yok, en akıcı · ORTA: dengeli · YÜKSEK: gölge + ışıltı (bloom). Yavaş telefonlar için DÜŞÜK/ORTA önerilir.
         </div>
       </div>
     </div>
