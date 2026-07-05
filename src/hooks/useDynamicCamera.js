@@ -34,8 +34,10 @@ export function useDynamicCamera() {
     // Çiftlik (paddock) kendi kamerasını yönetir — burada dokunma
     if (phase === 'paddock') return;
 
-    // FOV hızla büyür
-    const t        = (speed - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED);
+    // FOV hızla büyür. t NEGATİF olabilir (Zaman Büyüsü/slowmo hızı
+    // INITIAL_SPEED'in altına indirir) → Math.pow(negatif, 0.55)=NaN olur ve
+    // kamera FOV'unu bozup tüm sahneyi çökertir. 0-1 arası kıstır.
+    const t        = THREE.MathUtils.clamp((speed - INITIAL_SPEED) / (MAX_SPEED - INITIAL_SPEED), 0, 1);
     const targetFov = THREE.MathUtils.lerp(BASE_FOV, MAX_FOV, Math.pow(t, 0.55));
     fovRef.current  = THREE.MathUtils.lerp(fovRef.current, targetFov, 2 * delta);
     camera.fov      = fovRef.current;
