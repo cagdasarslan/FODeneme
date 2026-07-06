@@ -28,8 +28,8 @@ export const COMBO_PER_STEP  = 3;     // her 3 combo'da çarpan +1
 export const COMBO_MAX_MULT  = 4;
 
 // Tökezleme (stumble): ilk çarpma affedilir — bu pencere içinde ikinci çarpma öldürür.
-// Uyarı + tehlike penceresi 5 sn.
-export const STUMBLE_WINDOW_MS = 5000;
+// Uyarı + tehlike penceresi 7.5 sn.
+export const STUMBLE_WINDOW_MS = 7500;
 
 // Günlük skor görevi: o gün TÜM haritalarda toplam bu puana ulaşınca hediye sandık
 export const DAILY_SCORE_GOAL = 50000;

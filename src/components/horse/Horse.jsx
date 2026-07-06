@@ -382,6 +382,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   const mapId     = useGameStore((s) => s.mapId);
   const stumbleId = useGameStore((s) => s.stumbleId);
   const jumpedRef = useRef(new Set()); // bu zıplamada üzerinden atlanan engeller
+  const clearedObsRef = useRef(new Set()); // zıplayarak geçilen engeller — artık çarpamaz
   const clearedJumpRef = useRef(false); // bu zıplamada muafiyet yüksekliğine ulaşıldı mı
   const prevFlyingRef = useRef(false); // Pegasus uçuşu geçiş takibi
 
@@ -410,6 +411,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     prevLeftRef.current  = false;
     prevRightRef.current = false;
     jumpedRef.current.clear();
+    clearedObsRef.current.clear();
     slideUntilRef.current = 0;
     slidUnderRef.current.clear();
   }, [runId]);
@@ -428,6 +430,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     prevLeftRef.current  = false;
     prevRightRef.current = false;
     jumpedRef.current.clear();
+    clearedObsRef.current.clear();
   }, [reviveId]);
 
   useFrame((_, delta) => {
@@ -590,11 +593,17 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     // Sadece üstten geçen (overhead) engeller eğilmeyi gerektirir; onlar yukarıda
     // ayrı ele alınıyor. Yakın geçiş (close-call) ödülü aşağıda korunuyor.
     if (airborne) {
-      for (const [, obs] of obstacleRegistry) {
+      for (const [id, obs] of obstacleRegistry) {
         if (!obs.active) continue;
         if (getKind(obs.TypeFn) === 'overhead') continue;
+        if (obs.z > 2) { clearedObsRef.current.delete(id); continue; }
         const dx = Math.abs(pos.x - obs.x);
         const dz = Math.abs(pos.z - obs.z);
+        // Havadayken üzerinde/çok yakınında olunan engeli KALICI "geçildi"
+        // işaretle: inişte hitbox'ın arka kenarına basmak çarpma sayılmaz.
+        // Görselden derin hitbox'ların yarattığı son haksız tökezleme kaynağı bu.
+        const [hbDx, hbDz] = getHitbox(obs.TypeFn);
+        if (dx < hbDx * HIT_TOL_X && dz < hbDz + 1.0) clearedObsRef.current.add(id);
         if (dx < CLOSE_CALL_RADIUS && dz < CLOSE_CALL_RADIUS && closeCoolRef.current <= 0) {
           registerCloseCall();
           closeCoolRef.current = CLOSE_CALL_CD;
@@ -605,9 +614,12 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     if (graceRef.current > 0) return;
     const tolX = HIT_TOL_X;
     const tolZ = HIT_TOL_Z;
-    for (const [, obs] of obstacleRegistry) {
+    for (const [id, obs] of obstacleRegistry) {
       if (!obs.active) continue;
       if (getKind(obs.TypeFn) === 'overhead') continue; // yukarıda ele alındı
+      // Engel oyuncuyu geçti → işareti temizle (pool id'si yeniden kullanılır)
+      if (obs.z > 2) { clearedObsRef.current.delete(id); continue; }
+      if (clearedObsRef.current.has(id)) continue; // zıplayarak geçildi — asla çarpmaz
       const [hbDx, hbDz] = getHitbox(obs.TypeFn);
       const dx = Math.abs(pos.x - obs.x);
       const dz = Math.abs(pos.z - obs.z);
