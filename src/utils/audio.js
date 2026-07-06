@@ -21,7 +21,6 @@ function ctxOrNull() {
   return ctx;
 }
 function acSfx()   { return sfxEnabled   ? ctxOrNull() : null; }
-function acMusic() { return musicEnabled ? ctxOrNull() : null; }
 
 // ── Tek atımlık efektler (oyun sesleri) ───────────────────────────────────────
 function tone(freq, dur, { type = 'sine', gain = 0.18, slideTo = null, ctxIn = null } = {}) {
@@ -113,43 +112,34 @@ export function stopGallop() {
   if (gallopTimer) { clearTimeout(gallopTimer); gallopTimer = null; }
 }
 
-// ── Harita müziği (her haritaya özgü prosedürel döngü) ────────────────────────
-// mapId: 1 çiftlik, 2 şehir, 3 çöl, 4 uzay, 5 ortaçağ, 6 zindan
-const N = (n) => 440 * Math.pow(2, (n - 9) / 12); // MIDI-ish nota → frekans
-const MUSIC = {
-  1: { tempo: 420, type: 'triangle', gain: 0.05, notes: [60,64,67,72,67,64, 62,65,69,65, 60,64,67,64] },
-  2: { tempo: 300, type: 'square',   gain: 0.035, notes: [57,60,64,60,62,65,62,59, 57,60,64,67] },
-  3: { tempo: 460, type: 'sawtooth', gain: 0.035, notes: [62,63,66,68,66,63, 61,63,66,63, 62,65,63] },
-  4: { tempo: 1300,type: 'sine',     gain: 0.05, notes: [55,62,67,69, 60,64,71,67] }, // uzay: yavaş pad
-  5: { tempo: 480, type: 'triangle', gain: 0.045, notes: [57,60,62,64,62,60, 55,59,62,59, 57,60,64,62] },
-  6: { tempo: 560, type: 'sawtooth', gain: 0.03, notes: [45,48,51,48, 44,47,50,47, 45,48,52,51, 43,46,50,48] }, // zindan: karanlık minör
-};
+// ── Harita müziği (her haritaya özgü şarkı — oyuncu ölene kadar loop) ─────────
+// mapId → dosya: 1 çiftlik/at yarışı, 2 şehir, 3 çöl, 4 uzay, 5 ortaçağ, 6 zindan
+// Dosyalar public/audio/mapN.ogg — Vite BASE_URL ile hem web hem Capacitor'da çalışır
+const MUSIC_BASE = (import.meta.env?.BASE_URL ?? '/') + 'audio/';
+const MUSIC_VOL = 0.45;
 
-let musicTimer = null;
-let musicStep = 0;
+let musicEl = null;   // aktif <audio> elemanı
 let musicMap = 0;
 
 export function startMusic(mapId) {
-  const cfg = MUSIC[mapId] || MUSIC[1];
-  if (musicMap === mapId && musicTimer) return; // zaten çalıyor
+  if (!musicEnabled) return;
+  const id = (mapId >= 1 && mapId <= 6) ? mapId : 1;
+  if (musicMap === id && musicEl && !musicEl.paused) return; // zaten çalıyor
   stopMusic();
-  musicMap = mapId;
-  musicStep = 0;
-  const playStep = () => {
-    const c = acMusic();
-    if (c) {
-      const midi = cfg.notes[musicStep % cfg.notes.length];
-      const dur = (cfg.tempo / 1000) * 0.9;
-      tone(N(midi), dur, { type: cfg.type, gain: cfg.gain, ctxIn: c });
-      // her 4 notada bir bas
-      if (musicStep % 4 === 0) tone(N(cfg.notes[0] - 12), dur * 1.4, { type: 'sine', gain: cfg.gain * 0.8, ctxIn: c });
-    }
-    musicStep++;
-  };
-  playStep();
-  musicTimer = setInterval(playStep, cfg.tempo);
+  musicMap = id;
+  const el = new Audio(`${MUSIC_BASE}map${id}.ogg`);
+  el.loop = true;          // oyuncu ölene kadar döner
+  el.volume = MUSIC_VOL;
+  el.preload = 'auto';
+  musicEl = el;
+  // Autoplay engellenirse (ilk kullanıcı etkileşiminden önce) sessizce geç;
+  // bir sonraki startMusic çağrısında tekrar dener
+  el.play().catch(() => {});
 }
 export function stopMusic() {
-  if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+  if (musicEl) {
+    try { musicEl.pause(); musicEl.src = ''; } catch (e) {}
+    musicEl = null;
+  }
   musicMap = 0;
 }
