@@ -383,6 +383,8 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   const stumbleId = useGameStore((s) => s.stumbleId);
   const jumpedRef = useRef(new Set()); // bu zıplamada üzerinden atlanan engeller
   const clearedObsRef = useRef(new Set()); // zıplayarak geçilen engeller — artık çarpamaz
+  const justLandedRef = useRef(false); // bu karede yere indi (düşük FPS iniş artefaktı koruması)
+  const jumpBufRef    = useRef(0); // zıplama girdi tamponu (saniye)
   const clearedJumpRef = useRef(false); // bu zıplamada muafiyet yüksekliğine ulaşıldı mı
   const prevFlyingRef = useRef(false); // Pegasus uçuşu geçiş takibi
 
@@ -412,6 +414,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     prevRightRef.current = false;
     jumpedRef.current.clear();
     clearedObsRef.current.clear();
+    justLandedRef.current = false;
     slideUntilRef.current = 0;
     slidUnderRef.current.clear();
   }, [runId]);
@@ -431,6 +434,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     prevRightRef.current = false;
     jumpedRef.current.clear();
     clearedObsRef.current.clear();
+    justLandedRef.current = false;
   }, [reviveId]);
 
   useFrame((_, delta) => {
@@ -488,13 +492,20 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
                     * (inSpace ? SPACE_JUMP_MULT : 1);
     const gravity   = JUMP_GRAVITY * (inSpace ? SPACE_GRAVITY_MULT : 1);
     const wantsJump = controls.current.jump;
-    if (wantsJump && !jumpPressedRef.current && onGroundRef.current && !sliding && !flying) {
+    // Girdi tamponu: havada/kayarken basılan zıplama YUTULMAZ — 0.25 sn
+    // hatırlanır ve at müsait olur olmaz zıplar. "Bastım ama zıplamadı →
+    // çarptım" hissinin kaynağı buydu.
+    if (wantsJump && !jumpPressedRef.current) jumpBufRef.current = 0.25;
+    jumpPressedRef.current = wantsJump;
+    if (jumpBufRef.current > 0 && onGroundRef.current && !sliding && !flying) {
+      jumpBufRef.current  = 0;
       velYRef.current     = JUMP_FORCE * jumpMult;
       onGroundRef.current = false;
+      if (window.__dbg) window.__dbg.realJumps = (window.__dbg.realJumps || 0) + 1;
       sfx.jump();
       useGameStore.getState().bumpDaily('jumps', 1);
     }
-    jumpPressedRef.current = wantsJump;
+    jumpBufRef.current = Math.max(0, jumpBufRef.current - delta);
 
     let newY = pos.y;
     if (flying) {
@@ -513,6 +524,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
         velYRef.current = 0;
         onGroundRef.current = true;
         clearedJumpRef.current = false; // yere inince sıfırla
+        justLandedRef.current  = true;  // iniş karesi: hâlâ havada gibi değerlendir
       }
     }
 
@@ -580,6 +592,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
               graceRef.current = 1.0;
               return;
             }
+            if (window.__dbg) window.__dbg.hits.push({ kind: 'overhead', type: obs.TypeFn?.name, dx: +dx.toFixed(2), dz: +dz.toFixed(2), y: +pos.y.toFixed(2), airborne: !onGroundRef.current });
             registerCollision();
             return;
           }
@@ -588,8 +601,11 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
     }
 
     // ── Zemin çarpışması — yeterince yüksekteyken atla ─────────────────────
-    if (immune) return;
-    const airborne = !onGroundRef.current;
+    if (immune) { justLandedRef.current = false; return; }
+    // İniş karesi de "havada" sayılır: düşük FPS'te at tek karede inip aynı
+    // karede altındaki engele çarpmasın (görsel olarak hâlâ havadadır)
+    const airborne = !onGroundRef.current || justLandedRef.current;
+    justLandedRef.current = false;
     // Havadayken (zıplarken) HİÇBİR zemin engeline çarpma — endless-runner
     // standardı. Kalkış/iniş anındaki haksız ölümleri tamamen ortadan kaldırır.
     // Sadece üstten geçen (overhead) engeller eğilmeyi gerektirir; onlar yukarıda
@@ -603,9 +619,11 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
         const dz = Math.abs(pos.z - obs.z);
         // Havadayken üzerinde/çok yakınında olunan engeli KALICI "geçildi"
         // işaretle: inişte hitbox'ın arka kenarına basmak çarpma sayılmaz.
-        // Görselden derin hitbox'ların yarattığı son haksız tökezleme kaynağı bu.
+        // Bant, kare başına kat edilen yol kadar genişletilir (swept):
+        // yüksek hız + düşük FPS'te engel tek karede bandı atlayamasın.
         const [hbDx, hbDz] = getHitbox(obs.TypeFn);
-        if (dx < hbDx * HIT_TOL_X && dz < hbDz + 1.0) clearedObsRef.current.add(id);
+        const sweep = useGameStore.getState().speed * delta * 1.5;
+        if (dx < hbDx * HIT_TOL_X && dz < hbDz + 1.0 + sweep) clearedObsRef.current.add(id);
         if (dx < CLOSE_CALL_RADIUS && dz < CLOSE_CALL_RADIUS && closeCoolRef.current <= 0) {
           registerCloseCall();
           closeCoolRef.current = CLOSE_CALL_CD;
@@ -631,6 +649,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
           graceRef.current = 1.0;
           return;
         }
+        if (window.__dbg) window.__dbg.hits.push({ kind: 'ground', type: obs.TypeFn?.name, dx: +dx.toFixed(2), dz: +dz.toFixed(2), y: +pos.y.toFixed(2), airborne });
         registerCollision();
         return;
       }

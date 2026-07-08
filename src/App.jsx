@@ -28,6 +28,18 @@ import { initNotifications, scheduleReminders } from '@/services/NotificationSer
 import { initCloudSave, linkCloudToAccount } from '@/services/CloudSave';
 import { initAuth, refreshSessionIfNeeded } from '@/services/AuthService';
 import PaddockScene, { PaddockUI } from '@/components/paddock/Paddock';
+import { obstacleRegistry } from '@/utils/obstacleRegistry';
+import { horseRef } from '@/utils/horseRef';
+import { controlsState } from '@/hooks/useHorseControls';
+import { getKind, getHitbox } from '@/components/obstacles/ObstacleSpawner';
+
+// Test köprüsü — yalnız localStorage.dbg === '1' iken (bot/QA); oyuncuda kapalı
+if (typeof window !== 'undefined' && localStorage.getItem('dbg') === '1') {
+  window.__dbg = {
+    store: useGameStore, reg: obstacleRegistry, horse: horseRef,
+    controls: controlsState, getKind, getHitbox, hits: [],
+  };
+}
 
 // ── EnvLayer MUST be defined outside App so React sees the same component
 // type across re-renders. Defining it inside App creates a new function
