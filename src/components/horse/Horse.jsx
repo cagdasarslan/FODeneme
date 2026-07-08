@@ -557,16 +557,18 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       jumpedRef.current.clear();
     }
 
-    // ── ÜST ENGELLER: her yükseklikte kontrol — zıplayarak geçilmez! ───────
-    // Eğilerek geçmek serbesttir ve ödül verir.
+    // ── ÜST ENGELLER: zıplayarak geçilmez — eğilerek geçilir (ödüllü) ──────
+    // Kapı düzlemi incedir: yalnız gerçekten kapı hizasından geçerken sayılır
+    // (derin hitbox yüzünden kapıya varmadan "çarptın" olmaz).
+    const OVERHEAD_DZ = 0.55;
     if (!immune && graceRef.current <= 0) {
       for (const [id, obs] of obstacleRegistry) {
         if (!obs.active || getKind(obs.TypeFn) !== 'overhead') continue;
         if (obs.z > 2) { slidUnderRef.current.delete(id); continue; } // geçti → işareti temizle (pool id'si yeniden kullanılır)
-        const [hbDx, hbDz] = getHitbox(obs.TypeFn);
+        const [hbDx] = getHitbox(obs.TypeFn);
         const dx = Math.abs(pos.x - obs.x);
         const dz = Math.abs(pos.z - obs.z);
-        if (dx < hbDx * HIT_TOL_X && dz < hbDz * HIT_TOL_Z) {
+        if (dx < hbDx * HIT_TOL_X && dz < OVERHEAD_DZ) {
           if (sliding) {
             if (!slidUnderRef.current.has(id)) {
               slidUnderRef.current.add(id);

@@ -286,18 +286,27 @@ function OverheadGate({ post = '#8a6a44', beam = '#a5825a', glow = null }) {
   const beamMat = glow
     ? { color: beam, emissive: glow, emissiveIntensity: 1.2, roughness: 0.4 }
     : { color: beam, roughness: 0.8 };
+  // Kapı bilinçli olarak YÜKSEK: "üzerinden atlanır" gibi değil, "altından
+  // eğilerek geçilir" diye okunmalı. Kirişten sarkan latalar zıplama yolunu
+  // görsel olarak da kapatır — zıplayan at gerçekten latalara değer.
   return (
     <group>
       {[-1.6, 1.6].map((x) => (
-        <mesh key={x} position={[x, 0.95, 0]} castShadow>
-          <boxGeometry args={[0.22, 1.9, 0.22]} />
+        <mesh key={x} position={[x, 1.25, 0]} castShadow>
+          <boxGeometry args={[0.22, 2.5, 0.22]} />
           <meshStandardMaterial color={post} roughness={0.85} />
         </mesh>
       ))}
-      <mesh position={[0, 1.72, 0]} castShadow>
-        <boxGeometry args={[3.5, 0.34, 0.34]} />
+      <mesh position={[0, 2.35, 0]} castShadow>
+        <boxGeometry args={[3.5, 0.32, 0.32]} />
         <meshStandardMaterial {...beamMat} />
       </mesh>
+      {[-1.0, -0.35, 0.35, 1.0].map((x) => (
+        <mesh key={'s' + x} position={[x, 1.86, 0]} castShadow>
+          <boxGeometry args={[0.14, 0.72, 0.14]} />
+          <meshStandardMaterial {...beamMat} />
+        </mesh>
+      ))}
     </group>
   );
 }
