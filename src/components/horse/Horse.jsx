@@ -102,8 +102,8 @@ const FLY_Y = 4.2;            // uçuş yüksekliği (RigidBody y)
 const _horseT = { x: 0, y: 0, z: 0 }; // her kare rapier setTranslation için paylaşılan obje (allocation yok)
 // Çarpışma toleransı: hitbox'ın kenarına sürtmek öldürmesin — yalnızca
 // gerçekten engelin İÇİNE girince çarpma sayılır (yanlardan %25, önden %12 pay)
-const HIT_TOL_X = 0.75;
-const HIT_TOL_Z = 0.88;
+const HIT_TOL_X = 0.68;
+const HIT_TOL_Z = 0.78;
 // Zıplama muafiyeti (jump clearance): at zeminden bu kadar yükseldiyse zemin
 // engelleri artık çarpmaz. Eskiden 1.0 idi — yakından zıplayınca at daha bu
 // yüksekliğe tırmanamadan hitbox'a giriyor, "değmeden yanıyordun". Havadayken

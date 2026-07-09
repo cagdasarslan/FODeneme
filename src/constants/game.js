@@ -73,3 +73,7 @@ export const OBSTACLE_HITBOX = {
   CityDump:   [0.90, 1.20],
   default:    [1.00, 1.00],
 };
+
+// Yapı etiketi — ana menüde görünür; APK'nın güncel olduğunu doğrulamak için
+// her önemli düzeltmede güncellenir
+export const GAME_BUILD = 'v2026.07.09';

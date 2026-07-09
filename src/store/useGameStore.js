@@ -544,7 +544,11 @@ const useGameStore = create(
         turboActive: false,  turboTimer: 0,
         slowmoActive: false, slowmoTimer: 0,
         goldenActive: false, goldenTimer: 0,
-        speedBase: s.speed,
+        // DİKKAT: s.speed ölüm anındaki slow-mo ile ölçeklenmiş DÜNYA hızıdır
+        // (~%15) — onu taban yapmak koşuyu başlangıç hızına düşürüyordu.
+        // Gerçek ilerleme speedBase'te; aynen korunur → aynı hızdan devam.
+        speedBase: s.speedBase,
+        speed: s.speedBase,
       }));
     },
 

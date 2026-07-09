@@ -16,6 +16,7 @@ import { fetchLeaderboard } from '@/services/LeaderboardService';
 import { Capacitor } from '@capacitor/core';
 import { restoreFromCloud } from '@/services/CloudSave';
 import { signInWith } from '@/services/AuthService';
+import { GAME_BUILD } from '@/constants/game';
 
 const isNative = Capacitor.getPlatform() !== 'web';
 
@@ -249,6 +250,11 @@ export default function MainMenu() {
               {activeEvent.emoji} {activeEvent.name} ETKİNLİĞİ!
             </div>
           )}
+
+          {/* Yapı etiketi — hangi sürümün yüklü olduğunu doğrulamak için */}
+          <div style={{ position: 'fixed', top: 'calc(4px + env(safe-area-inset-top, 0px))', right: 8, fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--game-font)', zIndex: 5 }}>
+            {GAME_BUILD}
+          </div>
 
           {/* Havuç + günlük ödül */}
           <div style={styles.topRow}>
