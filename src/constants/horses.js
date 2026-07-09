@@ -54,13 +54,6 @@ export const HORSES = [
     baseManeuvMult: 1.2,
     baseJumpMult: 1.2,
     baseMaxSpeed: 58,
-    // Özel iskeletli model (.blend → GLB), kendi "run" animasyonu var
-    model: '/assets/models/horses/chestnut_stylized.glb',
-    modelScale: 1.15,
-    modelY: -1.05,
-    animClip: 'run',
-    skeletal: true,
-    noTint: true,
   },
   {
     id: 'ahal_teke',
@@ -75,12 +68,6 @@ export const HORSES = [
     baseManeuvMult: 1.3,
     baseJumpMult: 1.4,
     baseMaxSpeed: 78,
-    model: '/assets/models/horses/ahal_teke.glb',
-    modelScale: 1.15,
-    modelY: -1.05,
-    animClip: 'run',
-    skeletal: true,
-    noTint: true,
   },
   {
     id: 'pamuk',
