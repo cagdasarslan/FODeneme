@@ -1,0 +1,90 @@
+export const HORSES = [
+  {
+    id: 'chestnut',
+    name: 'ANADOLU ALASI',
+    price: 0,
+    bodyColor: '#8d6e63',
+    maneColor: '#5d4037',
+    hoofColor: '#3e2723',
+    desc: 'Sağlam ve güvenilir',
+    accentColor: '#8d6e63',
+    baseSpeedMult: 1.2,
+    baseManeuvMult: 1.1,
+    baseJumpMult: 1.1,
+    baseMaxSpeed: 50,
+  },
+  {
+    id: 'black',
+    name: 'KARAYEL',
+    price: 250,
+    bodyColor: '#212121',
+    maneColor: '#111111',
+    hoofColor: '#0a0a0a',
+    desc: 'Siyah Fırtına',
+    accentColor: '#424242',
+    baseSpeedMult: 1.4,
+    baseManeuvMult: 0.9,
+    baseJumpMult: 1.1,
+    baseMaxSpeed: 60,
+  },
+  {
+    id: 'white',
+    name: 'AKKOR KÜHEYLAN',
+    price: 600,
+    bodyColor: '#EDE8D8',
+    maneColor: '#C0B898',
+    hoofColor: '#8a8070',
+    desc: 'Parlak ve efsanevi',
+    accentColor: '#ffecb3',
+    baseSpeedMult: 1.8,
+    baseManeuvMult: 1.3,
+    baseJumpMult: 1.5,
+    baseMaxSpeed: 80,
+  },
+  {
+    id: 'stylized_chestnut',
+    name: 'PAMUK',
+    price: 0,
+    bodyColor: '#f2f2f4',
+    maneColor: '#8c8c96',   // gümüş-gri yele/kuyruk
+    hoofColor: '#212126',   // koyu toynak (beyaz atlarda deri/toynak koyudur)
+    desc: 'Bembeyaz at — gümüş yele, koyu toynak',
+    accentColor: '#ffffff',
+    baseSpeedMult: 1.3,
+    baseManeuvMult: 1.2,
+    baseJumpMult: 1.2,
+    baseMaxSpeed: 58,
+  },
+  {
+    id: 'ahal_teke',
+    name: 'AHAL TEKE',
+    price: 2000,
+    bodyColor: '#c89b3c',   // metalik altın gövde
+    maneColor: '#141416',   // siyah yele/kuyruk (gerçek buckskin donu)
+    hoofColor: '#141416',   // siyah bacak altları
+    desc: 'Efsanevi altın Ahal Teke — metalik parıltılı',
+    accentColor: '#e8c261',
+    baseSpeedMult: 1.7,
+    baseManeuvMult: 1.3,
+    baseJumpMult: 1.4,
+    baseMaxSpeed: 78,
+  },
+  {
+    id: 'pamuk',
+    name: 'AKAT',
+    price: 1200,
+    bodyColor: '#ffffff',
+    maneColor: '#f2f2f5',
+    hoofColor: '#d8d8de',
+    whiteWash: true, // dokuyu temizleyip bembeyaz yap
+    desc: 'Bembeyaz, narin ve hızlı',
+    accentColor: '#ffffff',
+    baseSpeedMult: 1.6,
+    baseManeuvMult: 1.5,
+    baseJumpMult: 1.3,
+    baseMaxSpeed: 75,
+  },
+];
+
+export const MAX_UPGRADE_LEVEL = 5;
+export const upgradeCost = (currentLevel) => 750 * Math.pow(2, currentLevel);

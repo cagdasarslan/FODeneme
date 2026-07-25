@@ -1,0 +1,55 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.13.0'
+        classpath 'com.google.gms:google-services:4.4.4'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+apply from: "variables.gradle"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+// Tüm alt modüllerde Java derleme seviyesini 17'ye sabitle.
+// Capacitor 8 varsayılan olarak Java 21 ister; bu, bazı ortamlarda
+// "invalid source release: 21" hatasına yol açıyor. JDK 17/20/21 ile
+// Java 17 hedefi her durumda sorunsuz derlenir.
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+        project.tasks.withType(JavaCompile).configureEach {
+            sourceCompatibility = JavaVersion.VERSION_17.toString()
+            targetCompatibility = JavaVersion.VERSION_17.toString()
+        }
+        // Kotlin görevleri varsa jvmTarget'ı da hizala (sınıf importu olmadan,
+        // ada göre eşleştirerek — Kotlin yoksa hiçbir şey eşleşmez, zararsız)
+        project.tasks.matching { it.name.startsWith('compile') && it.name.endsWith('Kotlin') }.configureEach { task ->
+            try { task.kotlinOptions.jvmTarget = "17" } catch (ignored) {}
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

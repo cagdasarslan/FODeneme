@@ -1,0 +1,9 @@
+{
+  "appId": "com.cagdasarslan.horserunner",
+  "appName": "Horse Runner",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#0a0a14"
+  },
+  "backgroundColor": "#0a0a14"
+}

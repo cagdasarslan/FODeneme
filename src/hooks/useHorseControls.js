@@ -1,29 +1,33 @@
 import { useEffect, useRef } from 'react';
 
-const KEYS = {
-  ArrowLeft: 'left',
-  ArrowRight: 'right',
-  KeyA: 'left',
-  KeyD: 'right',
-};
+// Singleton so TouchPad and useHorseControls share the same object
+export const controlsState = { left: false, right: false, jump: false, slide: false };
 
-/**
- * Returns a ref whose `.current` object has `left` and `right` booleans.
- * Polling via ref (not state) keeps re-renders out of the hot game loop.
- */
+const MOVE_KEYS = {
+  ArrowLeft:  'left',
+  ArrowRight: 'right',
+  KeyA:       'left',
+  KeyD:       'right',
+};
+const JUMP_KEYS  = new Set(['Space', 'ArrowUp', 'KeyW']);
+const SLIDE_KEYS = new Set(['ArrowDown', 'KeyS']);
+
 export function useHorseControls() {
-  const keys = useRef({ left: false, right: false });
+  const keys = useRef(controlsState);
 
   useEffect(() => {
     const down = (e) => {
-      const dir = KEYS[e.code];
-      if (dir) keys.current[dir] = true;
+      const dir = MOVE_KEYS[e.code];
+      if (dir) controlsState[dir] = true;
+      if (JUMP_KEYS.has(e.code)) controlsState.jump = true;
+      if (SLIDE_KEYS.has(e.code)) controlsState.slide = true;
     };
     const up = (e) => {
-      const dir = KEYS[e.code];
-      if (dir) keys.current[dir] = false;
+      const dir = MOVE_KEYS[e.code];
+      if (dir) controlsState[dir] = false;
+      if (JUMP_KEYS.has(e.code)) controlsState.jump = false;
+      if (SLIDE_KEYS.has(e.code)) controlsState.slide = false;
     };
-
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
     return () => {

@@ -6,4 +6,8 @@ export default defineConfig({
   resolve: {
     alias: { '@': '/src' },
   },
+  build: {
+    target: 'es2015',
+    chunkSizeWarningLimit: 2000,
+  },
 });
