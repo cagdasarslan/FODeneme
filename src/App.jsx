@@ -28,6 +28,7 @@ import { initNotifications, scheduleReminders } from '@/services/NotificationSer
 import { initCloudSave, linkCloudToAccount } from '@/services/CloudSave';
 import { initAuth, refreshSessionIfNeeded } from '@/services/AuthService';
 import PaddockScene, { PaddockUI } from '@/components/paddock/Paddock';
+import * as THREE from 'three';
 import { obstacleRegistry } from '@/utils/obstacleRegistry';
 import { horseRef } from '@/utils/horseRef';
 import { controlsState } from '@/hooks/useHorseControls';
@@ -37,7 +38,18 @@ import { getKind, getHitbox } from '@/components/obstacles/ObstacleSpawner';
 if (typeof window !== 'undefined' && localStorage.getItem('dbg') === '1') {
   window.__dbg = {
     store: useGameStore, reg: obstacleRegistry, horse: horseRef,
-    controls: controlsState, getKind, getHitbox, hits: [],
+    controls: controlsState, getKind, getHitbox, hits: [], THREE,
+    // Bir GLB'nin gerçek görsel ayak izini (yarı-genişlik, ölçek dahil) ölçer
+    async measure(path, scale) {
+      const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+      const gltf = await new GLTFLoader().loadAsync(path);
+      const box = new THREE.Box3().setFromObject(gltf.scene);
+      return {
+        halfX: +(((box.max.x - box.min.x) / 2) * scale).toFixed(2),
+        halfZ: +(((box.max.z - box.min.z) / 2) * scale).toFixed(2),
+        height: +((box.max.y - box.min.y) * scale).toFixed(2),
+      };
+    },
   };
 }
 

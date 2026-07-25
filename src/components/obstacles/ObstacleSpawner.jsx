@@ -372,7 +372,7 @@ const _setCity = () => {
 // Hitbox'lar görsel scale'lerle senkron tutulmalı — modeller büyütüldüğünde
 // burası da orantılı güncellenmeli, yoksa "havada ölme / içinden geçme" olur.
 const _setDesert = () => {
-  HITBOX_MAP.set(DesertCactusShort, [0.68, 0.68]);
+  HITBOX_MAP.set(DesertCactusShort, [0.55, 0.48]);
   HITBOX_MAP.set(DesertCactusTall,  [0.60, 0.55]);
   // Kayalar derindi (dz 1.32) → zıplayınca ön kenar erken yakalıyordu. Derinlik
   // diğer haritalarla tutarlı hale getirildi (zıplanabilir), yatay korundu.
@@ -382,7 +382,7 @@ const _setDesert = () => {
 };
 const _setSpace = () => {
   HITBOX_MAP.set(SpaceBarrels,   [0.96, 0.92]);
-  HITBOX_MAP.set(SpaceRover,     [0.60, 0.65]); // rover küçük model (~0.8 birim); görsele oturtuldu
+  HITBOX_MAP.set(SpaceRover,     [0.42, 0.48]); // rover küçük model (~0.8 birim); görsele oturtuldu
   HITBOX_MAP.set(SpaceMeteor,    [1.20, 1.00]);
   HITBOX_MAP.set(SpaceMeteorDet, [1.10, 0.95]);
   HITBOX_MAP.set(SpacePlatLow,   [1.40, 0.90]);
@@ -404,8 +404,8 @@ const _setDungeon = () => {
   HITBOX_MAP.set(DunBarrel, [0.90, 0.88]);
   HITBOX_MAP.set(DunChest,  [1.15, 0.90]);
   HITBOX_MAP.set(DunSpikes, [1.35, 1.05]);
-  HITBOX_MAP.set(DunBricks, [1.05, 0.98]);
-  HITBOX_MAP.set(DunTable,  [0.85, 0.88]);
+  HITBOX_MAP.set(DunBricks, [0.74, 0.70]);
+  HITBOX_MAP.set(DunTable,  [0.54, 0.56]);
 };
 const _setOverhead = () => {
   [OverheadFarm, OverheadCity, OverheadDesert, OverheadSpace, OverheadMedieval, OverheadDungeon]
