@@ -8,14 +8,14 @@ export const REMOVE_ADS_ID    = 'remove_ads';
 export const REMOVE_ADS_PRICE = '₺59,99';
 
 export const CARROT_PACKAGES = [
-  { id: 'carrots_1000',   carrots: 1000,   price: '₺14,99'  },
-  { id: 'carrots_2500',   carrots: 2500,   price: '₺34,99'  },
-  { id: 'carrots_5000',   carrots: 5000,   price: '₺59,99'  },
-  { id: 'carrots_10000',  carrots: 10000,  price: '₺99',    badge: 'POPÜLER' },
-  { id: 'carrots_20000',  carrots: 20000,  price: '₺189'    },
-  { id: 'carrots_30000',  carrots: 30000,  price: '₺270',   badge: 'AVANTAJLI' },
-  { id: 'carrots_50000',  carrots: 50000,  price: '₺429'    },
-  { id: 'carrots_75000',  carrots: 75000,  price: '₺599'    },
-  { id: 'carrots_100000', carrots: 100000, price: '₺749'    },
-  { id: 'carrots_250000', carrots: 250000, price: '₺1.699', badge: 'EN İYİ DEĞER' },
+  { id: 'carrots_1000',   carrots: 1000,   price: '₺1,49'   },
+  { id: 'carrots_2500',   carrots: 2500,   price: '₺3,49'   },
+  { id: 'carrots_5000',   carrots: 5000,   price: '₺5,99'   },
+  { id: 'carrots_10000',  carrots: 10000,  price: '₺9,99',   badge: 'POPÜLER' },
+  { id: 'carrots_20000',  carrots: 20000,  price: '₺18,99'  },
+  { id: 'carrots_30000',  carrots: 30000,  price: '₺26,99',  badge: 'AVANTAJLI' },
+  { id: 'carrots_50000',  carrots: 50000,  price: '₺42,99'  },
+  { id: 'carrots_75000',  carrots: 75000,  price: '₺59,99'  },
+  { id: 'carrots_100000', carrots: 100000, price: '₺74,99'  },
+  { id: 'carrots_250000', carrots: 250000, price: '₺169,99', badge: 'EN İYİ DEĞER' },
 ];
