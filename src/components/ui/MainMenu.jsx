@@ -297,8 +297,37 @@ export default function MainMenu() {
             </button>
           </div>
 
-          {/* İLK ADIMLAR — yeni oyuncuya meta sistemleri tanıtan rehber */}
-          {!isGameOver && onboardOpen && (
+          {/* Oyun sonu skor paneli — en üstte, en görünür yerde */}
+          {isGameOver && (
+            <div style={{ ...styles.resultsWrap, position: 'relative' }}>
+              {isNewRecord && <Confetti />}
+              <div style={styles.gameOverText}>GAME OVER</div>
+              {isNewRecord && <div style={styles.newRecord}>🏆 YENİ REKOR!</div>}
+              <div style={styles.statsCard}>
+                <div style={{ ...styles.mapBadge, borderColor: mapInfo.color, color: mapInfo.color }}>
+                  {mapInfo.emoji} {mapInfo.name}
+                </div>
+                <StatRow label="SKOR" value={<AnimatedScore value={score} />} color="#fff" />
+                <StatRow label="BU HARİTA REKORU" value={Math.floor(mapHs).toLocaleString()} color={mapInfo.color} />
+                <StatRow label="HAVUÇ" value={`🥕 ${carrots}`} color="#ffd700" />
+              </div>
+              {/* Arkadaşını geç — liderlikte bir üstteki oyuncu */}
+              {rival && (
+                <div style={styles.rivalRow}>
+                  🎯 {rival.rank}. sıradaki <b>{rival.name}</b>'i geçmek için{' '}
+                  <b style={{ color: '#ffd700' }}>{rival.diff.toLocaleString()}</b> puan!
+                </div>
+              )}
+              {runCarrots > 0 && !carrotsDoubled && (
+                <div style={{ marginTop: 10, width: '100%' }}>
+                  <AdButton label={`Havuçları 2 KATINA çıkar (+${runCarrots})`} sub={`Bu koşuda ${runCarrots} havuç topladın`} color="#ffcf66" onReward={() => doubleRunCarrots()} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* İLK ADIMLAR — yeni oyuncuya meta sistemleri tanıtan rehber (ölünce de görünür) */}
+          {onboardOpen && (
             <div style={styles.onboardCard}>
               <div style={styles.onboardHeader}>
                 <span style={{ fontSize: 18 }}>🚀</span>
@@ -336,7 +365,7 @@ export default function MainMenu() {
           )}
 
           {/* Günlük skor görevi: bugün tüm haritalarda 50.000 puan → hediye sandık */}
-          {!isGameOver && (
+          {(
             <div style={{
               ...styles.foalCard, cursor: goal.done && !goal.claimed ? 'pointer' : 'default',
               borderColor: goal.done && !goal.claimed ? '#ffd54a' : 'rgba(255,255,255,0.1)',
@@ -392,34 +421,6 @@ export default function MainMenu() {
           ))}
 
           {/* Oyun bitti ekranı */}
-          {isGameOver && (
-            <div style={{ ...styles.resultsWrap, position: 'relative' }}>
-              {isNewRecord && <Confetti />}
-              <div style={styles.gameOverText}>GAME OVER</div>
-              {isNewRecord && <div style={styles.newRecord}>🏆 YENİ REKOR!</div>}
-              <div style={styles.statsCard}>
-                <div style={{ ...styles.mapBadge, borderColor: mapInfo.color, color: mapInfo.color }}>
-                  {mapInfo.emoji} {mapInfo.name}
-                </div>
-                <StatRow label="SKOR" value={<AnimatedScore value={score} />} color="#fff" />
-                <StatRow label="BU HARİTA REKORU" value={Math.floor(mapHs).toLocaleString()} color={mapInfo.color} />
-                <StatRow label="HAVUÇ" value={`🥕 ${carrots}`} color="#ffd700" />
-              </div>
-              {/* Arkadaşını geç — liderlikte bir üstteki oyuncu */}
-              {rival && (
-                <div style={styles.rivalRow}>
-                  🎯 {rival.rank}. sıradaki <b>{rival.name}</b>'i geçmek için{' '}
-                  <b style={{ color: '#ffd700' }}>{rival.diff.toLocaleString()}</b> puan!
-                </div>
-              )}
-              {runCarrots > 0 && !carrotsDoubled && (
-                <div style={{ marginTop: 10, width: '100%' }}>
-                  <AdButton label={`Havuçları 2 KATINA çıkar (+${runCarrots})`} sub={`Bu koşuda ${runCarrots} havuç topladın`} color="#ffcf66" onReward={() => doubleRunCarrots()} />
-                </div>
-              )}
-            </div>
-          )}
-
           {sessionError && <p style={styles.warn}>⚠ Çevrimdışı mod</p>}
 
           {/* Harita seçici */}
