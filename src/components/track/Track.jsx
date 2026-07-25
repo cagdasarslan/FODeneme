@@ -87,7 +87,7 @@ const LAMP_COUNT   = Math.floor(TILE_LENGTH / LAMP_SPACING); // 4
 const LAMP_X       = ROAD_WIDTH / 2 + 1.8;
 
 function StreetLamps({ seed }) {
-  const night = useGameStore(s => s.nightMode);
+  const night = false; // gece modu kaldırıldı
   const mapId = useGameStore(s => s.mapId);
   // Sokak lambası yalnızca harita 1-2'de mantıklı
   if (mapId === 3 || mapId === 4) return null;

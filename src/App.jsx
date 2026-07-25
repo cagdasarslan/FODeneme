@@ -70,7 +70,6 @@ export default function App() {
   const initSession = useGameStore((s) => s.initSession);
   const mapId    = useGameStore((s) => s.mapId);
   const runId    = useGameStore((s) => s.runId);
-  const nightMode = useGameStore((s) => s.nightMode);
   const graphics  = useGameStore((s) => s.graphics);
   const phase = useGameStore((s) => s.phase);
   const initDaily = useGameStore((s) => s.initDaily);
@@ -152,7 +151,7 @@ export default function App() {
   const isMedieval = mapId === 5;
   const isDungeon = mapId === 6;
   const selfLit  = isSpace || isMars || isMedieval || isDungeon; // env yönetir kendi ışığını
-  const isNight  = nightMode && !selfLit;
+  const isNight  = false; // gece modu kaldırıldı
   const fogColor = mapId === 6 ? '#a8c8e8' : mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a'
     : mapId === 5 ? '#9fd0e8'
     : isNight ? '#0a0e1e'
@@ -165,6 +164,9 @@ export default function App() {
         style={{ width:'100vw', height:'100vh' }}
         gl={{ antialias, powerPreference:'high-performance' }}
         dpr={[1,dprMax]} performance={{ min:0.5 }}>
+        {/* Sahne arka planı: uzun/portre ekranlarda zeminin bitiği yerde SİYAH
+            boşluk kalmasın — ufukla (fog) aynı renge boyanır, dikişsiz görünür. */}
+        <color attach="background" args={[isPaddock ? '#8fb95f' : fogColor]} />
         {!isPaddock && <fog attach="fog" args={[fogColor, selfLit ? 120 : isNight ? 60 : 90, selfLit ? 500 : isNight ? 280 : 420]} />}
         <CameraRig />
         {isPaddock ? (

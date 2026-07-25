@@ -225,7 +225,7 @@ function StreetProps({ seed }) {
 
 // ── City Sky ──────────────────────────────────────────────────────────────────
 function CitySky() {
-  const night = useGameStore((s) => s.nightMode);
+  const night = false; // gece modu kaldırıldı
   const clouds = [
     [-80,35,-180,1.2],[40,40,-220,0.9],[-30,38,-300,1.4],
     [130,36,-170,1.0],[-160,44,-250,1.1],

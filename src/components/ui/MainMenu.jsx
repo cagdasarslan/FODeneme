@@ -78,24 +78,6 @@ const MAP_INFO = {
   6: { emoji: '💀', name: 'ZİNDAN',     color: '#9a6cff' },
 };
 
-function getDailyChallenge() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-  const challenges = ['500m koş', '1000m koş', '10 havuç topla', '3 koşu tamamla'];
-  return challenges[dayOfYear % 4];
-}
-
-function getDailyProgress(dateStr) {
-  try {
-    const raw = localStorage.getItem(`daily_${dateStr}`);
-    if (!raw) return { progress: 0, completed: false };
-    return JSON.parse(raw);
-  } catch {
-    return { progress: 0, completed: false };
-  }
-}
-
 const isMobile = window.innerWidth < 500;
 
 export default function MainMenu() {
@@ -136,7 +118,7 @@ export default function MainMenu() {
     phase, sessionReady, sessionError, score, carrots,
     startRun, openGarage, selectedCharacterId, selectedHorseId,
     mapId, setMapId, highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4, highScoreMap5, highScoreMap6,
-    horseLevels,
+    horseUpgrades,
     runCarrots, carrotsDoubled, doubleRunCarrots, claimAdCarrots, adBonusToday, armStartBoost,
   } = useGameStore(s => ({
     phase:               s.phase,
@@ -156,7 +138,7 @@ export default function MainMenu() {
     highScoreMap4:       s.highScoreMap4,
     highScoreMap5:       s.highScoreMap5,
     highScoreMap6:       s.highScoreMap6,
-    horseLevels:         s.horseLevels,
+    horseUpgrades:       s.horseUpgrades,
     runCarrots:          s.runCarrots,
     carrotsDoubled:      s.carrotsDoubled,
     doubleRunCarrots:    s.doubleRunCarrots,
@@ -218,7 +200,9 @@ export default function MainMenu() {
   const activeHorse = HORSES.find(h => h.id === selectedHorseId) ?? HORSES[0];
   const mapHs       = mapId === 6 ? (highScoreMap6 ?? 0) : mapId === 5 ? (highScoreMap5 ?? 0) : mapId === 4 ? (highScoreMap4 ?? 0) : mapId === 3 ? highScoreMap3 : mapId === 2 ? highScoreMap2 : highScoreMap1;
   const mapInfo     = MAP_INFO[mapId] ?? MAP_INFO[1];
-  const horseLevel  = (horseLevels && horseLevels[selectedHorseId]) ?? 1;
+  // Atın gerçek yükseltme seviyesi = 3 statın toplam seviyesi (0–15)
+  const hu          = horseUpgrades?.[selectedHorseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
+  const horseLevel  = (hu.speedLevel ?? 0) + (hu.maneuvLevel ?? 0) + (hu.jumpLevel ?? 0);
 
 
   if (phase !== 'idle' && phase !== 'gameover') return null;

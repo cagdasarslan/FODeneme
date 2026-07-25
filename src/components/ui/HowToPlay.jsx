@@ -60,10 +60,12 @@ const SECTIONS = [
       {
         type: 'cards',
         items: [
-          { icon: '🌿', name: 'AT YARIŞI', sub: 'Çiftlik / Pist', desc: 'Başlangıç haritası. Fıçı, saman balyası ve kütük yığını engelleri.', color: '#6aaa44' },
-          { icon: '🏙️', name: 'ŞEHİR', sub: 'Kent Sokakları', desc: 'Şehir haritası. Araba, taksi, polis arabası ve çöp kutusu engelleri.', color: '#4a90d9' },
-          { icon: '🌵', name: 'ÇÖLLER', sub: 'Mars Kolonisi', desc: 'Kırmızı Mars zemini, roketler ve uzay binaları. Kaktüs ve kaya engelleri.', color: '#d4a020' },
-          { icon: '🚀', name: 'UZAY KOLONİSİ', sub: "Mars'ta At Yarışı", desc: 'Uzay temalı harita. Rover, varil, meteor ve platform engelleri.', color: '#aa44ff' },
+          { icon: '🌿', name: 'AT YARIŞI', sub: 'Çiftlik / Pist', desc: 'Başlangıç haritası — herkese açık. Fıçı, saman balyası ve kütük yığını engelleri.', color: '#6aaa44' },
+          { icon: '🏙️', name: 'ŞEHİR', sub: 'Kent Sokakları', desc: 'Herhangi bir haritada 1.000 skor ile açılır. Araba, taksi, polis ve çöp kutusu engelleri.', color: '#4a90d9' },
+          { icon: '🌵', name: 'ÇÖLLER', sub: 'Çöl Koşusu', desc: '3.000 skor ile açılır. Kum fırtınası, uzun kaktüs ve büyük kaya engelleri.', color: '#d4a020' },
+          { icon: '🚀', name: 'UZAY KOLONİSİ', sub: 'Düşük Yerçekimi', desc: '6.000 skor ile açılır. Düşük yerçekiminde daha yüksek zıpla! Rover, varil, meteor ve platform.', color: '#aa44ff' },
+          { icon: '🏰', name: 'ORTAÇAĞ KÖYÜ', sub: 'Köy Yolu', desc: '10.000 skor ile açılır. Kuyu, kaya, ağaç ve tarla engelleri.', color: '#c8843c' },
+          { icon: '💀', name: 'ZİNDAN', sub: 'Karanlık Koridor', desc: '15.000 skor ile açılır. Sandık, fıçı, kasa, diken ve masa engelleri.', color: '#9a6cff' },
         ],
       },
     ],
@@ -75,25 +77,28 @@ const SECTIONS = [
     content: [
       {
         type: 'text',
-        text: 'Üç farklı at satın alabilir ve her birini 5 seviyeye kadar yükseltebilirsin. Yükseltme maliyeti seviyeye göre artar.',
+        text: 'Altı farklı at var. Her atın üç statı (hız, manevra, zıplama) ayrı ayrı 5 seviyeye kadar yükseltilebilir. Ayrıca Çiftlik\'te ücretsiz antrenmanla da güçlendirebilirsin.',
       },
       {
         type: 'table',
         headers: ['At', 'Fiyat', 'Hız', 'Manevra', 'Zıplama', 'Max Hız'],
         rows: [
-          ['🟤 ANADOLU ALASI', 'Ücretsiz', 'x1.0', 'x1.0', 'x1.0', '40'],
+          ['🟤 ANADOLU ALASI', 'Ücretsiz', 'x1.2', 'x1.1', 'x1.1', '50'],
+          ['🤍 PAMUK', 'Ücretsiz', 'x1.3', 'x1.2', 'x1.2', '58'],
           ['⬛ KARAYEL', '250 🥕', 'x1.4', 'x0.9', 'x1.1', '60'],
           ['⬜ AKKOR KÜHEYLAN', '600 🥕', 'x1.8', 'x1.3', 'x1.5', '80'],
+          ['🌟 AKAT', '1.200 🥕', 'x1.6', 'x1.5', 'x1.3', '75'],
+          ['🟡 AHAL TEKE', '2.000 🥕', 'x1.7', 'x1.3', 'x1.4', '78'],
         ],
       },
       {
         type: 'list',
         title: 'Yükseltme',
         items: [
-          'Her at maksimum 5. seviyeye yükseltilebilir',
-          'Seviye 2: 150 🥕 | Seviye 3: 225 🥕 | Seviye 4: 300 🥕 | Seviye 5: 375 🥕',
-          'Yükseltme her seviyede atın tüm statlarını güçlendirir',
-          'Yükseltmeler MAĞAZA → At sekmesinden yapılır',
+          'Her stat (hız / manevra / zıplama) ayrı ayrı 5 seviyeye çıkar',
+          'Maliyet: Sv1: 750 🥕 · Sv2: 1.500 · Sv3: 3.000 · Sv4: 6.000 · Sv5: 12.000',
+          'Ödüllü reklam izleyerek sonraki yükseltmede %50 indirim kazan',
+          'Yükseltmeler MAĞAZA → Atlarım sekmesinden yapılır',
         ],
       },
     ],

@@ -321,7 +321,7 @@ function NightStars() {
 }
 
 function Sky() {
-  const night = useGameStore((s) => s.nightMode);
+  const night = false; // gece modu kaldırıldı
   const clouds = [
     [-95,38,-200,1.3],[55,44,-240,1.0],[-20,42,-310,1.5],
     [120,37,-180,1.1],[-170,50,-260,1.2],[30,46,-160,0.9],
