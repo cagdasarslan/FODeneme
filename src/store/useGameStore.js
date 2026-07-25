@@ -44,6 +44,7 @@ import {
   FEED_COST, FEED_TOKLUK, FEED_BP, FEED_MAX_DAY,
   GROOM_MUTLULUK, GROOM_BP, GROOM_BOND, GROOM_COOLDOWN_MS,
   TRAIN_BP, TRAIN_BOND, TRAIN_COOLDOWN_MS, BP_PER_500M,
+  RUSH_COST_PER_HOUR, RUSH_MAX_COST,
 } from '@/constants/foals';
 
 // ---------------------------------------------------------------------------
@@ -1358,6 +1359,47 @@ const useGameStore = create(
       const newFoals = foals.map((f, i) => i === idx ? updated : f);
       localStorage.setItem('foals', JSON.stringify(newFoals));
       set({ foals: newFoals });
+      return true;
+    },
+
+    // Bu tayın mevcut aşamasındaki KALAN bekleme süresi için havuç maliyeti
+    rushCost: (id) => {
+      const foal = get().foals.find(f => f.id === id);
+      if (!foal || foal.stage === 'YETISKIN') return 0;
+      const cfg = STAGE_CONFIG[foal.stage];
+      const remaining = Math.max(0, cfg.minMs - (Date.now() - foal.stageStartedAt));
+      if (remaining <= 0) return 0;
+      const hours = Math.ceil(remaining / 3600_000);
+      return Math.min(RUSH_MAX_COST, hours * RUSH_COST_PER_HOUR);
+    },
+
+    // Hızlandır: kalan bekleme süresini geç (stageStartedAt'ı minMs kadar geri al).
+    // free=true → ödüllü reklam yolu (havuç alınmaz). BP/bağ/tokluk kapıları hâlâ
+    // geçerlidir; yalnız ZAMAN kapısı kaldırılır.
+    rushFoalStage: (id, free = false) => {
+      const { foals } = get();
+      const idx = foals.findIndex(f => f.id === id);
+      if (idx === -1) return false;
+      const foal = foals[idx];
+      if (foal.stage === 'YETISKIN') return false;
+      const cfg = STAGE_CONFIG[foal.stage];
+      const now = Date.now();
+      const remaining = Math.max(0, cfg.minMs - (now - foal.stageStartedAt));
+      if (remaining <= 0) return true; // zaten hazır
+      if (!free) {
+        const cost = get().rushCost(id);
+        if (get().carrots < cost) return false;
+        const carrots = get().carrots - cost;
+        localStorage.setItem('carrots', String(carrots));
+        set({ carrots });
+      }
+      // Zaman kapısını temizle: aşama başlangıcını minMs kadar geriye çek
+      const updated = { ...foal, stageStartedAt: now - cfg.minMs };
+      const newFoals = foals.map((f, i) => i === idx ? updated : f);
+      localStorage.setItem('foals', JSON.stringify(newFoals));
+      set({ foals: newFoals });
+      sfx.powerup(); haptic.success();
+      scheduleCloudSave();
       return true;
     },
 

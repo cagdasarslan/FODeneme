@@ -1,12 +1,20 @@
 export const STAGES = ['TAY', 'YAVRU', 'GENC', 'YETISKIN'];
 
 // minMs = minimum real time per stage (not cumulative)
+// Kasual-dostu süreler: eskiden 4/8/12s = toplam 24 SAAT (bir tayı büyütmek
+// tam bir gün alıyordu — mobil bir runner için çok cezalandırıcıydı). Artık
+// 1/2/4s = toplam 7 saat; ayrıca "Hızlandır" ile havuç/reklamla anında geçilir.
 export const STAGE_CONFIG = {
-  TAY:      { minMs: 4  * 3600_000, bp: 100, bondGate: 0, scale: 0.50 },
-  YAVRU:    { minMs: 8  * 3600_000, bp: 250, bondGate: 2, scale: 0.65 },
-  GENC:     { minMs: 12 * 3600_000, bp: 500, bondGate: 2, scale: 0.80 },
-  YETISKIN: { minMs: 0,             bp: 0,   bondGate: 0, scale: 1.00 },
+  TAY:      { minMs: 1 * 3600_000, bp: 80,  bondGate: 0, scale: 0.50 },
+  YAVRU:    { minMs: 2 * 3600_000, bp: 180, bondGate: 1, scale: 0.65 },
+  GENC:     { minMs: 4 * 3600_000, bp: 350, bondGate: 2, scale: 0.80 },
+  YETISKIN: { minMs: 0,            bp: 0,   bondGate: 0, scale: 1.00 },
 };
+
+// "Hızlandır": kalan bekleme süresini anında geç. Havuç maliyeti kalan saate
+// göre ölçeklenir; alternatif olarak ödüllü reklamla ücretsiz.
+export const RUSH_COST_PER_HOUR = 40;   // her kalan (yukarı yuvarlanmış) saat başına havuç
+export const RUSH_MAX_COST       = 150; // üst sınır (tek stage için)
 
 export const BREED_COST        = 300;
 export const BREED_COOLDOWN_MS = 6 * 3600_000;
@@ -31,7 +39,7 @@ export const TRAIN_BP          = 20;
 export const TRAIN_BOND        = 1;
 export const TRAIN_COOLDOWN_MS = 24 * 3600_000;
 
-export const BP_PER_500M = 10;
+export const BP_PER_500M = 15; // koşuyla BP kazanımı (aktif oyuncu daha hızlı ilerlesin)
 
 export const TRAITS = {
   sampiyon: { label: '🏆 Şampiyon', desc: 'Tüm statlar +%10',  effect: { allMult: 0.10 } },

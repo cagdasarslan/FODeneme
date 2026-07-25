@@ -93,6 +93,8 @@ function FoalCard({ foal, onFlash }) {
   const trainFoal = useGameStore(s => s.trainFoal);
   const advanceStageIfReady = useGameStore(s => s.advanceStageIfReady);
   const matureFoal = useGameStore(s => s.matureFoal);
+  const rushFoalStage = useGameStore(s => s.rushFoalStage);
+  const rushCost = useGameStore(s => s.rushCost);
   const renameFoal = useGameStore(s => s.renameFoal);
   const skipFoalCooldown = useGameStore(s => s.skipFoalCooldown);
   const carrots = useGameStore(s => s.carrots);
@@ -242,6 +244,28 @@ function FoalCard({ foal, onFlash }) {
           </button>
         )}
       </div>
+
+      {/* Hızlandır — süre kapısını havuç veya reklamla anında geç */}
+      {!isMature && !canAdvance && elapsed < cfg.minMs && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          <button
+            style={{ ...SC.actionBtn, flex: 1, background: carrots >= rushCost(foal.id) ? 'linear-gradient(135deg,#ff9f43,#e17055)' : 'rgba(255,255,255,0.1)', opacity: carrots >= rushCost(foal.id) ? 1 : 0.5 }}
+            disabled={carrots < rushCost(foal.id)}
+            onClick={() => { if (rushFoalStage(foal.id, false)) onFlash('⏩ Süre atlandı!'); }}
+          >
+            ⏩ HIZLANDIR<br /><span style={{ fontSize: 9 }}>{rushCost(foal.id)} 🥕</span>
+          </button>
+          <div style={{ flex: 1 }}>
+            <AdButton
+              label="Ücretsiz hızlandır"
+              sub="Reklam izle → süre atlanır"
+              color="#00cfff"
+              compact
+              onReward={() => { if (rushFoalStage(foal.id, true)) onFlash('⏩ Süre atlandı!'); }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Reklam izle → bekleme süresini atla (tımar / antrenman) */}
       {!isMature && (!groomReady || !trainReady) && (
