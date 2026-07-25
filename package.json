@@ -28,6 +28,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/three": "^0.165.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "playwright": "1.48",
     "vite": "^5.3.0"
   },
   "scripts": {

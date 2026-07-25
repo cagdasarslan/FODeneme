@@ -423,10 +423,13 @@ export default function MainMenu() {
             )}
           </div>
 
+        </div>
+
+        {/* Sabit OYNA çubuğu — kaydırma gerektirmeden her zaman görünür */}
+        <div style={styles.actionBar}>
           <button style={styles.btn} onClick={startRun}>
             {isGameOver ? 'TEKRAR OYNA' : 'OYNA'}
           </button>
-
         </div>
 
         {/* Alt sekme çubuğu */}
@@ -790,6 +793,12 @@ const styles = {
     borderRadius: 10, padding: '2px 7px',
   },
   changeHint: { color: 'rgba(255,255,255,0.3)', fontSize: 10 },
+  actionBar: {
+    flexShrink: 0,
+    padding: '10px 18px',
+    borderTop: '1px solid rgba(255,255,255,0.08)',
+    background: 'linear-gradient(180deg, rgba(8,8,18,0) 0%, rgba(8,8,18,0.85) 40%)',
+  },
   btn: {
     padding: '13px 52px',
     fontSize: 18, fontFamily: 'var(--game-font)', fontWeight: 700, letterSpacing: 3,
