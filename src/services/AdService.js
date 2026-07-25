@@ -4,11 +4,18 @@ import {
   BannerAdSize, BannerAdPosition,
 } from '@capacitor-community/admob';
 
-// ⚠️ TEST kimlikleri (Google örnek). Yayına almadan önce kendi AdMob
-// reklam birim kimliklerinizle değiştirin; ayrıca AndroidManifest.xml
-// içindeki AdMob App ID'yi de kendi uygulamanızınkiyle güncelleyin.
+// ── AdMob reklam kimlikleri ──────────────────────────────────────────────────
+// Kendi AdMob birim kimliklerini buraya yapıştır. Aşağıdakiler Google'ın TEST
+// kimlikleridir; gerçek kimlik girilene kadar reklamlar KAPALI kalır (test
+// reklamlarını yayına göndermek AdMob politikasını ihlal eder). Ayrıca
+// AndroidManifest.xml'deki AdMob App ID'yi de kendi uygulamanınkiyle değiştir.
+const TEST_PREFIX = 'ca-app-pub-3940256099942544';
 const REWARD_AD_ID = 'ca-app-pub-3940256099942544/5224354917';
 const BANNER_AD_ID = 'ca-app-pub-3940256099942544/6300978111';
+
+// Gerçek kimlik girilmediyse reklamlar devre dışı — kullanıcı hiç reklam
+// görmez (ödüllü reklam butonları da gizlenir), test reklamı asla yayınlanmaz.
+export const ADS_ENABLED = !REWARD_AD_ID.startsWith(TEST_PREFIX);
 
 const isNative = Capacitor.getPlatform() !== 'web';
 let initialized = false;
@@ -27,7 +34,9 @@ async function ensureInit() {
 // Web/native olmayan ortamda (geliştirme) ~5sn bekleyip true döner (placeholder)
 // ki reklam ekranı erken kapanmasın (3 reklam ≈ 15sn+ simülasyonda).
 export async function showRewardedAd() {
-  if (!isNative) { await new Promise(r => setTimeout(r, 5000)); return true; }
+  // Gerçek AdMob kimliği yoksa reklam gösterme (test reklamı yayınlama) —
+  // ödülü doğrudan ver ki oyuncu bonus butonlarını yine de kullanabilsin.
+  if (!isNative || !ADS_ENABLED) { await new Promise(r => setTimeout(r, 400)); return true; }
   await ensureInit();
 
   return new Promise((resolve) => {
@@ -68,7 +77,7 @@ export async function showRewardedAds(count, onProgress) {
 let bannerShown = false;
 
 export async function showBanner() {
-  if (!isNative || bannerShown) return;
+  if (!isNative || !ADS_ENABLED || bannerShown) return;
   // "Reklamları Kaldır" satın alındıysa banner asla gösterilmez
   if (localStorage.getItem('adsRemoved') === '1') return;
   await ensureInit();

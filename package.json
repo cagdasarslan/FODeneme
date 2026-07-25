@@ -38,6 +38,7 @@
     "cap:sync": "npm run build && npx cap sync",
     "cap:open": "npx cap open android",
     "apk": "npm run build && npx cap sync && node -e \"const{execSync}=require('child_process');execSync(process.platform==='win32'?'gradlew.bat assembleDebug':'./gradlew assembleDebug',{cwd:'android',stdio:'inherit'})\"",
-    "apk:release": "npm run build && npx cap sync && node -e \"const{execSync}=require('child_process');execSync(process.platform==='win32'?'gradlew.bat assembleRelease':'./gradlew assembleRelease',{cwd:'android',stdio:'inherit'})\""
+    "apk:release": "npm run build && npx cap sync && node -e \"const{execSync}=require('child_process');execSync(process.platform==='win32'?'gradlew.bat assembleRelease':'./gradlew assembleRelease',{cwd:'android',stdio:'inherit'})\"",
+    "bundle:release": "npm run build && npx cap sync && node -e \"const{execSync}=require('child_process');execSync(process.platform==='win32'?'gradlew.bat bundleRelease':'./gradlew bundleRelease',{cwd:'android',stdio:'inherit'})\""
   }
 }

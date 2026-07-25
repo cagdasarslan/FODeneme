@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+// Yayın imzalama anahtarı: android/keystore.properties'ten okunur (git'e girmez).
+// Dosya yoksa (CI/geliştirme) imzasız kalır; yalnız yerelde yayın derlerken gerekir.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.cagdasarslan.horserunner"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +24,22 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            // keystore.properties varsa yayın anahtarıyla imzala (Play yükleme için şart)
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
