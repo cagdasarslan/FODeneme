@@ -76,7 +76,7 @@ export const OBSTACLE_HITBOX = {
 
 // Yapı etiketi — ana menüde görünür; APK'nın güncel olduğunu doğrulamak için
 // her önemli düzeltmede güncellenir
-export const GAME_BUILD = 'v2026.07.12';
+export const GAME_BUILD = 'v2026.07.13';
 
 // ── HARİTA MADALYALARI — kısa vadeli somut hedefler ──────────────────────────
 // Her harita için tek koşuda ulaşılması gereken 3 skor eşiği (bronz/gümüş/altın).

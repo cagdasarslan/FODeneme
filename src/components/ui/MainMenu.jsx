@@ -4,6 +4,7 @@ import { CHARACTERS } from '@/constants/characters';
 import { HORSES } from '@/constants/horses';
 import Leaderboard from '@/components/ui/Leaderboard';
 import HowToPlay from '@/components/ui/HowToPlay';
+import Tutorial from '@/components/ui/Tutorial';
 import CarrotShop from '@/components/ui/CarrotShop';
 import Settings from '@/components/ui/Settings';
 import DailyReward from '@/components/ui/DailyReward';
@@ -87,6 +88,8 @@ export default function MainMenu() {
   const [showSettings, setShowSettings] = useState(false);
   const [showDaily, setShowDaily] = useState(false);
   const [showMissions, setShowMissions] = useState(false);
+  // İlk oynayış eğitimi — yalnızca bir kez (intro_v1)
+  const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem('intro_v1'));
 
   // İlk girişte TEK SEFERLİK kullanıcı adı — liderlikte bu adla görünür
   const [showNameModal, setShowNameModal] = useState(() => !localStorage.getItem('nameSet'));
@@ -575,6 +578,9 @@ export default function MainMenu() {
           </div>
         </div>
       )}
+
+      {/* İlk oynayış eğitimi — ad seçildikten sonra bir kez */}
+      {showTutorial && !showNameModal && <Tutorial onClose={() => setShowTutorial(false)} />}
 
       {showLeaderboard && <Leaderboard onClose={() => setShowLeaderboard(false)} />}
       {showGuide && <HowToPlay onClose={() => setShowGuide(false)} />}

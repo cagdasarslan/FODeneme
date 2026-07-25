@@ -23,7 +23,7 @@ import { getAuthUser } from '@/services/AuthService';
 
 // Buluta yedeklenen kalıcı anahtarlar (günlük/ephemeral anahtarlar bilinçli dışarıda)
 const SAVE_KEYS = [
-  'carrots', 'playerName', 'nameSet', 'supaPlayerId', 'tut_done',
+  'carrots', 'playerName', 'nameSet', 'supaPlayerId', 'tut_done', 'intro_v1',
   'selectedHorseId', 'ownedHorseIds', 'horseLevels', 'horseUpgrades',
   'selectedCharId', 'ownedCharIds', 'powerupLevels', 'customHorses',
   'hs_map1', 'hs_map2', 'hs_map3', 'hs_map4', 'hs_map5', 'hs_map6',
