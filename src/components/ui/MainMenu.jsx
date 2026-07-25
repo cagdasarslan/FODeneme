@@ -235,15 +235,20 @@ export default function MainMenu() {
           <button style={styles.iconBtn} onClick={() => setShowSettings(true)}>⚙️</button>
         </div>
 
-        {/* Kaydırılabilir içerik */}
-        <div style={styles.scrollArea}>
-          {/* Başlık */}
+        {/* Sabit başlık + OYNA — menü açılınca ilk görünen, kaydırmayla oynamaz */}
+        <div style={styles.fixedHeader}>
           <div style={styles.titleWrap}>
             <div style={styles.titleSub}>🐴</div>
             <h1 style={styles.title}>HORSE RUNNER</h1>
             <div style={styles.titleSubline}>KOŞ · YETİŞTİR · YARIŞ</div>
           </div>
+          <button style={styles.btn} onClick={startRun}>
+            {isGameOver ? 'TEKRAR OYNA' : '▶  OYNA'}
+          </button>
+        </div>
 
+        {/* Kaydırılabilir içerik */}
+        <div style={styles.scrollArea}>
           {/* Mevsimsel etkinlik rozeti */}
           {activeEvent && (
             <div style={{ ...styles.eventBadge, borderColor: activeEvent.color, color: activeEvent.color }}>
@@ -425,13 +430,6 @@ export default function MainMenu() {
 
         </div>
 
-        {/* Sabit OYNA çubuğu — kaydırma gerektirmeden her zaman görünür */}
-        <div style={styles.actionBar}>
-          <button style={styles.btn} onClick={startRun}>
-            {isGameOver ? 'TEKRAR OYNA' : 'OYNA'}
-          </button>
-        </div>
-
         {/* Alt sekme çubuğu */}
         <div style={styles.bottomNav}>
           <button style={{ ...styles.navBtn, ...styles.navActive }}>
@@ -585,7 +583,7 @@ const styles = {
   scrollArea: {
     flex: 1, overflowY: 'auto', minHeight: 0,
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-    padding: '22px 18px 14px',
+    padding: '14px 18px 14px',
   },
   topIcons: { position: 'absolute', top: 10, right: 12, display: 'flex', gap: 6, zIndex: 2 },
   iconBtn: { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, width: 34, height: 34, fontSize: 16, cursor: 'pointer' },
@@ -793,11 +791,12 @@ const styles = {
     borderRadius: 10, padding: '2px 7px',
   },
   changeHint: { color: 'rgba(255,255,255,0.3)', fontSize: 10 },
-  actionBar: {
+  fixedHeader: {
     flexShrink: 0,
-    padding: '10px 18px',
-    borderTop: '1px solid rgba(255,255,255,0.08)',
-    background: 'linear-gradient(180deg, rgba(8,8,18,0) 0%, rgba(8,8,18,0.85) 40%)',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+    padding: '18px 18px 14px',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    background: 'linear-gradient(180deg, rgba(14,14,32,0.6) 0%, rgba(8,8,18,0) 100%)',
   },
   btn: {
     padding: '13px 52px',
