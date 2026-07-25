@@ -171,7 +171,7 @@ Günlük, haftalık ve tüm zamanların en iyileriyle yarış.
 - Telefon ekran görüntüleri: 5 adet 1080×1920 (min 2 gerekir)
 
 **Kategori:** Oyun → Yarış (veya Aksiyon)
-**Etiketler/İletişim:** ecagdasarslan@gmail.com
+**Etiketler/İletişim:** leronsoftware@gmail.com
 
 ---
 
