@@ -27,6 +27,8 @@ import {
   STUMBLE_WINDOW_MS,
   PADDOCK_TRAIN_CAP,
   DAILY_SCORE_GOAL,
+  MAP_MEDALS,
+  MEDAL_REWARDS,
 } from '@/constants/game';
 import { ACHIEVEMENTS } from '@/constants/achievements';
 import { POWERUP_IDS, powerupDuration, powerupUpgradeCost, POWERUP_MAX_LEVEL } from '@/constants/powerups';
@@ -198,6 +200,12 @@ const useGameStore = create(
     highScoreMap5: parseInt(localStorage.getItem('hs_map5') ?? '0', 10),
     highScoreMap6: parseInt(localStorage.getItem('hs_map6') ?? '0', 10),
 
+    // ── Harita madalyaları ────────────────────────────────────────────────────
+    // { [mapId]: kazanılan en yüksek kademe 0-3 }
+    medals: JSON.parse(localStorage.getItem('medals_v1') ?? '{}'),
+    // Koşu sonunda bu koşuda yeni kazanılan madalyalar (toast için); [{map,tier,reward}]
+    newMedals: [],
+
     // ── Character (jockey) config ─────────────────────────────────────────────
     selectedCharacterId: localStorage.getItem('selectedCharId') ?? 'cowboy',
     ownedCharacterIds: JSON.parse(localStorage.getItem('ownedCharIds') ?? '["cowboy"]'),
@@ -311,7 +319,28 @@ const useGameStore = create(
             ? { highScoreMap2: newMapHs }
             : { highScoreMap1: newMapHs };
 
-      set({ phase: 'gameover', highScore: newHighScore, ...mapHsUpdate });
+      // ── Harita madalyaları: bu koşuda yeni kademe(ler) açıldı mı? ───────────
+      const thresholds = MAP_MEDALS[mapId] ?? [];
+      const prevTier = (get().medals?.[mapId]) ?? 0;
+      let newTier = prevTier;
+      const earned = [];
+      for (let i = prevTier; i < thresholds.length; i++) {
+        if (Math.floor(score) >= thresholds[i]) {
+          newTier = i + 1;
+          earned.push({ map: mapId, tier: i + 1, reward: MEDAL_REWARDS[i] });
+        }
+      }
+      let medalUpdate = {};
+      if (newTier > prevTier) {
+        const medals = { ...(get().medals ?? {}), [mapId]: newTier };
+        localStorage.setItem('medals_v1', JSON.stringify(medals));
+        const medalCarrots = earned.reduce((a, e) => a + e.reward, 0);
+        const nc = get().carrots + medalCarrots;
+        localStorage.setItem('carrots', String(nc));
+        medalUpdate = { medals, newMedals: earned, carrots: nc };
+      }
+
+      set({ phase: 'gameover', highScore: newHighScore, ...mapHsUpdate, ...medalUpdate });
       get().addRunBP(get().distance);
       scheduleCloudSave(); // koşu bitti → ilerlemeyi buluta yedekle
 
@@ -982,6 +1011,8 @@ const useGameStore = create(
     },
 
     setMapId: (id) => { localStorage.setItem('mapId', id); set({ mapId: id }); },
+    // Madalya ödül toast'ı kapatıldığında çağrılır
+    clearNewMedals: () => set({ newMedals: [] }),
 
     setSoundOn: (on) => {
       localStorage.setItem('soundOn', on ? '1' : '0');

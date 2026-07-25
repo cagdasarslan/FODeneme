@@ -10,7 +10,7 @@ import DailyReward from '@/components/ui/DailyReward';
 import Missions from '@/components/ui/Missions';
 import AdButton from '@/components/ui/AdButton';
 import { showBanner, hideBanner } from '@/services/AdService';
-import { AD_DAILY_CARROTS, AD_DAILY_MAX, MAP_UNLOCKS } from '@/constants/game';
+import { AD_DAILY_CARROTS, AD_DAILY_MAX, MAP_UNLOCKS, MAP_MEDALS, MEDAL_ICONS } from '@/constants/game';
 import { getActiveEvent } from '@/constants/events';
 import { fetchLeaderboard } from '@/services/LeaderboardService';
 import { Capacitor } from '@capacitor/core';
@@ -150,6 +150,11 @@ export default function MainMenu() {
   // Tay vitrini — en acil tayın durumu ana ekranda
   const foals = useGameStore(s => s.foals);
 
+  // Harita madalyaları
+  const medals         = useGameStore(s => s.medals);
+  const newMedals      = useGameStore(s => s.newMedals);
+  const clearNewMedals = useGameStore(s => s.clearNewMedals);
+
   // "Arkadaşını geç": oyun sonunda liderlikte bir üstündeki oyuncuyu göster
   const [rival, setRival] = useState(null);
   useEffect(() => {
@@ -229,6 +234,29 @@ export default function MainMenu() {
           <button style={styles.btn} onClick={startRun}>
             {isGameOver ? 'TEKRAR OYNA' : '▶  OYNA'}
           </button>
+          {/* Harita madalyaları — seçili haritanın kısa vadeli hedefi */}
+          {(() => {
+            const thr = MAP_MEDALS[mapId] ?? [];
+            const earned = (medals?.[mapId]) ?? 0;
+            const nextTarget = earned < thr.length ? thr[earned] : null;
+            return (
+              <div style={styles.medalStrip}>
+                <div style={styles.medalIcons}>
+                  {thr.map((t, i) => (
+                    <span key={i} title={`${t.toLocaleString()} skor`}
+                      style={{ fontSize: 18, opacity: i < earned ? 1 : 0.28, filter: i < earned ? 'none' : 'grayscale(1)' }}>
+                      {MEDAL_ICONS[i]}
+                    </span>
+                  ))}
+                </div>
+                <span style={styles.medalGoal}>
+                  {nextTarget
+                    ? <>Sonraki madalya: <b style={{ color: '#ffd54a' }}>{nextTarget.toLocaleString()}</b> skor</>
+                    : <span style={{ color: '#8ee69a' }}>Tüm madalyalar alındı! 🏅</span>}
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Kaydırılabilir içerik */}
@@ -529,6 +557,25 @@ export default function MainMenu() {
           </div>
         </div>
       )}
+
+      {/* Madalya ödül toast'ı — koşu sonunda yeni madalya kazanılınca */}
+      {newMedals && newMedals.length > 0 && (
+        <div style={styles.chestOverlay} onClick={clearNewMedals}>
+          <div style={styles.chestBox} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 64, animation: 'pulse 0.6s ease-out' }}>
+              {MEDAL_ICONS[newMedals[newMedals.length - 1].tier - 1]}
+            </div>
+            <div style={styles.chestTitle}>
+              {newMedals.length > 1 ? `${newMedals.length} MADALYA KAZANDIN!` : 'MADALYA KAZANDIN!'}
+            </div>
+            <div style={styles.chestReward}>
+              +{newMedals.reduce((a, m) => a + m.reward, 0).toLocaleString()} 🥕
+            </div>
+            <div style={styles.chestSub}>Yeni hedef için tekrar koş!</div>
+            <button style={styles.chestBtn} onClick={clearNewMedals}>HARİKA!</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -777,11 +824,17 @@ const styles = {
   changeHint: { color: 'rgba(255,255,255,0.3)', fontSize: 10 },
   fixedHeader: {
     flexShrink: 0,
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-    padding: '18px 18px 14px',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+    padding: '18px 18px 12px',
     borderBottom: '1px solid rgba(255,255,255,0.08)',
     background: 'linear-gradient(180deg, rgba(14,14,32,0.6) 0%, rgba(8,8,18,0) 100%)',
   },
+  medalStrip: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+    width: '100%',
+  },
+  medalIcons: { display: 'flex', gap: 2 },
+  medalGoal: { fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--game-font)', fontWeight: 600 },
   btn: {
     padding: '13px 52px',
     fontSize: 18, fontFamily: 'var(--game-font)', fontWeight: 700, letterSpacing: 3,

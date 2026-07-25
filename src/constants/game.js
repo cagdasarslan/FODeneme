@@ -76,4 +76,20 @@ export const OBSTACLE_HITBOX = {
 
 // Yapı etiketi — ana menüde görünür; APK'nın güncel olduğunu doğrulamak için
 // her önemli düzeltmede güncellenir
-export const GAME_BUILD = 'v2026.07.09';
+export const GAME_BUILD = 'v2026.07.10';
+
+// ── HARİTA MADALYALARI — kısa vadeli somut hedefler ──────────────────────────
+// Her harita için tek koşuda ulaşılması gereken 3 skor eşiği (bronz/gümüş/altın).
+// Kazanılan her madalya bir kez havuç ödülü verir. Oyuncuya "bir sonraki hedef"
+// hissi verir; görevlerden bağımsız, kalıcı ilerleme.
+export const MAP_MEDALS = {
+  1: [500, 1500, 4000],
+  2: [1000, 3000, 7000],
+  3: [2000, 5000, 10000],
+  4: [3000, 7000, 14000],
+  5: [4000, 9000, 18000],
+  6: [5000, 12000, 24000],
+};
+// Bronz / Gümüş / Altın ödülleri (havuç)
+export const MEDAL_REWARDS = [300, 700, 1500];
+export const MEDAL_ICONS = ['🥉', '🥈', '🥇'];
