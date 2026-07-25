@@ -206,6 +206,9 @@ const useGameStore = create(
     // Koşu sonunda bu koşuda yeni kazanılan madalyalar (toast için); [{map,tier,reward}]
     newMedals: [],
 
+    // İlk Adımlar (onboarding) — ödülü alınan adımların id listesi
+    onboardClaimed: JSON.parse(localStorage.getItem('onboard_v1') ?? '[]'),
+
     // ── Character (jockey) config ─────────────────────────────────────────────
     selectedCharacterId: localStorage.getItem('selectedCharId') ?? 'cowboy',
     ownedCharacterIds: JSON.parse(localStorage.getItem('ownedCharIds') ?? '["cowboy"]'),
@@ -1023,6 +1026,37 @@ const useGameStore = create(
     setMapId: (id) => { localStorage.setItem('mapId', id); set({ mapId: id }); },
     // Madalya ödül toast'ı kapatıldığında çağrılır
     clearNewMedals: () => set({ newMedals: [] }),
+
+    // ── İlk Adımlar (onboarding) — yeni oyuncuya meta sistemleri tanıtır ───────
+    // Tamamlanma mevcut ilerlemeden türetilir; her adım bir kez havuç ödülü verir.
+    getOnboarding: () => {
+      const s = get();
+      const trained = Object.values(s.trainingXP ?? {}).some(v => (v ?? 0) > 0);
+      const owned = (s.ownedHorseIds?.length ?? 1) + (s.ownedCharacterIds?.length ?? 1);
+      const claimed = s.onboardClaimed ?? [];
+      const steps = [
+        { id: 'play',  icon: '🏁', label: 'İlk koşunu tamamla',            done: (s.highScore ?? 0) > 0, reward: 150 },
+        { id: 'medal', icon: '🥉', label: 'İlk madalyanı kazan',           done: Object.values(s.medals ?? {}).some(t => t > 0), reward: 200 },
+        { id: 'train', icon: '🐎', label: "Çiftlik'te atını ücretsiz eğit", done: trained, reward: 200 },
+        { id: 'hara',  icon: '🐣', label: "Hara'da bir tay büyüt",          done: (s.foals?.length ?? 0) > 0, reward: 250 },
+        { id: 'shop',  icon: '🛒', label: 'Yeni bir at veya jokey al',      done: owned > 3, reward: 200 },
+      ];
+      return steps.map(st => ({ ...st, claimed: claimed.includes(st.id) }));
+    },
+    claimOnboardStep: (id) => {
+      const s = get();
+      const steps = s.getOnboarding();
+      const step = steps.find(x => x.id === id);
+      if (!step || !step.done || step.claimed) return 0;
+      const onboardClaimed = [...(s.onboardClaimed ?? []), id];
+      const carrots = s.carrots + step.reward;
+      localStorage.setItem('onboard_v1', JSON.stringify(onboardClaimed));
+      localStorage.setItem('carrots', String(carrots));
+      set({ onboardClaimed, carrots });
+      sfx.collect(); haptic.success();
+      scheduleCloudSave();
+      return step.reward;
+    },
 
     setSoundOn: (on) => {
       localStorage.setItem('soundOn', on ? '1' : '0');

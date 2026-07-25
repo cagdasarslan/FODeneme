@@ -155,6 +155,14 @@ export default function MainMenu() {
   const newMedals      = useGameStore(s => s.newMedals);
   const clearNewMedals = useGameStore(s => s.clearNewMedals);
 
+  // İlk Adımlar (onboarding) — tamamlanmayı etkileyen alanlara abone ol
+  const onboardClaimed  = useGameStore(s => s.onboardClaimed);
+  const trainingXP      = useGameStore(s => s.trainingXP);
+  const enterPaddock    = useGameStore(s => s.enterPaddock);
+  const claimOnboardStep = useGameStore(s => s.claimOnboardStep);
+  const onboarding = useGameStore(s => s.getOnboarding)();
+  const onboardOpen = onboarding.some(st => !st.claimed); // hepsi alınınca kart kaybolur
+
   // "Arkadaşını geç": oyun sonunda liderlikte bir üstündeki oyuncuyu göster
   const [rival, setRival] = useState(null);
   useEffect(() => {
@@ -288,6 +296,44 @@ export default function MainMenu() {
               🏆
             </button>
           </div>
+
+          {/* İLK ADIMLAR — yeni oyuncuya meta sistemleri tanıtan rehber */}
+          {!isGameOver && onboardOpen && (
+            <div style={styles.onboardCard}>
+              <div style={styles.onboardHeader}>
+                <span style={{ fontSize: 18 }}>🚀</span>
+                <span style={styles.onboardTitle}>İLK ADIMLAR</span>
+                <span style={styles.onboardCount}>
+                  {onboarding.filter(s => s.claimed).length}/{onboarding.length}
+                </span>
+              </div>
+              {onboarding.map(st => {
+                const nav = () => {
+                  if (st.done) return;
+                  if (st.id === 'play')  startRun();
+                  else if (st.id === 'train') enterPaddock();
+                  else if (st.id === 'hara')  openGarage('hara');
+                  else if (st.id === 'shop')  openGarage();
+                };
+                return (
+                  <div key={st.id} style={{ ...styles.onboardRow, opacity: st.claimed ? 0.55 : 1, cursor: (!st.done || (st.done && !st.claimed)) ? 'pointer' : 'default' }}
+                    onClick={st.done && !st.claimed ? () => { claimOnboardStep(st.id); } : nav}>
+                    <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>
+                      {st.claimed ? '✅' : st.icon}
+                    </span>
+                    <span style={{ flex: 1, fontSize: 12, color: st.claimed ? '#8ee69a' : '#fff', fontWeight: 600 }}>
+                      {st.label}
+                    </span>
+                    {st.claimed ? null : st.done ? (
+                      <span style={styles.onboardClaim}>AL +{st.reward} 🥕</span>
+                    ) : (
+                      <span style={styles.onboardGo}>GİT →</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Günlük skor görevi: bugün tüm haritalarda 50.000 puan → hediye sandık */}
           {!isGameOver && (
@@ -833,6 +879,18 @@ const styles = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
     width: '100%',
   },
+  onboardCard: {
+    width: '100%', boxSizing: 'border-box',
+    background: 'linear-gradient(160deg, rgba(90,140,255,0.14), rgba(60,80,200,0.08))',
+    border: '1px solid rgba(120,160,255,0.35)', borderRadius: 12, padding: '10px 12px',
+    display: 'flex', flexDirection: 'column', gap: 4,
+  },
+  onboardHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 },
+  onboardTitle: { flex: 1, fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: '#bcd2ff', fontFamily: 'var(--game-font)' },
+  onboardCount: { fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 700 },
+  onboardRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 4px', borderTop: '1px solid rgba(255,255,255,0.06)' },
+  onboardClaim: { fontSize: 11, fontWeight: 800, color: '#1a0a00', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', padding: '4px 8px', borderRadius: 6, whiteSpace: 'nowrap' },
+  onboardGo: { fontSize: 11, fontWeight: 700, color: '#7fb0ff', whiteSpace: 'nowrap' },
   medalIcons: { display: 'flex', gap: 2 },
   medalGoal: { fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--game-font)', fontWeight: 600 },
   btn: {
