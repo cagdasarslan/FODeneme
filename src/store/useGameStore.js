@@ -338,6 +338,7 @@ const useGameStore = create(
         const nc = get().carrots + medalCarrots;
         localStorage.setItem('carrots', String(nc));
         medalUpdate = { medals, newMedals: earned, carrots: nc };
+        sfx.medal(); haptic.success(); // madalya kazanımı juice
       }
 
       set({ phase: 'gameover', highScore: newHighScore, ...mapHsUpdate, ...medalUpdate });
@@ -375,6 +376,7 @@ const useGameStore = create(
       let scoreMult = 1;
       if (!adrenalinBoosting && adrenaline >= ADRENALINE_MAX) {
         boostUpdate = { adrenalinBoosting: true, adrenalinBoostTimer: 3, adrenaline: 0 };
+        sfx.burst(); haptic.heavy(); // adrenalin patlaması juice
       } else if (adrenalinBoosting) {
         const t = adrenalinBoostTimer - delta;
         boostUpdate = t > 0
@@ -476,7 +478,12 @@ const useGameStore = create(
 
     // Combo artırıcı: art arda riskli aksiyonlar skor çarpanını yükseltir
     _bumpCombo: () => {
-      const combo = get().combo + 1;
+      const prev = get().combo;
+      const combo = prev + 1;
+      // Combo çarpanı bir kademe arttıysa tatmin edici "yükseliş" sesi + titreşim
+      const multOf = (c) => 1 + Math.min(COMBO_MAX_MULT - 1, Math.floor(c / COMBO_PER_STEP));
+      const newMult = multOf(combo);
+      if (newMult > multOf(prev)) { sfx.combo(newMult); haptic.medium(); }
       set({ combo, comboExpire: Date.now() + COMBO_WINDOW_MS });
     },
 
@@ -485,6 +492,8 @@ const useGameStore = create(
       if (phase !== 'playing') return;
       get().bumpDaily('closecall', 1);
       get()._bumpCombo();
+      sfx.whoosh();
+      haptic.light();
       set({
         adrenaline: Math.min(adrenaline + ADRENALINE_CLOSE_CALL_GAIN, ADRENALINE_MAX),
       });
@@ -495,6 +504,7 @@ const useGameStore = create(
       if (phase !== 'playing') return;
       get().bumpDaily('jumpover', 1);
       get()._bumpCombo();
+      sfx.whoosh();
       haptic.light();
       set({
         adrenaline: Math.min(adrenaline + ADRENALINE_JUMP_GAIN, ADRENALINE_MAX),

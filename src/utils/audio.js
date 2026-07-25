@@ -69,6 +69,18 @@ export const sfx = {
   crash:   () => { noise(0.3, 0.3); tone(140, 0.3, { type: 'sawtooth', gain: 0.18, slideTo: 60 }); },
   click:   () => tone(440, 0.05, { type: 'square', gain: 0.10 }),
   powerup: () => { tone(523, 0.1, { type:'triangle', gain:0.14 }); setTimeout(()=>tone(784,0.14,{type:'triangle',gain:0.14}),90); },
+  // Combo yükselince: kademeyle tizleşen kısa "yükseliş" — tatmin edici geri bildirim
+  combo:   (mult = 2) => {
+    const base = 520 + (mult - 1) * 130; // x2→650, x3→780, x4→910
+    tone(base, 0.09, { type: 'triangle', gain: 0.13 });
+    setTimeout(() => tone(base * 1.5, 0.11, { type: 'triangle', gain: 0.12 }), 70);
+  },
+  // Makas / engel atlama: hızlı "vınn" — hafif ve sık çalınabilir
+  whoosh:  () => tone(760, 0.10, { type: 'sine', gain: 0.09, slideTo: 320 }),
+  // Adrenalin patlaması: 3 notalı yükselen fanfar
+  burst:   () => { [523, 659, 880].forEach((f, i) => setTimeout(() => tone(f, 0.16, { type: 'triangle', gain: 0.15 }), i * 90)); },
+  // Madalya kazanımı: kısa zafer jingle'ı
+  medal:   () => { [660, 880, 1046, 1318].forEach((f, i) => setTimeout(() => tone(f, 0.14, { type: 'triangle', gain: 0.14 }), i * 100)); },
 };
 
 // ── Nal sesi (dıgıdık dıgıdık) — oyun sesi, hıza göre tempo ───────────────────
