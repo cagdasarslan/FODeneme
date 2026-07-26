@@ -128,3 +128,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Claude Code internal (submodule gitlink Pages'i bozuyor)
+.claude/
