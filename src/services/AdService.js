@@ -11,7 +11,7 @@ import {
 // AndroidManifest.xml'deki AdMob App ID'yi de kendi uygulamanınkiyle değiştir.
 const TEST_PREFIX = 'ca-app-pub-3940256099942544';
 const REWARD_AD_ID = 'ca-app-pub-3920099901614778/4114106996';
-const BANNER_AD_ID = 'ca-app-pub-3940256099942544/6300978111';
+const BANNER_AD_ID = 'ca-app-pub-3920099901614778/7670354416';
 
 // Gerçek kimlik girilmediyse ilgili reklam türü devre dışı kalır — test
 // reklamı asla yayınlanmaz (AdMob politikası ihlali olur). İki tür ayrı ayrı
