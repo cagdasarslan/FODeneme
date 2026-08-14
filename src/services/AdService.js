@@ -10,12 +10,14 @@ import {
 // reklamlarını yayına göndermek AdMob politikasını ihlal eder). Ayrıca
 // AndroidManifest.xml'deki AdMob App ID'yi de kendi uygulamanınkiyle değiştir.
 const TEST_PREFIX = 'ca-app-pub-3940256099942544';
-const REWARD_AD_ID = 'ca-app-pub-3940256099942544/5224354917';
+const REWARD_AD_ID = 'ca-app-pub-3920099901614778/4114106996';
 const BANNER_AD_ID = 'ca-app-pub-3940256099942544/6300978111';
 
-// Gerçek kimlik girilmediyse reklamlar devre dışı — kullanıcı hiç reklam
-// görmez (ödüllü reklam butonları da gizlenir), test reklamı asla yayınlanmaz.
+// Gerçek kimlik girilmediyse ilgili reklam türü devre dışı kalır — test
+// reklamı asla yayınlanmaz (AdMob politikası ihlali olur). İki tür ayrı ayrı
+// kontrol edilir ki biri hazırken diğeri beklemesin.
 export const ADS_ENABLED = !REWARD_AD_ID.startsWith(TEST_PREFIX);
+export const BANNER_ENABLED = !BANNER_AD_ID.startsWith(TEST_PREFIX);
 
 const isNative = Capacitor.getPlatform() !== 'web';
 let initialized = false;
@@ -77,7 +79,7 @@ export async function showRewardedAds(count, onProgress) {
 let bannerShown = false;
 
 export async function showBanner() {
-  if (!isNative || !ADS_ENABLED || bannerShown) return;
+  if (!isNative || !BANNER_ENABLED || bannerShown) return;
   // "Reklamları Kaldır" satın alındıysa banner asla gösterilmez
   if (localStorage.getItem('adsRemoved') === '1') return;
   await ensureInit();
