@@ -42,11 +42,10 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- AdMob App ID — TEST kimliği. Yayına almadan önce kendi AdMob
-             App ID'nizle değiştirin. -->
+        <!-- AdMob App ID — Horse Runner (gerçek yayıncı kimliği) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-3920099901614778~8053352005"/>
     </application>
 
     <!-- Permissions -->
