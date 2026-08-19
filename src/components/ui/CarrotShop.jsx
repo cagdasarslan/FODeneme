@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { CARROT_PACKAGES, REMOVE_ADS_ID } from '@/constants/iap';
-import { initBilling, purchase, setGrantHandler, setRemoveAdsHandler, getDisplayPrice, getRemoveAdsPrice } from '@/services/BillingService';
+import { initBilling, purchase, setGrantHandler, setRemoveAdsHandler, setPricesUpdatedHandler, getDisplayPrice, getRemoveAdsPrice } from '@/services/BillingService';
 import { hideBanner } from '@/services/AdService';
 
 // Gerçek para ile havuç satın alma mağazası (Google Play Billing).
@@ -26,7 +26,8 @@ export default function CarrotShop({ onClose }) {
       setFlash('🎉 Reklamlar kaldırıldı — iyi koşular!');
       setTimeout(() => setFlash(''), 2500);
     });
-    initBilling().then(() => force(n => n + 1)); // gerçek fiyatlar gelince yenile
+    setPricesUpdatedHandler(() => force(n => n + 1)); // Play fiyatları geç gelirse tazele
+    initBilling().then(() => force(n => n + 1));
   }, [addCarrots, setAdsRemoved]);
 
   const handleBuy = async (pkg) => {

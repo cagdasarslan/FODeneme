@@ -10,6 +10,7 @@ const isNative = Capacitor.getPlatform() !== 'web';
 let initialized = false;
 let onGrant = null;            // (productId, carrots) => void  — havuç ekleme callback'i
 let onRemoveAds = null;        // () => void — reklamsız satın alımı işlendiğinde
+let onPricesUpdated = null;    // () => void — Play'den fiyatlar gelince UI'yi tazele
 const livePrices = {};         // productId -> Play'in gerçek fiyatı
 
 function CDV() { return (typeof window !== 'undefined') ? window.CdvPurchase : undefined; }
@@ -17,6 +18,8 @@ function CDV() { return (typeof window !== 'undefined') ? window.CdvPurchase : u
 // Satın alma onaylanınca havuçları ekleyecek callback'i kaydet
 export function setGrantHandler(fn) { onGrant = fn; }
 export function setRemoveAdsHandler(fn) { onRemoveAds = fn; }
+// Play ürün bilgilerini asenkron gönderir; fiyatlar gelince mağazayı tazelemek için
+export function setPricesUpdatedHandler(fn) { onPricesUpdated = fn; }
 
 export function getDisplayPrice(pkg) {
   return livePrices[pkg.id] || pkg.price;
@@ -54,14 +57,22 @@ export async function initBilling() {
         });
       });
 
-    await store.initialize([Platform.GOOGLE_PLAY]);
+    // Yerelleştirilmiş fiyatları Play'den oku. Ürün bilgileri initialize()
+    // çözüldükten SONRA da gelebildiği için productUpdated ile tekrar okunur;
+    // aksi halde mağaza koddaki yedek fiyatlarda takılı kalır.
+    const refreshPrices = () => {
+      let changed = false;
+      [...CARROT_PACKAGES, { id: REMOVE_ADS_ID }].forEach(p => {
+        const prod = store.get(p.id, Platform.GOOGLE_PLAY);
+        const price = prod && prod.pricing && prod.pricing.price;
+        if (price && livePrices[p.id] !== price) { livePrices[p.id] = price; changed = true; }
+      });
+      if (changed && onPricesUpdated) onPricesUpdated();
+    };
+    store.when().productUpdated(refreshPrices);
 
-    // Yerelleştirilmiş fiyatları sakla
-    [...CARROT_PACKAGES, { id: REMOVE_ADS_ID }].forEach(p => {
-      const prod = store.get(p.id, Platform.GOOGLE_PLAY);
-      const offer = prod && prod.pricing;
-      if (offer && offer.price) livePrices[p.id] = offer.price;
-    });
+    await store.initialize([Platform.GOOGLE_PLAY]);
+    refreshPrices();
 
     // RESTORE: daha önce reklamsız satın alınmışsa (cihaz değişimi vb.) geri yükle
     const ra = store.get(REMOVE_ADS_ID, Platform.GOOGLE_PLAY);
