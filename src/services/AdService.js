@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import {
-  AdMob, RewardAdPluginEvents,
+  AdMob, RewardAdPluginEvents, BannerAdPluginEvents,
   BannerAdSize, BannerAdPosition,
 } from '@capacitor-community/admob';
 
@@ -77,6 +77,14 @@ export async function showRewardedAds(count, onProgress) {
 
 // ── Banner reklam (yalnızca ana menüde) ───────────────────────────────────────
 let bannerShown = false;
+let sizeListener = null;
+
+// Banner web görünümünün ÜZERİNE çizilir; arayüzün altı kapanmasın diye
+// yüksekliğini CSS değişkenine yazıyoruz (#root bunu alt boşluk olarak kullanır).
+function setBannerHeight(px) {
+  if (typeof document === 'undefined') return;
+  document.documentElement.style.setProperty('--banner-h', `${px || 0}px`);
+}
 
 export async function showBanner() {
   if (!isNative || !BANNER_ENABLED || bannerShown) return;
@@ -84,6 +92,12 @@ export async function showBanner() {
   if (localStorage.getItem('adsRemoved') === '1') return;
   await ensureInit();
   try {
+    if (!sizeListener) {
+      sizeListener = await AdMob.addListener(
+        BannerAdPluginEvents.SizeChanged,
+        (info) => setBannerHeight(info?.height)
+      );
+    }
     // Uyarlanabilir banner yüksekliği ekran genişliğiyle büyüyor; tablette
     // ekranın çok yerini kaplıyor. Geniş ekranlarda sabit 320x50 kullan.
     const isWide = (typeof window !== 'undefined') && window.innerWidth >= 600;
@@ -104,6 +118,7 @@ export async function hideBanner() {
   try {
     await AdMob.removeBanner();
     bannerShown = false;
+    setBannerHeight(0);
   } catch (e) {
     console.warn('[AdService] hideBanner failed:', e);
   }
