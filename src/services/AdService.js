@@ -84,9 +84,12 @@ export async function showBanner() {
   if (localStorage.getItem('adsRemoved') === '1') return;
   await ensureInit();
   try {
+    // Uyarlanabilir banner yüksekliği ekran genişliğiyle büyüyor; tablette
+    // ekranın çok yerini kaplıyor. Geniş ekranlarda sabit 320x50 kullan.
+    const isWide = (typeof window !== 'undefined') && window.innerWidth >= 600;
     await AdMob.showBanner({
       adId: BANNER_AD_ID,
-      adSize: BannerAdSize.ADAPTIVE_BANNER,
+      adSize: isWide ? BannerAdSize.BANNER : BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
       margin: 0,
     });
