@@ -12,6 +12,7 @@ let onGrant = null;            // (productId, carrots) => void  — havuç eklem
 let onRemoveAds = null;        // () => void — reklamsız satın alımı işlendiğinde
 let onPricesUpdated = null;    // () => void — Play'den fiyatlar gelince UI'yi tazele
 const livePrices = {};         // productId -> Play'in gerçek fiyatı
+const processed = new Set();   // işlenen işlem kimlikleri (çift ödül vermemek için)
 
 function CDV() { return (typeof window !== 'undefined') ? window.CdvPurchase : undefined; }
 
@@ -44,18 +45,25 @@ export async function initBilling() {
       { id: REMOVE_ADS_ID, type: ProductType.NON_CONSUMABLE, platform: Platform.GOOGLE_PLAY },
     ]);
 
-    // Onaylanan siparişleri işle → havuç ekle / reklamsızı etkinleştir
-    store.when()
-      .approved(tx => tx.verify())
-      .verified(receipt => {
-        receipt.finish();
-        const items = receipt.collection || [];
-        items.forEach(item => {
-          if (item.id === REMOVE_ADS_ID) { onRemoveAds && onRemoveAds(); return; }
-          const pkg = CARROT_PACKAGES.find(p => p.id === item.id);
-          if (pkg && onGrant) onGrant(pkg.id, pkg.carrots);
-        });
+    // Onaylanan siparişleri işle → havuç ekle / reklamsızı etkinleştir.
+    // NOT: Ödül 'approved' aşamasında verilir. 'verified' yalnızca bir makbuz
+    // doğrulama sunucusu (store.validator) tanımlıysa tetiklenir; bizde yok,
+    // dolayısıyla verify() beklenirse satın alma asla teslim edilmez.
+    store.when().approved(tx => {
+      const key = tx.transactionId || tx.purchaseId;
+      if (key && processed.has(key)) { tx.finish(); return; }
+      if (key) processed.add(key);
+
+      (tx.products || []).forEach(item => {
+        if (item.id === REMOVE_ADS_ID) { onRemoveAds && onRemoveAds(); return; }
+        const pkg = CARROT_PACKAGES.find(p => p.id === item.id);
+        if (pkg && onGrant) onGrant(pkg.id, pkg.carrots);
       });
+
+      // finish(): tüketilebilirleri tüketir, kalıcı ürünleri onaylar.
+      // Çağrılmazsa Google 3 gün sonra satın almayı otomatik iade eder.
+      tx.finish();
+    });
 
     // Yerelleştirilmiş fiyatları Play'den oku. Ürün bilgileri initialize()
     // çözüldükten SONRA da gelebildiği için productUpdated ile tekrar okunur;
@@ -102,7 +110,7 @@ export async function purchase(productId) {
     const { store, Platform } = CDV();
     const product = store.get(productId, Platform.GOOGLE_PLAY);
     const offer = product && product.getOffer();
-    if (!offer) return { ok: false, reason: 'Ürün hazır değil' };
+    if (!offer) return { ok: false, reason: 'Mağaza hazır değil, biraz sonra tekrar dene' };
     await store.order(offer);
     // Havuçlar approved/verified akışında eklenir; burada sadece tetikledik.
     return { ok: true };
