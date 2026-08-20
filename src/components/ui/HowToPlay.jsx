@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
 
@@ -370,15 +372,15 @@ const SECTIONS = [
 function renderContent(block, idx) {
   switch (block.type) {
     case 'text':
-      return <p key={idx} style={s.bodyText}>{block.text}</p>;
+      return <p key={idx} style={s.bodyText}>{t(block.text)}</p>;
 
     case 'list':
       return (
         <div key={idx} style={s.listBlock}>
-          {block.title && <div style={s.listTitle}>{block.title}</div>}
+          {block.title && <div style={s.listTitle}>{t(block.title)}</div>}
           <ul style={s.ul}>
             {block.items.map((item, i) => (
-              <li key={i} style={s.li}>{item}</li>
+              <li key={i} style={s.li}>{t(item)}</li>
             ))}
           </ul>
         </div>
@@ -387,18 +389,18 @@ function renderContent(block, idx) {
     case 'table':
       return (
         <div key={idx} style={s.tableWrap}>
-          {block.title && <div style={s.listTitle}>{block.title}</div>}
+          {block.title && <div style={s.listTitle}>{t(block.title)}</div>}
           <div style={s.tableScroll}>
             <table style={s.table}>
               <thead>
                 <tr>
-                  {block.headers.map((h, i) => <th key={i} style={s.th}>{h}</th>)}
+                  {block.headers.map((h, i) => <th key={i} style={s.th}>{t(h)}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {block.rows.map((row, i) => (
                   <tr key={i}>
-                    {row.map((cell, j) => <td key={j} style={s.td}>{cell}</td>)}
+                    {row.map((cell, j) => <td key={j} style={s.td}>{t(cell)}</td>)}
                   </tr>
                 ))}
               </tbody>
@@ -413,9 +415,9 @@ function renderContent(block, idx) {
           {block.items.map((item, i) => (
             <div key={i} style={{ ...s.mapCard, borderColor: item.color }}>
               <span style={s.mapCardIcon}>{item.icon}</span>
-              <div style={{ ...s.mapCardName, color: item.color }}>{item.name}</div>
-              <div style={s.mapCardSub}>{item.sub}</div>
-              <div style={s.mapCardDesc}>{item.desc}</div>
+              <div style={{ ...s.mapCardName, color: item.color }}>{t(item.name)}</div>
+              <div style={s.mapCardSub}>{t(item.sub)}</div>
+              <div style={s.mapCardDesc}>{t(item.desc)}</div>
             </div>
           ))}
         </div>
@@ -424,15 +426,15 @@ function renderContent(block, idx) {
     case 'stages':
       return (
         <div key={idx} style={s.stagesWrap}>
-          {block.title && <div style={s.listTitle}>{block.title}</div>}
+          {block.title && <div style={s.listTitle}>{t(block.title)}</div>}
           <div style={s.stagesGrid}>
             {block.items.map((item, i) => (
               <div key={i} style={{ ...s.stageCard, borderColor: item.color }}>
-                <div style={{ ...s.stageName, color: item.color }}>{item.stage}</div>
-                <div style={s.stageRow}>⏱ {item.duration}</div>
-                <div style={s.stageRow}>📊 {item.bp}</div>
-                <div style={s.stageRow}>📏 {item.scale}</div>
-                <div style={s.stageRow}>🔒 {item.gate}</div>
+                <div style={{ ...s.stageName, color: item.color }}>{t(item.stage)}</div>
+                <div style={s.stageRow}>⏱ {t(item.duration)}</div>
+                <div style={s.stageRow}>📊 {t(item.bp)}</div>
+                <div style={s.stageRow}>📏 {t(item.scale)}</div>
+                <div style={s.stageRow}>🔒 {t(item.gate)}</div>
               </div>
             ))}
           </div>
@@ -445,6 +447,7 @@ function renderContent(block, idx) {
 }
 
 export default function HowToPlay({ onClose }) {
+  useLang();
   const [activeSection, setActiveSection] = useState('gameplay');
   const section = SECTIONS.find(sec => sec.id === activeSection);
 
@@ -453,7 +456,7 @@ export default function HowToPlay({ onClose }) {
       <div style={s.modal}>
         {/* Header */}
         <div style={s.header}>
-          <div style={s.headerTitle}>📖 OYUN REHBERİ</div>
+          <div style={s.headerTitle}>📖 {t('OYUN REHBERİ')}</div>
           <button style={s.closeBtn} onClick={onClose}>✕</button>
         </div>
 
@@ -473,12 +476,12 @@ export default function HowToPlay({ onClose }) {
                   onClick={() => setActiveSection(sec.id)}
                 >
                   <span style={{ fontSize: 16 }}>{sec.icon}</span>
-                  <span style={s.tabText}>{sec.title}</span>
+                  <span style={s.tabText}>{t(sec.title)}</span>
                 </button>
               ))}
             </div>
             <div style={s.content}>
-              <div style={s.sectionTitle}>{section.icon} {section.title}</div>
+              <div style={s.sectionTitle}>{section.icon} {t(section.title)}</div>
               {section.content.map((block, i) => renderContent(block, i))}
             </div>
           </>
@@ -498,12 +501,12 @@ export default function HowToPlay({ onClose }) {
                   onClick={() => setActiveSection(sec.id)}
                 >
                   <span style={s.sideBtnIcon}>{sec.icon}</span>
-                  <span style={s.sideBtnText}>{sec.title}</span>
+                  <span style={s.sideBtnText}>{t(sec.title)}</span>
                 </button>
               ))}
             </div>
             <div style={s.content}>
-              <div style={s.sectionTitle}>{section.icon} {section.title}</div>
+              <div style={s.sectionTitle}>{section.icon} {t(section.title)}</div>
               {section.content.map((block, i) => renderContent(block, i))}
             </div>
           </div>

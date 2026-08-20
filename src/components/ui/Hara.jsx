@@ -3,6 +3,8 @@ import useGameStore from '@/store/useGameStore';
 import { HORSES } from '@/constants/horses';
 import { STAGE_CONFIG, BREED_COST, BREED_COOLDOWN_MS, SHOP_TIER1_COST, SHOP_TIER2_COST, EXTRA_SLOT_COST, TRAITS, GROOM_COOLDOWN_MS, TRAIN_COOLDOWN_MS, FEED_MAX_DAY } from '@/constants/foals';
 import AdButton from '@/components/ui/AdButton';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 const STAGE_LABELS = { TAY: 'TAY', YAVRU: 'YAVRU', GENC: 'GENÇ', YETISKIN: 'YETİŞKİN' };
 const STAGE_COLORS = { TAY: '#81c784', YAVRU: '#64b5f6', GENC: '#ffb74d', YETISKIN: '#ffd700' };
@@ -29,7 +31,7 @@ function MeterBar({ label, value, color }) {
 function BondDots({ value }) {
   return (
     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>BAĞ</span>
+      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>{t('BAĞ')}</span>
       {Array.from({ length: 5 }, (_, i) => (
         <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: i < value ? '#ffd700' : 'rgba(255,255,255,0.15)' }} />
       ))}
@@ -65,10 +67,10 @@ function Countdown({ stageStartedAt, stage }) {
   const cfg = STAGE_CONFIG[stage];
   const elapsed = Date.now() - stageStartedAt;
   const remaining = Math.max(0, cfg.minMs - elapsed);
-  if (remaining === 0) return <div style={{ fontSize: 10, color: '#4caf50' }}>⏰ Süre tamamlandı!</div>;
+  if (remaining === 0) return <div style={{ fontSize: 10, color: '#4caf50' }}>⏰ {t('Süre tamamlandı!')}</div>;
   const h = Math.floor(remaining / 3600_000);
   const m = Math.floor((remaining % 3600_000) / 60_000);
-  return <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>⏱ {h}s {m}dk kaldı</div>;
+  return <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>⏱ {t('{h}s {m}dk kaldı', { h, m })}</div>;
 }
 
 function BPProgress({ bp, stage }) {
@@ -78,7 +80,7 @@ function BPProgress({ bp, stage }) {
   return (
     <div style={{ marginBottom: 6 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>
-        <span>BÜYÜME PUANI</span><span>{bp}/{cfg.bp}</span>
+        <span>{t('BÜYÜME PUANI')}</span><span>{bp}/{cfg.bp}</span>
       </div>
       <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3 }}>
         <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, #ce93d8, #ab47bc)', borderRadius: 3 }} />
@@ -88,6 +90,7 @@ function BPProgress({ bp, stage }) {
 }
 
 function FoalCard({ foal, onFlash }) {
+  useLang();
   const feedFoal = useGameStore(s => s.feedFoal);
   const groomFoal = useGameStore(s => s.groomFoal);
   const trainFoal = useGameStore(s => s.trainFoal);
@@ -103,7 +106,7 @@ function FoalCard({ foal, onFlash }) {
   const [nameInput, setNameInput] = useState('');
   const saveName = () => {
     const res = renameFoal(foal.id, nameInput);
-    if (res.ok) { setEditingName(false); onFlash('✏️ İsim güncellendi'); }
+    if (res.ok) { setEditingName(false); onFlash('✏️ ' + t('İsim güncellendi')); }
     else onFlash(`❌ ${res.reason}`);
   };
 
@@ -156,13 +159,13 @@ function FoalCard({ foal, onFlash }) {
               <button
                 onClick={() => { setNameInput(foal.name); setEditingName(true); }}
                 style={{ ...nameBtn, opacity: 0.7 }}
-                title="İsmi değiştir"
+                title={t('İsmi değiştir')}
               >✏️</button>
             </div>
           )}
           <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)' }}>
-            {foal.source === 'breed' ? '🧬 Çiftleştirme' : '🏪 Mağaza'}
-            {foal.genes.trait && <span style={{ marginLeft: 6, color: '#ffd700' }}>{TRAITS[foal.genes.trait]?.label}</span>}
+            {foal.source === 'breed' ? '🧬 ' + t('Çiftleştirme') : '🏪 ' + t('Mağaza')}
+            {foal.genes.trait && <span style={{ marginLeft: 6, color: '#ffd700' }}>{t(TRAITS[foal.genes.trait]?.label ?? '')}</span>}
           </div>
         </div>
         <div style={{ width: 48, height: 48, borderRadius: '50%', background: foal.genes.bodyColor, border: `3px solid ${foal.genes.maneColor}` }} />
@@ -175,19 +178,19 @@ function FoalCard({ foal, onFlash }) {
           <Countdown stageStartedAt={foal.stageStartedAt} stage={foal.stage} />
           <BPProgress bp={foal.bp} stage={foal.stage} />
           <div style={{ marginTop: 4 }}>
-            <MeterBar label="TOKLUK" value={foal.tokluk} color={foal.tokluk < 20 ? '#ef5350' : '#66bb6a'} />
-            <MeterBar label="MUTLULUK" value={foal.mutluluk} color="#42a5f5" />
+            <MeterBar label={t('TOKLUK')} value={foal.tokluk} color={foal.tokluk < 20 ? '#ef5350' : '#66bb6a'} />
+            <MeterBar label={t('MUTLULUK')} value={foal.mutluluk} color="#42a5f5" />
             <BondDots value={foal.bag} />
           </div>
-          {foal.tokluk < 20 && <div style={{ fontSize: 9, color: '#ef5350', marginTop: 4 }}>⚠️ Tokluk düşük – büyüme durdu!</div>}
+          {foal.tokluk < 20 && <div style={{ fontSize: 9, color: '#ef5350', marginTop: 4 }}>⚠️ {t('Tokluk düşük – büyüme durdu!')}</div>}
         </>
       )}
 
       {isMature && (
         <div style={{ textAlign: 'center', padding: '8px 0', color: '#ffd700', fontWeight: 700, fontSize: 12 }}>
-          🎉 Olgunlaştı! Ahıra eklenmeye hazır.
+          🎉 {t('Olgunlaştı! Ahıra eklenmeye hazır.')}
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
-            Hız {foal.genes.speedMult.toFixed(2)}x · Manevra {foal.genes.maneuvMult.toFixed(2)}x · Zıplama {foal.genes.jumpMult.toFixed(2)}x
+            {t('Hız')} {foal.genes.speedMult.toFixed(2)}x · {t('Manevra')} {foal.genes.maneuvMult.toFixed(2)}x · {t('Zıplama')} {foal.genes.jumpMult.toFixed(2)}x
           </div>
         </div>
       )}
@@ -199,48 +202,48 @@ function FoalCard({ foal, onFlash }) {
             <button
               style={{ ...SC.actionBtn, background: canFeed ? '#388e3c' : '#2a2a2a', opacity: canFeed ? 1 : 0.5 }}
               onClick={() => {
-                if (carrots < 15) { onFlash('❌ Yetersiz havuç (15 gerekli)'); return; }
-                if (feedsToday >= FEED_MAX_DAY) { onFlash(`❌ Günlük limit doldu (${FEED_MAX_DAY}/${FEED_MAX_DAY})`); return; }
+                if (carrots < 15) { onFlash('❌ ' + t('Yetersiz havuç (15 gerekli)')); return; }
+                if (feedsToday >= FEED_MAX_DAY) { onFlash('❌ ' + t('Günlük limit doldu ({a}/{b})', { a: FEED_MAX_DAY, b: FEED_MAX_DAY })); return; }
                 const ok = feedFoal(foal.id);
-                onFlash(ok ? `🥕 Beslendi! (${feedsToday+1}/${FEED_MAX_DAY})` : '❌ Beslenemedi');
+                onFlash(ok ? '🥕 ' + t('Beslendi! ({a}/{b})', { a: feedsToday+1, b: FEED_MAX_DAY }) : '❌ ' + t('Beslenemedi'));
               }}
             >
-              🥕 BESLE<br /><span style={{ fontSize: 8 }}>15 havuç</span>
+              🥕 {t('BESLE')}<br /><span style={{ fontSize: 8 }}>{t('15 havuç')}</span>
             </button>
             <button
               style={{ ...SC.actionBtn, background: groomReady ? '#1565c0' : '#2a2a2a', opacity: groomReady ? 1 : 0.5 }}
               onClick={() => {
-                if (!groomReady) { const h = Math.floor((GROOM_COOLDOWN_MS - (now - foal.lastGroomedAt)) / 3600_000); onFlash(`❌ ${h}s sonra tımarlanabilir`); return; }
-                const ok = groomFoal(foal.id); onFlash(ok ? '✨ Tımarlandı! +1BAĞ' : 'Cooldown devam ediyor');
+                if (!groomReady) { const h = Math.floor((GROOM_COOLDOWN_MS - (now - foal.lastGroomedAt)) / 3600_000); onFlash('❌ ' + t('{h}s sonra tımarlanabilir', { h })); return; }
+                const ok = groomFoal(foal.id); onFlash(ok ? '✨ ' + t('Tımarlandı! +1 BAĞ') : t('Bekleme süresi devam ediyor'));
               }}
             >
-              ✨ TIMARLA<br /><span style={{ fontSize: 8 }}>Ücretsiz</span>
+              ✨ {t('TIMARLA')}<br /><span style={{ fontSize: 8 }}>{t('Ücretsiz')}</span>
             </button>
             <button
               style={{ ...SC.actionBtn, background: trainReady ? '#6a1b9a' : '#2a2a2a', opacity: trainReady ? 1 : 0.5 }}
               onClick={() => {
-                if (!trainReady) { onFlash('❌ Bugün antrenman yapıldı'); return; }
-                const ok = trainFoal(foal.id); onFlash(ok ? '🏃 Antrenman yapıldı! +20BP +1BAĞ' : 'Cooldown devam ediyor');
+                if (!trainReady) { onFlash('❌ ' + t('Bugün antrenman yapıldı')); return; }
+                const ok = trainFoal(foal.id); onFlash(ok ? '🏃 ' + t('Antrenman yapıldı! +20 BP +1 BAĞ') : t('Bekleme süresi devam ediyor'));
               }}
             >
-              🏃 ANTRENMAN<br /><span style={{ fontSize: 8 }}>Günde 1</span>
+              🏃 {t('ANTRENMAN')}<br /><span style={{ fontSize: 8 }}>{t('Günde 1')}</span>
             </button>
           </>
         )}
         {canAdvance && (
           <button
             style={{ ...SC.actionBtn, background: 'linear-gradient(135deg,#f57f17,#e65100)', flex: 1 }}
-            onClick={() => { advanceStageIfReady(foal.id); onFlash('🌟 Aşama geçildi!'); }}
+            onClick={() => { advanceStageIfReady(foal.id); onFlash('🌟 ' + t('Aşama geçildi!')); }}
           >
-            🌟 AŞAMA GEÇER
+            🌟 {t('AŞAMA GEÇER')}
           </button>
         )}
         {isMature && (
           <button
             style={{ ...SC.actionBtn, background: 'linear-gradient(135deg,#ffd700,#ff8f00)', flex: 1, color: '#000' }}
-            onClick={() => { const h = matureFoal(foal.id); onFlash(h ? `🐴 ${h.name} atlarına katıldı!` : 'Hata'); }}
+            onClick={() => { const h = matureFoal(foal.id); onFlash(h ? '🐴 ' + t('{name} atlarına katıldı!', { name: h.name }) : t('Hata')); }}
           >
-            🐴 AHIRA EKLE
+            🐴 {t('AHIRA EKLE')}
           </button>
         )}
       </div>
@@ -251,17 +254,17 @@ function FoalCard({ foal, onFlash }) {
           <button
             style={{ ...SC.actionBtn, flex: 1, background: carrots >= rushCost(foal.id) ? 'linear-gradient(135deg,#ff9f43,#e17055)' : 'rgba(255,255,255,0.1)', opacity: carrots >= rushCost(foal.id) ? 1 : 0.5 }}
             disabled={carrots < rushCost(foal.id)}
-            onClick={() => { if (rushFoalStage(foal.id, false)) onFlash('⏩ Süre atlandı!'); }}
+            onClick={() => { if (rushFoalStage(foal.id, false)) onFlash('⏩ ' + t('Süre atlandı!')); }}
           >
-            ⏩ HIZLANDIR<br /><span style={{ fontSize: 9 }}>{rushCost(foal.id)} 🥕</span>
+            ⏩ {t('HIZLANDIR')}<br /><span style={{ fontSize: 9 }}>{rushCost(foal.id)} 🥕</span>
           </button>
           <div style={{ flex: 1 }}>
             <AdButton
-              label="Ücretsiz hızlandır"
-              sub="Reklam izle → süre atlanır"
+              label={t('Ücretsiz hızlandır')}
+              sub={t('Reklam izle → süre atlanır')}
               color="#00cfff"
               compact
-              onReward={() => { if (rushFoalStage(foal.id, true)) onFlash('⏩ Süre atlandı!'); }}
+              onReward={() => { if (rushFoalStage(foal.id, true)) onFlash('⏩ ' + t('Süre atlandı!')); }}
             />
           </div>
         </div>
@@ -271,14 +274,14 @@ function FoalCard({ foal, onFlash }) {
       {!isMature && (!groomReady || !trainReady) && (
         <div style={{ marginTop: 8 }}>
           <AdButton
-            label={!groomReady && !trainReady ? 'Bekleme sürelerini atla' : !groomReady ? 'Tımar beklemesini atla' : 'Antrenman beklemesini atla'}
-            sub="Reklam izle → hemen tekrar bakım yap"
+            label={!groomReady && !trainReady ? t('Bekleme sürelerini atla') : !groomReady ? t('Tımar beklemesini atla') : t('Antrenman beklemesini atla')}
+            sub={t('Reklam izle → hemen tekrar bakım yap')}
             color="#9ad0ff"
             compact
             onReward={() => {
               if (!groomReady) skipFoalCooldown(foal.id, 'groom');
               if (!trainReady) skipFoalCooldown(foal.id, 'train');
-              onFlash('⏩ Bekleme süresi atlandı');
+              onFlash('⏩ ' + t('Bekleme süresi atlandı'));
             }}
           />
         </div>
@@ -288,6 +291,7 @@ function FoalCard({ foal, onFlash }) {
 }
 
 function BreedModal({ onClose, onDone }) {
+  useLang();
   const ownedHorseIds = useGameStore(s => s.ownedHorseIds);
   const carrots = useGameStore(s => s.carrots);
   const breedFoal = useGameStore(s => s.breedFoal);
@@ -317,12 +321,12 @@ function BreedModal({ onClose, onDone }) {
     <div style={{ ...SC.modal }}>
       <div style={{ ...SC.modalBox }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🧬 ÇİFTLEŞTİRME</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🧬 {t('ÇİFTLEŞTİRME')}</span>
           <button style={SC.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-          {[['Ebeveyn A', selA, setSelA, selB], ['Ebeveyn B', selB, setSelB, selA]].map(([lbl, sel, setSel, other]) => (
+          {[[t('Ebeveyn A'), selA, setSelA, selB], [t('Ebeveyn B'), selB, setSelB, selA]].map(([lbl, sel, setSel, other]) => (
             <div key={lbl}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>{lbl}</div>
               <select
@@ -331,7 +335,7 @@ function BreedModal({ onClose, onDone }) {
                 style={{ width: '100%', background: '#1a1a2e', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 6, padding: '6px 8px', fontFamily: 'var(--game-font)', fontSize: 11 }}
               >
                 {available.filter(h => h.id !== other).map(h => (
-                  <option key={h.id} value={h.id}>{h.name}</option>
+                  <option key={h.id} value={h.id}>{t(h.name)}</option>
                 ))}
               </select>
             </div>
@@ -340,10 +344,10 @@ function BreedModal({ onClose, onDone }) {
 
         {previewGenes && (
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-            <div style={{ color: '#ffd700', fontWeight: 700, marginBottom: 4 }}>Tahmini Özellikler (±%10 varyasyon)</div>
-            <div>Hız: ~{previewGenes.speedMult.toFixed(2)}x &nbsp; Manevra: ~{previewGenes.maneuvMult.toFixed(2)}x</div>
-            <div>Zıplama: ~{previewGenes.jumpMult.toFixed(2)}x &nbsp; Max Hız: ~{previewGenes.maxSpeed.toFixed(0)}</div>
-            <div style={{ color: '#ce93d8', marginTop: 4 }}>%5 nadir özellik şansı</div>
+            <div style={{ color: '#ffd700', fontWeight: 700, marginBottom: 4 }}>{t('Tahmini Özellikler (±%10 varyasyon)')}</div>
+            <div>{t('Hız')}: ~{previewGenes.speedMult.toFixed(2)}x &nbsp; {t('Manevra')}: ~{previewGenes.maneuvMult.toFixed(2)}x</div>
+            <div>{t('Zıplama')}: ~{previewGenes.jumpMult.toFixed(2)}x &nbsp; {t('Max Hız')}: ~{previewGenes.maxSpeed.toFixed(0)}</div>
+            <div style={{ color: '#ce93d8', marginTop: 4 }}>{t('%5 nadir özellik şansı')}</div>
           </div>
         )}
 
@@ -353,8 +357,8 @@ function BreedModal({ onClose, onDone }) {
         {breedCooldownActive && (
           <div style={{ marginBottom: 10 }}>
             <AdButton
-              label="Çiftleştirme beklemesini atla"
-              sub="Reklam izle → hemen çiftleştir"
+              label={t('Çiftleştirme beklemesini atla')}
+              sub={t('Reklam izle → hemen çiftleştir')}
               color="#ce93d8"
               compact
               onReward={() => { skipFoalCooldown(null, 'breed'); setErr(''); }}
@@ -363,17 +367,17 @@ function BreedModal({ onClose, onDone }) {
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: canBreed ? '#ffd700' : '#ff6666', fontWeight: 700 }}>🥕 {BREED_COST} havuç</span>
+          <span style={{ color: canBreed ? '#ffd700' : '#ff6666', fontWeight: 700 }}>🥕 {BREED_COST} {t('havuç')}</span>
           <button
             style={{ ...SC.actionBtn, background: canBreed ? 'linear-gradient(135deg,#c8a000,#a07800)' : '#3a2a2a', opacity: canBreed ? 1 : 0.5, padding: '10px 24px' }}
             disabled={!canBreed}
             onClick={() => {
               const res = breedFoal(selA, selB);
               if (res.ok) { onDone(res.foal); }
-              else setErr(res.reason);
+              else setErr(t(res.reason));
             }}
           >
-            🧬 ÇİFTLEŞTİR
+            🧬 {t('ÇİFTLEŞTİR')}
           </button>
         </div>
       </div>
@@ -382,6 +386,7 @@ function BreedModal({ onClose, onDone }) {
 }
 
 function ShopModal({ onClose, onDone }) {
+  useLang();
   const carrots = useGameStore(s => s.carrots);
   const buyFoal = useGameStore(s => s.buyFoal);
   const [err, setErr] = useState('');
@@ -390,13 +395,13 @@ function ShopModal({ onClose, onDone }) {
     <div style={SC.modal}>
       <div style={SC.modalBox}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🏪 YAVRU SATIN AL</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🏪 {t('YAVRU SATIN AL')}</span>
           <button style={SC.closeBtn} onClick={onClose}>✕</button>
         </div>
         {err && <div style={{ color: '#ef5350', fontSize: 11, marginBottom: 8 }}>{err}</div>}
         {[
-          { tier: 1, cost: SHOP_TIER1_COST, label: 'Tier 1 Yavru', desc: 'Temel genetik · Hız 0.8–1.3x', color: '#66bb6a' },
-          { tier: 2, cost: SHOP_TIER2_COST, label: 'Tier 2 Yavru', desc: 'Gelişmiş genetik · Hız 1.2–1.8x', color: '#42a5f5' },
+          { tier: 1, cost: SHOP_TIER1_COST, label: t('Tier 1 Yavru'), desc: t('Temel genetik · Hız 0.8–1.3x'), color: '#66bb6a' },
+          { tier: 2, cost: SHOP_TIER2_COST, label: t('Tier 2 Yavru'), desc: t('Gelişmiş genetik · Hız 1.2–1.8x'), color: '#42a5f5' },
         ].map(({ tier, cost, label, desc, color }) => (
           <div key={tier} style={{ ...SC.shopTier, borderColor: `${color}44` }}>
             <div>
@@ -406,7 +411,7 @@ function ShopModal({ onClose, onDone }) {
             <button
               style={{ ...SC.actionBtn, background: carrots >= cost ? `linear-gradient(135deg,${color},${color}99)` : '#3a2a2a', opacity: carrots >= cost ? 1 : 0.5, padding: '8px 16px' }}
               disabled={carrots < cost}
-              onClick={() => { const res = buyFoal(tier); if (res.ok) onDone(res.foal); else setErr(res.reason); }}
+              onClick={() => { const res = buyFoal(tier); if (res.ok) onDone(res.foal); else setErr(t(res.reason)); }}
             >
               🥕 {cost}
             </button>
@@ -418,6 +423,7 @@ function ShopModal({ onClose, onDone }) {
 }
 
 export default function Hara() {
+  useLang();
   const foals = useGameStore(s => s.foals);
   const stableSlots = useGameStore(s => s.stableSlots);
   const bonusSlots = useGameStore(s => s.bonusSlots);
@@ -446,15 +452,15 @@ export default function Hara() {
       {/* Slot info */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
-          Ahır: {foals.length}/{totalSlots} slot{bonusSlots > 0 ? ` (+${bonusSlots} geçici)` : ''}
+          {t('Ahır:')} {foals.length}/{totalSlots} {t('slot')}{bonusSlots > 0 ? ` (+${bonusSlots} ${t('geçici')})` : ''}
         </span>
         {foals.length >= totalSlots && (
           <button
             style={{ ...SC.actionBtn, padding: '6px 14px', fontSize: 10, background: carrots >= 1000 ? 'linear-gradient(135deg,#c8a000,#a07800)' : '#3a2a2a', opacity: carrots >= 1000 ? 1 : 0.5 }}
             disabled={carrots < 1000}
-            onClick={() => { const ok = buyStableSlot(); doFlash(ok ? '🏠 Yeni slot açıldı!' : 'Yetersiz havuç'); }}
+            onClick={() => { const ok = buyStableSlot(); doFlash(ok ? '🏠 ' + t('Yeni slot açıldı!') : t('Yetersiz havuç')); }}
           >
-            🏠 +Slot (🥕 1000)
+            🏠 +{t('Slot')} (🥕 1000)
           </button>
         )}
       </div>
@@ -462,12 +468,12 @@ export default function Hara() {
       {/* Ahır dolu → reklamla geçici slot */}
       {foals.length >= totalSlots && (
         <AdButton
-          label="Geçici +1 ahır slotu"
-          sub="Bu oturum için ekstra slot (1000 havuç değerinde)"
+          label={t('Geçici +1 ahır slotu')}
+          sub={t('Bu oturum için ekstra slot (1000 havuç değerinde)')}
           ads={5}
           color="#c8a0ff"
           compact
-          onReward={() => { addTempStableSlot(); doFlash('🏠 Geçici slot eklendi'); }}
+          onReward={() => { addTempStableSlot(); doFlash('🏠 ' + t('Geçici slot eklendi')); }}
         />
       )}
 
@@ -480,30 +486,30 @@ export default function Hara() {
       {foals.length < totalSlots && (
         <div style={SC.emptySlot}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>🐣</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>Ahır boş</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>{t('Ahır boş')}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button style={{ ...SC.actionBtn, background: 'linear-gradient(135deg,#7b1fa2,#4a148c)', padding: '10px 20px' }} onClick={() => setModal('breed')}>
-              🧬 ÇİFTLEŞTİR
+              🧬 {t('ÇİFTLEŞTİR')}
             </button>
             <button style={{ ...SC.actionBtn, background: 'linear-gradient(135deg,#1565c0,#0d47a1)', padding: '10px 20px' }} onClick={() => setModal('shop')}>
-              🏪 SATIN AL
+              🏪 {t('SATIN AL')}
             </button>
           </div>
           {/* Reklam izle → bedava şanslı tay (yüksek istatistik) */}
           <div style={{ width: '100%', marginTop: 10 }}>
             <AdButton
-              label="Şanslı tay (bedava)"
-              sub="Reklam izle → yüksek istatistikli tay"
+              label={t('Şanslı tay (bedava)')}
+              sub={t('Reklam izle → yüksek istatistikli tay')}
               color="#ffd700"
               compact
-              onReward={() => { const r = buyFoalLucky(1); doFlash(r.ok ? `🍀 ${r.foal.name} geldi!` : `❌ ${r.reason}`); }}
+              onReward={() => { const r = buyFoalLucky(1); doFlash(r.ok ? '🍀 ' + t('{name} geldi!', { name: r.foal.name }) : `❌ ${t(r.reason)}`); }}
             />
           </div>
         </div>
       )}
 
-      {modal === 'breed' && <BreedModal onClose={closeModal} onDone={foal => { closeModal(); doFlash(`🐴 ${foal.name} doğdu!`); }} />}
-      {modal === 'shop'  && <ShopModal  onClose={closeModal} onDone={foal => { closeModal(); doFlash(`🐴 ${foal.name} geldi!`); }} />}
+      {modal === 'breed' && <BreedModal onClose={closeModal} onDone={foal => { closeModal(); doFlash('🐴 ' + t('{name} doğdu!', { name: foal.name })); }} />}
+      {modal === 'shop'  && <ShopModal  onClose={closeModal} onDone={foal => { closeModal(); doFlash('🐴 ' + t('{name} geldi!', { name: foal.name })); }} />}
     </div>
   );
 }

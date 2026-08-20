@@ -10,6 +10,8 @@ import Hara from './Hara';
 import AdButton from '@/components/ui/AdButton';
 import { AD_UPGRADE_DISCOUNT } from '@/constants/game';
 import { POWERUPS, POWERUP_MAX_LEVEL, powerupDuration, powerupUpgradeCost } from '@/constants/powerups';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 const CHAR_BASE = '/assets/models/characters/';
 const MODEL_PATH = '/assets/models/horse.glb';
@@ -136,6 +138,7 @@ function HorsePreview3D({ variant }) {
 
 // ── Main Garage ───────────────────────────────────────────────────────────────
 export default function Garage() {
+  useLang();
   const showGarage          = useGameStore(s => s.showGarage);
   const closeGarage         = useGameStore(s => s.closeGarage);
   const garageOpenTab       = useGameStore(s => s.garageOpenTab);
@@ -180,6 +183,7 @@ export default function Garage() {
   if (!showGarage) return null;
 
   const doFlash = (msg) => { setFlash(msg); setTimeout(() => setFlash(''), 1500); };
+  const flashBad = flash.includes('YETERSİZ');
 
   // ── Jockey action ─────────────────────────────────────────────────────────
   const previewChar = CHARACTERS.find(c => c.id === charPreview) ?? CHARACTERS[0];
@@ -218,14 +222,14 @@ export default function Garage() {
       <div style={S.panel}>
         {/* Header */}
         <div style={S.header}>
-          <span style={S.title}>🏇 MAĞAZA</span>
+          <span style={S.title}>🏇 {t('MAĞAZA')}</span>
           <span style={S.gold}>🥕 {carrots}</span>
           <button style={S.closeBtn} onClick={closeGarage}>✕</button>
         </div>
 
         {/* Tabs */}
         <div style={S.tabs}>
-          {[['jockey','🥷 JOKEYLERİM'],['horse','🐴 ATLARIM'],['hara','🐣 HARA'],['powerups','⚡ YETENEKLER']].map(([id, label]) => (
+          {[['jockey','🥷 '+t('JOKEYLERİM')],['horse','🐴 '+t('ATLARIM')],['hara','🐣 '+t('HARA')],['powerups','⚡ '+t('YETENEKLER')]].map(([id, label]) => (
             <button
               key={id}
               style={{ ...S.tab, ...(tab === id ? S.tabActive : {}) }}
@@ -254,10 +258,10 @@ export default function Garage() {
                     onClick={() => setCharPreview(c.id)}
                   >
                     <div style={S.cardEmoji}>{c.emoji}</div>
-                    <div style={S.cardName}>{c.name}</div>
-                    {selected && <div style={S.badge}>✓ AKTİF</div>}
+                    <div style={S.cardName}>{t(c.name)}</div>
+                    {selected && <div style={S.badge}>✓ {t('AKTİF')}</div>}
                     {!owned  && <div style={{ ...S.cardPrice, color: carrots >= c.price ? '#ffd700' : '#ff6666' }}>🥕 {c.price}</div>}
-                    {owned && !selected && <div style={{ ...S.cardPrice, color: '#aaa' }}>SAHİPSİN</div>}
+                    {owned && !selected && <div style={{ ...S.cardPrice, color: '#aaa' }}>{t('SAHİPSİN')}</div>}
                   </div>
                 );
               })}
@@ -266,16 +270,16 @@ export default function Garage() {
             {/* 3D Preview */}
             <div style={{ ...S.preview, borderColor: previewChar.color }}>
               <CharPreview3D charFile={previewChar.file} accentColor={previewChar.color} />
-              <div style={{ ...S.previewName, color: previewChar.color }}>{previewChar.name}</div>
-              <div style={S.previewDesc}>{previewChar.desc}</div>
+              <div style={{ ...S.previewName, color: previewChar.color }}>{t(previewChar.name)}</div>
+              <div style={S.previewDesc}>{t(previewChar.desc)}</div>
               {!charOwned && (
                 <div style={S.priceRow}>
                   <span style={{ color: carrots >= previewChar.price ? '#ffd700' : '#ff6666', fontWeight: 700, fontSize: 18 }}>🥕 {previewChar.price}</span>
-                  <span style={S.priceSub}>havuç</span>
+                  <span style={S.priceSub}>{t('havuç')}</span>
                 </div>
               )}
               {flash ? (
-                <div style={{ ...S.actionBtn, background: flash.includes('YETERSİZ') ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{flash}</div>
+                <div style={{ ...S.actionBtn, background: flashBad ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{t(flash)}</div>
               ) : (
                 <button
                   style={{ ...S.actionBtn,
@@ -285,7 +289,7 @@ export default function Garage() {
                   onClick={handleCharAction}
                   disabled={charSel}
                 >
-                  {charSel ? '✓ SEÇİLİ' : charOwned ? '🐴 SEÇ' : '🥕 SATIN AL'}
+                  {charSel ? '✓ ' + t('SEÇİLİ') : charOwned ? '🐴 ' + t('SEÇ') : '🥕 ' + t('SATIN AL')}
                 </button>
               )}
             </div>
@@ -311,10 +315,10 @@ export default function Garage() {
                   >
                     {/* Color swatch */}
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: h.bodyColor, border: `3px solid ${h.maneColor}`, marginBottom: 4 }} />
-                    <div style={S.cardName}>{h.name}</div>
-                    {selected && <div style={S.badge}>✓ AKTİF</div>}
+                    <div style={S.cardName}>{t(h.name)}</div>
+                    {selected && <div style={S.badge}>✓ {t('AKTİF')}</div>}
                     {!owned && <div style={{ ...S.cardPrice, color: carrots >= h.price ? '#ffd700' : '#ff6666' }}>🥕 {h.price}</div>}
-                    {owned && !selected && <div style={{ ...S.cardPrice, color: '#aaa' }}>SAHİPSİN</div>}
+                    {owned && !selected && <div style={{ ...S.cardPrice, color: '#aaa' }}>{t('SAHİPSİN')}</div>}
                   </div>
                 );
               })}
@@ -323,8 +327,8 @@ export default function Garage() {
             {/* 3D Horse Preview */}
             <div style={{ ...S.preview, borderColor: previewHorse.accentColor }}>
               <HorsePreview3D variant={previewHorse} />
-              <div style={{ ...S.previewName, color: previewHorse.accentColor }}>{previewHorse.name}</div>
-              <div style={S.previewDesc}>{previewHorse.desc}</div>
+              <div style={{ ...S.previewName, color: previewHorse.accentColor }}>{t(previewHorse.name)}</div>
+              <div style={S.previewDesc}>{t(previewHorse.desc)}</div>
 
               {/* 3-stat upgrade section */}
               {horseOwned && (() => {
@@ -339,12 +343,12 @@ export default function Garage() {
                     {/* Reklam izle → sonraki yükseltme %50 indirimli */}
                     {upgradeDiscount ? (
                       <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#33ff99', letterSpacing: 1, padding: '6px', border: '1px solid #33ff9955', borderRadius: 8 }}>
-                        ✓ İNDİRİM AKTİF — sonraki yükseltme %50
+                        ✓ {t('İNDİRİM AKTİF — sonraki yükseltme %50')}
                       </div>
                     ) : (
                       <AdButton
-                        label="Yükseltmede %50 indirim"
-                        sub="Reklam izle → sonraki yükseltme yarı fiyat"
+                        label={t('Yükseltmede %50 indirim')}
+                        sub={t('Reklam izle → sonraki yükseltme yarı fiyat')}
                         color="#33ff99"
                         compact
                         onReward={() => armUpgradeDiscount()}
@@ -361,8 +365,8 @@ export default function Garage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
                             <span style={{ fontSize: 18 }}>{icon}</span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color }}>{label}</div>
-                              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{sub}</div>
+                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color }}>{t(label)}</div>
+                              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{t(sub)}</div>
                               {/* Progress bar */}
                               <div style={{ display: 'flex', gap: 3, marginTop: 5 }}>
                                 {Array.from({ length: 5 }, (_, i) => (
@@ -374,12 +378,12 @@ export default function Garage() {
                                 ))}
                               </div>
                               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
-                                SEVİYE {lvl}/5
+                                {t('SEVİYE')} {lvl}/5
                               </div>
                             </div>
                           </div>
                           {maxed ? (
-                            <div style={S.maxBadge}>MAKSİMUM</div>
+                            <div style={S.maxBadge}>{t('MAKSİMUM')}</div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 80 }}>
                               <span style={{ fontSize: 11, fontWeight: 700, color: canAfford ? '#ffd700' : '#ff6666' }}>🥕 {cost}</span>
@@ -388,11 +392,11 @@ export default function Garage() {
                                 onClick={() => {
                                   const ok = upgradeHorseStat(previewHorse.id, key);
                                   if (!ok) doFlash('YETERSİZ HAVUÇ!');
-                                  else doFlash(`${label} SEVİYE ${lvl + 1}!`);
+                                  else doFlash(`${t(label)} ${t('SEVİYE')} ${lvl + 1}!`);
                                 }}
                                 disabled={!canAfford}
                               >
-                                ↑ YÜKSELTİ
+                                ↑ {t('YÜKSELT')}
                               </button>
                             </div>
                           )}
@@ -406,11 +410,11 @@ export default function Garage() {
               {!horseOwned && (
                 <div style={S.priceRow}>
                   <span style={{ color: carrots >= previewHorse.price ? '#ffd700' : '#ff6666', fontWeight: 700, fontSize: 18 }}>🥕 {previewHorse.price}</span>
-                  <span style={S.priceSub}>havuç</span>
+                  <span style={S.priceSub}>{t('havuç')}</span>
                 </div>
               )}
               {flash ? (
-                <div style={{ ...S.actionBtn, background: flash.includes('YETERSİZ') ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{flash}</div>
+                <div style={{ ...S.actionBtn, background: flashBad ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{t(flash)}</div>
               ) : (
                 <button
                   style={{ ...S.actionBtn,
@@ -420,7 +424,7 @@ export default function Garage() {
                   onClick={handleHorseAction}
                   disabled={horseSel}
                 >
-                  {horseSel ? '✓ SEÇİLİ' : horseOwned ? '🐴 SEÇ' : '🥕 SATIN AL'}
+                  {horseSel ? '✓ ' + t('SEÇİLİ') : horseOwned ? '🐴 ' + t('SEÇ') : '🥕 ' + t('SATIN AL')}
                 </button>
               )}
             </div>
@@ -434,10 +438,10 @@ export default function Garage() {
         {tab === 'powerups' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: 1, textAlign: 'center' }}>
-              Koşuda yolda beliren yetenekleri topla. Havuçla geliştir → süreleri uzasın!
+              {t('Koşuda yolda beliren yetenekleri topla. Havuçla geliştir → süreleri uzasın!')}
             </div>
             {flash && (
-              <div style={{ ...S.actionBtn, background: flash.includes('YETERSİZ') ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{flash}</div>
+              <div style={{ ...S.actionBtn, background: flashBad ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{t(flash)}</div>
             )}
             {POWERUPS.map(p => {
               const lvl    = powerupLevels[p.id] ?? 0;
@@ -451,8 +455,8 @@ export default function Garage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
                     <span style={{ fontSize: 24 }}>{p.emoji}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: p.color }}>{p.name}</div>
-                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{p.desc}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: p.color }}>{t(p.name)}</div>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{t(p.desc)}</div>
                       <div style={{ display: 'flex', gap: 3, marginTop: 5 }}>
                         {Array.from({ length: POWERUP_MAX_LEVEL }, (_, i) => (
                           <div key={i} style={{
@@ -463,12 +467,12 @@ export default function Garage() {
                         ))}
                       </div>
                       <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
-                        SEVİYE {lvl}/{POWERUP_MAX_LEVEL} — Süre: {curDur.toFixed(1)}s{!maxed && ` → ${nextDur.toFixed(1)}s`}
+                        {t('SEVİYE')} {lvl}/{POWERUP_MAX_LEVEL} — {t('Süre:')} {curDur.toFixed(1)}s{!maxed && ` → ${nextDur.toFixed(1)}s`}
                       </div>
                     </div>
                   </div>
                   {maxed ? (
-                    <div style={S.maxBadge}>MAKSİMUM</div>
+                    <div style={S.maxBadge}>{t('MAKSİMUM')}</div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 80 }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: canAfford ? '#ffd700' : '#ff6666' }}>🥕 {cost}</span>
@@ -477,11 +481,11 @@ export default function Garage() {
                         onClick={() => {
                           const ok = upgradePowerup(p.id);
                           if (!ok) doFlash('YETERSİZ HAVUÇ!');
-                          else doFlash(`${p.name} SEVİYE ${lvl + 1}!`);
+                          else doFlash(`${t(p.name)} ${t('SEVİYE')} ${lvl + 1}!`);
                         }}
                         disabled={!canAfford}
                       >
-                        ↑ YÜKSELT
+                        ↑ {t('YÜKSELT')}
                       </button>
                     </div>
                   )}

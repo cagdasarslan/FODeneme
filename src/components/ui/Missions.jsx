@@ -1,7 +1,10 @@
 import useGameStore from '@/store/useGameStore';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // Görev sekmesi modalı: günlük görevler + günlük ödül + liderlik kısayolları
 export default function Missions({ onClose, onDaily, onLeaderboard }) {
+  useLang();
   const dailyCarrots   = useGameStore(s => s.dailyCarrots);
   const missionClaimed = useGameStore(s => s.missionClaimed);
   const getMissions    = useGameStore(s => s.getMissions);
@@ -23,20 +26,20 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
     <div style={S.modal}>
       <div style={S.box}>
         <div style={S.header}>
-          <span style={S.title}>🎯 GÖREVLER</span>
+          <span style={S.title}>🎯 {t('GÖREVLER')}</span>
           <button style={S.close} onClick={onClose}>✕</button>
         </div>
 
         <button style={{ ...S.bigBtn, ...S.dailyBtn }} onClick={onDaily}>
-          🎁 GÜNLÜK ÖDÜL
+          🎁 {t('GÜNLÜK ÖDÜL')}
           {canClaimStreak && <span style={S.dot} />}
         </button>
 
-        <div style={S.sectionLabel}>GÜNLÜK GÖREVLER</div>
+        <div style={S.sectionLabel}>{t('GÜNLÜK GÖREVLER')}</div>
         {missions.map(m => (
           <div key={m.id} style={S.row}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={S.label}>{m.label}</div>
+              <div style={S.label}>{t(m.label)}</div>
               <div style={S.barBg}>
                 <div style={{ ...S.barFill, width: `${(m.progress / m.target) * 100}%`, background: m.done ? '#33ff99' : '#ffd700' }} />
               </div>
@@ -53,11 +56,11 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
         ))}
 
         {/* Haftalık görevler — pazartesi sıfırlanır, büyük ödül */}
-        <div style={{ ...S.sectionLabel, marginTop: 18, color: 'rgba(140,180,255,0.85)' }}>HAFTALIK GÖREVLER</div>
+        <div style={{ ...S.sectionLabel, marginTop: 18, color: 'rgba(140,180,255,0.85)' }}>{t('HAFTALIK GÖREVLER')}</div>
         {weekly.map(m => (
           <div key={m.id} style={S.row}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={S.label}>{m.label}</div>
+              <div style={S.label}>{t(m.label)}</div>
               <div style={S.barBg}>
                 <div style={{ ...S.barFill, width: `${(m.progress / m.target) * 100}%`, background: m.done ? '#33ff99' : '#6a9fff' }} />
               </div>
@@ -74,12 +77,12 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
         ))}
 
         {/* Başarımlar — kalıcı hedefler */}
-        <div style={{ ...S.sectionLabel, marginTop: 18 }}>BAŞARIMLAR</div>
+        <div style={{ ...S.sectionLabel, marginTop: 18 }}>{t('BAŞARIMLAR')}</div>
         {achievements.map(a => (
           <div key={a.id} style={S.row}>
             <span style={{ fontSize: 18 }}>{a.emoji}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={S.label}>{a.label}</div>
+              <div style={S.label}>{t(a.label)}</div>
               <div style={S.barBg}>
                 <div style={{ ...S.barFill, width: `${(a.progress / a.target) * 100}%`, background: a.done ? '#33ff99' : '#8899ff' }} />
               </div>
@@ -96,7 +99,7 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
         ))}
 
         <button style={{ ...S.bigBtn, ...S.lbBtn }} onClick={onLeaderboard}>
-          🏆 LİDERLİK TABLOSU
+          🏆 {t('LİDERLİK TABLOSU')}
         </button>
       </div>
     </div>

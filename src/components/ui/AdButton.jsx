@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { showRewardedAds } from '@/services/AdService';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // Ödüllü reklam butonu — N reklamı SIRAYLA gösterir, HEPSİ bitmeden ödül vermez.
 // İzleme sırasında tam ekran "Reklam X/N" katmanı kalır (erken kapanmaz).
@@ -7,6 +9,7 @@ export default function AdButton({
   label, sub, ads = 1, onReward, color = '#7ce29a', disabled = false, compact = false,
 }) {
   const [busy, setBusy] = useState(false);
+  useLang();
   const [prog, setProg] = useState({ c: 0, t: 0 });
 
   const handle = async () => {
@@ -25,16 +28,16 @@ export default function AdButton({
         disabled={busy || disabled}
         style={{ ...S.btn, ...(compact ? S.compact : {}), borderColor: color, color, opacity: disabled ? 0.4 : 1 }}
       >
-        <span style={S.main}>📺 {label}{ads > 1 ? ` (${ads} reklam)` : ''}</span>
+        <span style={S.main}>📺 {label}{ads > 1 ? ` (${t('{n} reklam', { n: ads })})` : ''}</span>
         {sub && <span style={S.sub}>{sub}</span>}
       </button>
 
       {busy && (
         <div style={S.overlay}>
           <div style={S.spinner}>📺</div>
-          <div style={S.ovTitle}>Reklam izleniyor</div>
+          <div style={S.ovTitle}>{t('Reklam izleniyor')}</div>
           <div style={S.ovCount}>{prog.c} / {prog.t}</div>
-          <div style={S.ovNote}>Ödül için reklamların bitmesini bekleyin…</div>
+          <div style={S.ovNote}>{t('Ödül için reklamların bitmesini bekleyin…')}</div>
         </div>
       )}
     </>

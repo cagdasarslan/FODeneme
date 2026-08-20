@@ -7,11 +7,14 @@ import { HORSES } from '@/constants/horses';
 const TOP_SPEED = Math.max(...HORSES.map(h => h.baseMaxSpeed ?? 40)) * 1.3;
 import TouchPad from '@/components/ui/TouchPad';
 import { POWERUP_IDS, POWERUP_BY_ID } from '@/constants/powerups';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 const isMobile = 'ontouchstart' in window;
 
 // ── Close-call flash mesajları ────────────────────────────────────────────────
 const CLOSE_TEXTS = ['MAKAS!', 'KIL PAYI!', 'ADRENALIN!', 'YAKINDI!', 'ATEŞ!'];
+// çeviri: CLOSE_TEXTS öğeleri gösterilirken t() ile geçirilir
 
 function CloseCallFlash() {
   const [text, setText]     = useState('');
@@ -23,7 +26,7 @@ function CloseCallFlash() {
       (s) => s.adrenaline,
       (adrenaline, prev) => {
         if (adrenaline > prev + 5) {
-          setText(CLOSE_TEXTS[Math.floor(Math.random() * CLOSE_TEXTS.length)]);
+          setText(t(CLOSE_TEXTS[Math.floor(Math.random() * CLOSE_TEXTS.length)]));
           setVisible(true);
           clearTimeout(timerRef.current);
           timerRef.current = setTimeout(() => setVisible(false), 900);
@@ -43,6 +46,7 @@ function CloseCallFlash() {
 
 // ── Ana HUD ───────────────────────────────────────────────────────────────────
 export default function HUD() {
+  useLang();
   // KRİTİK PERFORMANS: skor/hız/adrenalin her frame kesirli değişir. Obje
   // selector her store set'inde yeni referans üretip HUD'u 60fps yeniden
   // render ediyordu (yüksek hızda donmaların ana sebebi). Primitive + floor
@@ -80,7 +84,7 @@ export default function HUD() {
 
   if (phase !== 'playing' && phase !== 'paused') return null;
 
-  const TUT_MSGS = ['👆 ← → kaydırarak şerit değiştir', '👆 ↑ yukarı kaydır = ZIPLA', '👆 ↓ aşağı kaydır = EĞİL'];
+  const TUT_MSGS = [t('👆 ← → kaydırarak şerit değiştir'), t('👆 ↑ yukarı kaydır = ZIPLA'), t('👆 ↓ aşağı kaydır = EĞİL')];
 
   const adrColor = adrenaline > 75 ? '#ff3333' : adrenaline > 40 ? '#ff9900' : '#33aaff';
   const isMaxAdr = adrenaline > 90;
@@ -93,13 +97,13 @@ export default function HUD() {
       {/* Duraklatma ekranı */}
       {phase === 'paused' && (
         <div style={styles.pauseOverlay}>
-          <div style={styles.pauseTitle}>⏸ DURAKLATILDI</div>
-          <div style={styles.pauseScore}>SKOR: {Math.floor(score).toLocaleString()}</div>
+          <div style={styles.pauseTitle}>⏸ {t('DURAKLATILDI')}</div>
+          <div style={styles.pauseScore}>{t('SKOR')}: {Math.floor(score).toLocaleString()}</div>
           <button style={styles.pauseResume} onClick={() => useGameStore.getState().resumeRun()}>
-            ▶ DEVAM ET
+            ▶ {t('DEVAM ET')}
           </button>
           <button style={styles.pauseQuit} onClick={() => useGameStore.getState().endRun()}>
-            🏁 KOŞUYU BİTİR
+            🏁 {t('KOŞUYU BİTİR')}
           </button>
         </div>
       )}
@@ -118,7 +122,7 @@ export default function HUD() {
       {/* Üst bar */}
       <div style={styles.topBar}>
         <div style={styles.statBlock}>
-          <span style={styles.label}>SKOR</span>
+          <span style={styles.label}>{t('SKOR')}</span>
           <span style={styles.value}>{Math.floor(score).toLocaleString()}</span>
           {/* Hız — skorun tam altında */}
           <span style={{ ...styles.speedLine, color: speedColor }}>
@@ -126,13 +130,13 @@ export default function HUD() {
           </span>
         </div>
         <div style={styles.statBlock}>
-          <span style={styles.label}>EN YÜKSEK</span>
+          <span style={styles.label}>{t('EN YÜKSEK')}</span>
           <span style={{ ...styles.value, color: '#f5d060' }}>
             {Math.floor(highScore).toLocaleString()}
           </span>
         </div>
         <div style={styles.statBlock}>
-          <span style={styles.label}>🥕 HAVUÇ</span>
+          <span style={styles.label}>🥕 {t('HAVUÇ')}</span>
           <span style={{ ...styles.value, color: '#ffd700' }}>{carrots}</span>
         </div>
       </div>
@@ -198,7 +202,7 @@ export default function HUD() {
       {/* Adrenalin barı */}
       <div style={styles.adrWrap}>
         <div style={{ ...styles.adrLabel, color: adrColor, animation: isMaxAdr ? 'pulse 0.5s infinite alternate' : 'none' }}>
-          {isMaxAdr ? '⚡ MAX ADRENALİN' : `ADRENALİN ${Math.floor(adrenaline)}%`}
+          {isMaxAdr ? '⚡ ' + t('MAX ADRENALİN') : `${t('ADRENALİN')} ${Math.floor(adrenaline)}%`}
         </div>
         <div style={styles.adrTrack}>
           <div style={{ ...styles.adrFill, width: `${adrenaline}%`, background: adrColor }} />
@@ -212,7 +216,7 @@ export default function HUD() {
       {/* Kontrol ipuçları (sol alt) */}
       {!isMobile && (
         <div style={styles.hints}>
-          <span>← → / A D &nbsp;|&nbsp; SPACE / ↑ Zıpla</span>
+          <span>← → / A D &nbsp;|&nbsp; SPACE / ↑ {t('Zıpla')}</span>
         </div>
       )}
 

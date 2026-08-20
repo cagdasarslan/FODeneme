@@ -3,9 +3,12 @@ import useGameStore from '@/store/useGameStore';
 import { CARROT_PACKAGES, REMOVE_ADS_ID } from '@/constants/iap';
 import { initBilling, purchase, setGrantHandler, setRemoveAdsHandler, setPricesUpdatedHandler, getDisplayPrice, getRemoveAdsPrice } from '@/services/BillingService';
 import { hideBanner } from '@/services/AdService';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // Gerçek para ile havuç satın alma mağazası (Google Play Billing).
 export default function CarrotShop({ onClose }) {
+  useLang();
   const carrots = useGameStore(s => s.carrots);
   const addCarrots = useGameStore(s => s.addCarrots);
   const adsRemoved = useGameStore(s => s.adsRemoved);
@@ -17,13 +20,13 @@ export default function CarrotShop({ onClose }) {
   useEffect(() => {
     setGrantHandler((productId, amount) => {
       addCarrots(amount);
-      setFlash(`✅ ${amount.toLocaleString()} havuç hesabına eklendi!`);
+      setFlash('✅ ' + t('{n} havuç hesabına eklendi!', { n: amount.toLocaleString() }));
       setTimeout(() => setFlash(''), 2500);
     });
     setRemoveAdsHandler(() => {
       setAdsRemoved();
       hideBanner();
-      setFlash('🎉 Reklamlar kaldırıldı — iyi koşular!');
+      setFlash('🎉 ' + t('Reklamlar kaldırıldı — iyi koşular!'));
       setTimeout(() => setFlash(''), 2500);
     });
     setPricesUpdatedHandler(() => force(n => n + 1)); // Play fiyatları geç gelirse tazele
@@ -35,24 +38,24 @@ export default function CarrotShop({ onClose }) {
     setBusy(pkg.id);
     const res = await purchase(pkg.id);
     setBusy(null);
-    if (!res.ok) setFlash(`❌ ${res.reason || 'Satın alma başarısız'}`), setTimeout(() => setFlash(''), 2500);
+    if (!res.ok) setFlash(`❌ ${res.reason || t('Satın alma başarısız')}`), setTimeout(() => setFlash(''), 2500);
   };
 
   return (
     <div style={S.modal}>
       <div style={S.box}>
         <div style={S.header}>
-          <span style={S.title}>💎 HAVUÇ MAĞAZASI</span>
+          <span style={S.title}>💎 {t('HAVUÇ MAĞAZASI')}</span>
           <button style={S.close} onClick={onClose}>✕</button>
         </div>
 
-        <div style={S.balance}>🥕 {carrots.toLocaleString()} havuç</div>
+        <div style={S.balance}>🥕 {carrots.toLocaleString()} {t('havuç')}</div>
 
         {flash && <div style={S.flash}>{flash}</div>}
 
         {/* Reklamları Kaldır — tek seferlik, kalıcı */}
         {adsRemoved ? (
-          <div style={S.adsDone}>✓ Reklamlar kaldırıldı</div>
+          <div style={S.adsDone}>✓ {t('Reklamlar kaldırıldı')}</div>
         ) : (
           <button
             style={{ ...S.removeAds, opacity: busy ? 0.5 : 1 }}
@@ -61,8 +64,8 @@ export default function CarrotShop({ onClose }) {
           >
             <span style={{ fontSize: 18 }}>🚫</span>
             <span style={{ flex: 1, textAlign: 'left' }}>
-              <b>REKLAMLARI KALDIR</b>
-              <div style={{ fontSize: 9, opacity: 0.75, marginTop: 2 }}>Banner tamamen kapanır · ödüllü reklamlar isteğe bağlı kalır</div>
+              <b>{t('REKLAMLARI KALDIR')}</b>
+              <div style={{ fontSize: 9, opacity: 0.75, marginTop: 2 }}>{t('Banner tamamen kapanır · ödüllü reklamlar isteğe bağlı kalır')}</div>
             </span>
             <span style={S.priceBtn}>{busy === REMOVE_ADS_ID ? '...' : getRemoveAdsPrice()}</span>
           </button>
@@ -76,7 +79,7 @@ export default function CarrotShop({ onClose }) {
               disabled={!!busy}
               onClick={() => handleBuy(pkg)}
             >
-              {pkg.badge && <span style={S.badge}>{pkg.badge}</span>}
+              {pkg.badge && <span style={S.badge}>{t(pkg.badge)}</span>}
               <span style={S.carrotIcon}>🥕</span>
               <span style={S.amount}>{pkg.carrots.toLocaleString()}</span>
               <span style={S.priceBtn}>
@@ -87,7 +90,7 @@ export default function CarrotShop({ onClose }) {
         </div>
 
         <div style={S.note}>
-          Ödemeler Google Play üzerinden güvenle alınır. Havuçlar anında hesabınıza eklenir.
+          {t('Ödemeler Google Play üzerinden güvenle alınır. Havuçlar anında hesabınıza eklenir.')}
         </div>
       </div>
     </div>

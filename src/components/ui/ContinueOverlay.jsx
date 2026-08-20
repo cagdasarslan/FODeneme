@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { showRewardedAds } from '@/services/AdService';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // Çarpışma sonrası "devam et" ekranı:
 //  - Havuçla devam et (maliyet her seferinde 3 kat artar)
 //  - Reklam izleyerek devam et (gereken reklam sayısı her seferinde 3 kat artar)
 //  - Vazgeç → gerçek game over
 export default function ContinueOverlay() {
+  useLang();
   const phase    = useGameStore(s => s.phase);
   const carrots  = useGameStore(s => s.carrots);
   const reviveCount = useGameStore(s => s.reviveCount);
@@ -65,7 +68,7 @@ export default function ContinueOverlay() {
       <div style={S.backdrop}>
         <div style={S.countWrap}>
           <div style={S.countNum}>{countdown}</div>
-          <div style={S.countText}>Hazır ol…</div>
+          <div style={S.countText}>{t('Hazır ol…')}</div>
         </div>
       </div>
     );
@@ -74,16 +77,16 @@ export default function ContinueOverlay() {
   return (
     <div style={S.backdrop}>
       <div style={S.panel}>
-        <div style={S.title}>ÇARPTIN!</div>
+        <div style={S.title}>{t('ÇARPTIN!')}</div>
         <div style={S.sub}>Devam etmek ister misin?</div>
 
         <button
           style={{ ...S.btn, ...S.carrotBtn, ...(canAfford ? {} : S.disabled) }}
           onClick={() => { if (canAfford) startCountdown(() => continueWithCarrots()); }}
         >
-          <span style={S.btnMain}>🥕 {cost.carrots.toLocaleString()} havuçla devam et</span>
+          <span style={S.btnMain}>🥕 {t('{n} havuçla devam et', { n: cost.carrots.toLocaleString() })}</span>
           <span style={S.btnSubText}>
-            {canAfford ? `Bakiye: ${carrots.toLocaleString()} 🥕` : `Yetersiz havuç (${carrots.toLocaleString()})`}
+            {canAfford ? `${t('Bakiye:')} ${carrots.toLocaleString()} 🥕` : t('Yetersiz havuç ({n})', { n: carrots.toLocaleString() })}
           </span>
         </button>
 
@@ -91,8 +94,8 @@ export default function ContinueOverlay() {
           style={{ ...S.btn, ...S.adBtn, ...(watching ? S.disabled : {}) }}
           onClick={handleAd}
         >
-          <span style={S.btnMain}>📺 Reklam izle ({cost.ads} reklam)</span>
-          <span style={S.btnSubText}>{watching ? 'Reklam yükleniyor…' : 'İzleyerek ücretsiz devam et'}</span>
+          <span style={S.btnMain}>📺 {t('Reklam izle ({n} reklam)', { n: cost.ads })}</span>
+          <span style={S.btnSubText}>{watching ? t('Reklam yükleniyor…') : t('İzleyerek ücretsiz devam et')}</span>
         </button>
 
         <button style={S.giveUp} onClick={() => giveUp()} disabled={watching}>
@@ -100,7 +103,7 @@ export default function ContinueOverlay() {
         </button>
 
         {reviveCount > 0 && (
-          <div style={S.note}>Bu koşuda {reviveCount}. devam — maliyet her seferinde 3 katına çıkar</div>
+          <div style={S.note}>{t('Bu koşuda {n}. devam — maliyet her seferinde 3 katına çıkar', { n: reviveCount })}</div>
         )}
       </div>
     </div>

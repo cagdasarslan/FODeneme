@@ -1,7 +1,10 @@
 import { useProgress } from '@react-three/drei';
 import { useEffect, useRef, useState } from 'react';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 export default function LoadingScreen() {
+  useLang();
   const { progress, active } = useProgress();
   const [visible, setVisible]   = useState(true);
   const [opacity, setOpacity]   = useState(1);
@@ -32,7 +35,7 @@ export default function LoadingScreen() {
         <div style={S.barTrack}>
           <div style={{ ...S.barFill, width: `${pct}%` }} />
         </div>
-        <div style={S.pct}>{pct < 100 ? `YÜKLENİYOR… %${pct}` : 'HAZIR!'}</div>
+        <div style={S.pct}>{pct < 100 ? `${t('YÜKLENİYOR…')} %${pct}` : t('HAZIR!')}</div>
       </div>
     </div>
   );

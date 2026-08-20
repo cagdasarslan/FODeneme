@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // Tek seferlik ilk-oynayış eğitimi. localStorage 'intro_v1' ile bir kez gösterilir.
 // Yeni oyuncuya oyunun amacını ve temel hamleleri adım adım tanıtır.
@@ -70,6 +72,7 @@ const STEPS = [
 ];
 
 export default function Tutorial({ onClose }) {
+  useLang();
   const [step, setStep] = useState(0);
   const s = STEPS[step];
   const isLast = step === STEPS.length - 1;
@@ -84,19 +87,19 @@ export default function Tutorial({ onClose }) {
       <style>{KEYFRAMES}</style>
       <div style={ST.card}>
         {/* Atla */}
-        <button style={ST.skip} onClick={finish}>ATLA ✕</button>
+        <button style={ST.skip} onClick={finish}>{t('ATLA')} ✕</button>
 
         {/* İçerik */}
         <div style={ST.iconWrap}>
           <span style={{ ...ST.icon, animation: ANIM[s.anim] }}>{s.icon}</span>
         </div>
-        <div style={ST.title}>{s.title}</div>
+        <div style={ST.title}>{t(s.title)}</div>
         <div style={ST.lines}>
           {s.lines.map((l, i) => (
-            <p key={i} style={ST.line}>{l}</p>
+            <p key={i} style={ST.line}>{t(l)}</p>
           ))}
         </div>
-        {s.hint && <div style={ST.hint}>{s.hint}</div>}
+        {s.hint && <div style={ST.hint}>{t(s.hint)}</div>}
 
         {/* İlerleme noktaları */}
         <div style={ST.dots}>
@@ -108,12 +111,12 @@ export default function Tutorial({ onClose }) {
         {/* Butonlar */}
         <div style={ST.btnRow}>
           {step > 0 && (
-            <button style={ST.backBtn} onClick={() => setStep(step - 1)}>‹ GERİ</button>
+            <button style={ST.backBtn} onClick={() => setStep(step - 1)}>‹ {t('GERİ')}</button>
           )}
           {isLast ? (
-            <button style={ST.startBtn} onClick={finish}>HADİ BAŞLAYALIM! 🏁</button>
+            <button style={ST.startBtn} onClick={finish}>{t('HADİ BAŞLAYALIM!')} 🏁</button>
           ) : (
-            <button style={ST.nextBtn} onClick={() => setStep(step + 1)}>İLERİ ›</button>
+            <button style={ST.nextBtn} onClick={() => setStep(step + 1)}>{t('İLERİ')} ›</button>
           )}
         </div>
       </div>

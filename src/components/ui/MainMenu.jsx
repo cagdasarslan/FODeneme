@@ -18,6 +18,8 @@ import { Capacitor } from '@capacitor/core';
 import { restoreFromCloud } from '@/services/CloudSave';
 import { signInWith } from '@/services/AuthService';
 import { GAME_BUILD } from '@/constants/game';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 const isNative = Capacitor.getPlatform() !== 'web';
 
@@ -82,6 +84,7 @@ const MAP_INFO = {
 const isMobile = window.innerWidth < 500;
 
 export default function MainMenu() {
+  useLang();
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showShop, setShowShop] = useState(false);
@@ -107,10 +110,10 @@ export default function MainMenu() {
   const [restoreMsg, setRestoreMsg]   = useState('');
   const doRestore = async () => {
     if (restoreCode.trim().length < 6) return;
-    setRestoreMsg('Yükleniyor…');
+    setRestoreMsg(t('Yükleniyor…'));
     const r = await restoreFromCloud(restoreCode);
     if (r.ok) {
-      setRestoreMsg('✓ Hesabın geri yüklendi!');
+      setRestoreMsg('✓ ' + t('Hesabın geri yüklendi!'));
       setTimeout(() => window.location.reload(), 1000);
     } else {
       setRestoreMsg('⚠ ' + r.reason);
@@ -240,10 +243,10 @@ export default function MainMenu() {
           <div style={styles.titleWrap}>
             <div style={styles.titleSub}>🐴</div>
             <h1 style={styles.title}>HORSE RUNNER</h1>
-            <div style={styles.titleSubline}>KOŞ · YETİŞTİR · YARIŞ</div>
+            <div style={styles.titleSubline}>{t('KOŞ · YETİŞTİR · YARIŞ')}</div>
           </div>
           <button style={styles.btn} onClick={startRun}>
-            {isGameOver ? 'TEKRAR OYNA' : '▶  OYNA'}
+            {isGameOver ? t('TEKRAR OYNA') : '▶  ' + t('OYNA')}
           </button>
           {/* Harita madalyaları — seçili haritanın kısa vadeli hedefi */}
           {(() => {
@@ -253,8 +256,8 @@ export default function MainMenu() {
             return (
               <div style={styles.medalStrip}>
                 <div style={styles.medalIcons}>
-                  {thr.map((t, i) => (
-                    <span key={i} title={`${t.toLocaleString()} skor`}
+                  {thr.map((thrVal, i) => (
+                    <span key={i} title={`${thrVal.toLocaleString()} ${t('skor')}`}
                       style={{ fontSize: 18, opacity: i < earned ? 1 : 0.28, filter: i < earned ? 'none' : 'grayscale(1)' }}>
                       {MEDAL_ICONS[i]}
                     </span>
@@ -262,8 +265,8 @@ export default function MainMenu() {
                 </div>
                 <span style={styles.medalGoal}>
                   {nextTarget
-                    ? <>Sonraki madalya: <b style={{ color: '#ffd54a' }}>{nextTarget.toLocaleString()}</b> skor</>
-                    : <span style={{ color: '#8ee69a' }}>Tüm madalyalar alındı! 🏅</span>}
+                    ? <>{t('Sonraki madalya:')} <b style={{ color: '#ffd54a' }}>{nextTarget.toLocaleString()}</b> {t('skor')}</>
+                    : <span style={{ color: '#8ee69a' }}>{t('Tüm madalyalar alındı!')} 🏅</span>}
                 </span>
               </div>
             );
@@ -275,7 +278,7 @@ export default function MainMenu() {
           {/* Mevsimsel etkinlik rozeti */}
           {activeEvent && (
             <div style={{ ...styles.eventBadge, borderColor: activeEvent.color, color: activeEvent.color }}>
-              {activeEvent.emoji} {activeEvent.name} ETKİNLİĞİ!
+              {activeEvent.emoji} {activeEvent.name} {t('ETKİNLİĞİ!')}
             </div>
           )}
 
@@ -305,25 +308,25 @@ export default function MainMenu() {
             <div style={{ ...styles.resultsWrap, position: 'relative' }}>
               {isNewRecord && <Confetti />}
               <div style={styles.gameOverText}>GAME OVER</div>
-              {isNewRecord && <div style={styles.newRecord}>🏆 YENİ REKOR!</div>}
+              {isNewRecord && <div style={styles.newRecord}>🏆 {t('YENİ REKOR!')}</div>}
               <div style={styles.statsCard}>
                 <div style={{ ...styles.mapBadge, borderColor: mapInfo.color, color: mapInfo.color }}>
                   {mapInfo.emoji} {mapInfo.name}
                 </div>
-                <StatRow label="SKOR" value={<AnimatedScore value={score} />} color="#fff" />
-                <StatRow label="BU HARİTA REKORU" value={Math.floor(mapHs).toLocaleString()} color={mapInfo.color} />
-                <StatRow label="HAVUÇ" value={`🥕 ${carrots}`} color="#ffd700" />
+                <StatRow label={t('SKOR')} value={<AnimatedScore value={score} />} color="#fff" />
+                <StatRow label={t('BU HARİTA REKORU')} value={Math.floor(mapHs).toLocaleString()} color={mapInfo.color} />
+                <StatRow label={t('HAVUÇ')} value={`🥕 ${carrots}`} color="#ffd700" />
               </div>
               {/* Arkadaşını geç — liderlikte bir üstteki oyuncu */}
               {rival && (
                 <div style={styles.rivalRow}>
-                  🎯 {rival.rank}. sıradaki <b>{rival.name}</b>'i geçmek için{' '}
-                  <b style={{ color: '#ffd700' }}>{rival.diff.toLocaleString()}</b> puan!
+                  🎯 {t('{rank}. sıradaki', { rank: rival.rank })} <b>{rival.name}</b>{t('oyuncusunu geçmek için')}{' '}
+                  <b style={{ color: '#ffd700' }}>{rival.diff.toLocaleString()}</b> {t('puan!')}
                 </div>
               )}
               {runCarrots > 0 && !carrotsDoubled && (
                 <div style={{ marginTop: 10, width: '100%' }}>
-                  <AdButton label={`Havuçları 2 KATINA çıkar (+${runCarrots})`} sub={`Bu koşuda ${runCarrots} havuç topladın`} color="#ffcf66" onReward={() => doubleRunCarrots()} />
+                  <AdButton label={t('Havuçları 2 KATINA çıkar (+{n})', { n: runCarrots })} sub={t('Bu koşuda {n} havuç topladın', { n: runCarrots })} color="#ffcf66" onReward={() => doubleRunCarrots()} />
                 </div>
               )}
             </div>
@@ -334,7 +337,7 @@ export default function MainMenu() {
             <div style={styles.onboardCard}>
               <div style={styles.onboardHeader}>
                 <span style={{ fontSize: 18 }}>🚀</span>
-                <span style={styles.onboardTitle}>İLK ADIMLAR</span>
+                <span style={styles.onboardTitle}>{t('İLK ADIMLAR')}</span>
                 <span style={styles.onboardCount}>
                   {onboarding.filter(s => s.claimed).length}/{onboarding.length}
                 </span>
@@ -354,12 +357,12 @@ export default function MainMenu() {
                       {st.claimed ? '✅' : st.icon}
                     </span>
                     <span style={{ flex: 1, fontSize: 12, color: st.claimed ? '#8ee69a' : '#fff', fontWeight: 600 }}>
-                      {st.label}
+                      {t(st.label)}
                     </span>
                     {st.claimed ? null : st.done ? (
-                      <span style={styles.onboardClaim}>AL +{st.reward} 🥕</span>
+                      <span style={styles.onboardClaim}>{t('AL')} +{st.reward} 🥕</span>
                     ) : (
-                      <span style={styles.onboardGo}>GİT →</span>
+                      <span style={styles.onboardGo}>{t('GİT')} →</span>
                     )}
                   </div>
                 );
@@ -376,23 +379,23 @@ export default function MainMenu() {
             }} onClick={() => { if (goal.done && !goal.claimed) { const r = openDailyChest(); if (r) setChestReward(r); } }}>
               <span style={{ fontSize: 26 }}>{goal.claimed ? '✅' : goal.done ? '🎁' : '🎯'}</span>
               <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                <div style={styles.foalName}>Günlük Görev · 50.000 Puan</div>
+                <div style={styles.foalName}>{t('Günlük Görev · 50.000 Puan')}</div>
                 {goal.claimed ? (
-                  <div style={{ ...styles.foalStatus, color: '#8ee69a' }}>Bugünkü sandık alındı — yarın tekrar! 🎁</div>
+                  <div style={{ ...styles.foalStatus, color: '#8ee69a' }}>{t('Bugünkü sandık alındı — yarın tekrar!')} 🎁</div>
                 ) : goal.done ? (
-                  <div style={{ ...styles.foalStatus, color: '#ffd54a' }}>Tamamlandı! Sandığı açmak için dokun 👉</div>
+                  <div style={{ ...styles.foalStatus, color: '#ffd54a' }}>{t('Tamamlandı! Sandığı açmak için dokun')} 👉</div>
                 ) : (
                   <>
                     <div style={{ height: 6, background: 'rgba(255,255,255,0.12)', borderRadius: 3, overflow: 'hidden', marginTop: 5 }}>
                       <div style={{ height: '100%', width: `${Math.min(100, goal.score / goal.target * 100)}%`, background: 'linear-gradient(90deg,#ffd54a,#ff9f00)', borderRadius: 3 }} />
                     </div>
                     <div style={{ ...styles.foalStatus, color: 'rgba(255,255,255,0.55)', marginTop: 3 }}>
-                      {goal.score.toLocaleString()} / {goal.target.toLocaleString()} (tüm haritalar)
+                      {goal.score.toLocaleString()} / {goal.target.toLocaleString()} ({t('tüm haritalar')})
                     </div>
                   </>
                 )}
               </div>
-              {goal.done && !goal.claimed && <span style={{ ...styles.foalGo, color: '#ffd54a' }}>AÇ →</span>}
+              {goal.done && !goal.claimed && <span style={{ ...styles.foalGo, color: '#ffd54a' }}>{t('AÇ')} →</span>}
             </div>
           )}
 
@@ -404,30 +407,30 @@ export default function MainMenu() {
               <div style={styles.foalCard} onClick={() => openGarage('hara')}>
                 <div style={{ width: 34, height: 34, borderRadius: '50%', background: f.genes.bodyColor, border: `3px solid ${f.genes.maneColor}`, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                  <div style={styles.foalName}>🐣 {f.name} <span style={styles.foalStage}>({f.stage})</span></div>
+                  <div style={styles.foalName}>🐣 {f.name} <span style={styles.foalStage}>({t(f.stage)})</span></div>
                   <div style={{ ...styles.foalStatus, color: hungry ? '#ff8866' : '#8ee69a' }}>
-                    {hungry ? '⚠️ Acıktı — hemen besle!' : `Tokluk %${Math.floor(f.tokluk)} · Mutluluk %${Math.floor(f.mutluluk)}`}
+                    {hungry ? '⚠️ ' + t('Acıktı — hemen besle!') : t('Tokluk %{a} · Mutluluk %{b}', { a: Math.floor(f.tokluk), b: Math.floor(f.mutluluk) })}
                   </div>
                 </div>
-                <span style={styles.foalGo}>BAK →</span>
+                <span style={styles.foalGo}>{t('BAK')} →</span>
               </div>
             );
           })() : (
             <div style={styles.foalCard} onClick={() => openGarage('hara')}>
               <span style={{ fontSize: 26 }}>🐣</span>
               <div style={{ flex: 1, textAlign: 'left' }}>
-                <div style={styles.foalName}>İlk tayını yetiştir!</div>
-                <div style={{ ...styles.foalStatus, color: 'rgba(255,255,255,0.5)' }}>Çiftleştir, besle, büyüt — kendi şampiyonunu yarat</div>
+                <div style={styles.foalName}>{t('İlk tayını yetiştir!')}</div>
+                <div style={{ ...styles.foalStatus, color: 'rgba(255,255,255,0.5)' }}>{t('Çiftleştir, besle, büyüt — kendi şampiyonunu yarat')}</div>
               </div>
-              <span style={styles.foalGo}>AHIR →</span>
+              <span style={styles.foalGo}>{t('AHIR')} →</span>
             </div>
           ))}
 
           {/* Oyun bitti ekranı */}
-          {sessionError && <p style={styles.warn}>⚠ Çevrimdışı mod</p>}
+          {sessionError && <p style={styles.warn}>⚠ {t('Çevrimdışı mod')}</p>}
 
           {/* Harita seçici */}
-          <div style={styles.sectionTitle}>🗺️ HARİTA SEÇ</div>
+          <div style={styles.sectionTitle}>🗺️ {t('HARİTA SEÇ')}</div>
           <div style={styles.mapRow}>
             {[
               { id: 1, emoji: '🌿', name: 'AT YARIŞI',     sub: 'Çiftlik / Pist',    color: '#6aaa44', rgb: '106,170,68', hs: highScoreMap1 },
@@ -455,10 +458,10 @@ export default function MainMenu() {
                   onClick={() => { if (!locked) setMapId(m.id); }}
                 >
                   <span style={styles.mapEmoji}>{locked ? '🔒' : m.emoji}</span>
-                  <span style={{ ...styles.mapName, color: mapId === m.id ? m.color : '#fff' }}>{m.name}</span>
-                  <span style={styles.mapSub}>{m.sub}</span>
+                  <span style={{ ...styles.mapName, color: mapId === m.id ? m.color : '#fff' }}>{t(m.name)}</span>
+                  <span style={styles.mapSub}>{t(m.sub)}</span>
                   <span style={{ ...styles.mapHsChip, color: locked ? '#ff8866' : mapId === m.id ? m.color : 'rgba(255,255,255,0.3)' }}>
-                    {locked ? `🔒 ${need.toLocaleString()} skor gerekli` : `⬡ ${Math.floor(m.hs).toLocaleString()}`}
+                    {locked ? `🔒 ${t('{n} skor gerekli', { n: need.toLocaleString() })}` : `⬡ ${Math.floor(m.hs).toLocaleString()}`}
                   </span>
                 </div>
               );
@@ -469,24 +472,24 @@ export default function MainMenu() {
           <div style={styles.activeRow} onClick={openGarage}>
             <div style={styles.activeItem}>
               <span style={styles.activeEmoji}>{activeChar.emoji}</span>
-              <span style={styles.activeName}>{activeChar.name}</span>
+              <span style={styles.activeName}>{t(activeChar.name)}</span>
             </div>
             <div style={styles.activeDivider} />
             <div style={styles.activeItem}>
               <div style={{ width: 22, height: 22, borderRadius: '50%', background: activeHorse.bodyColor, border: `2px solid ${activeHorse.maneColor}` }} />
-              <span style={styles.activeName}>{activeHorse.name}</span>
-              <span style={styles.levelPill}>SV {horseLevel}</span>
+              <span style={styles.activeName}>{t(activeHorse.name)}</span>
+              <span style={styles.levelPill}>{t('SV')} {horseLevel}</span>
             </div>
-            <span style={styles.changeHint}>DEĞİŞTİR →</span>
+            <span style={styles.changeHint}>{t('DEĞİŞTİR')} →</span>
           </div>
 
           {/* Reklam alanları */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
             {(AD_DAILY_MAX - adBonusToday) > 0 && (
-              <AdButton label={`Bedava ${AD_DAILY_CARROTS} havuç`} sub={`Bugün ${AD_DAILY_MAX - adBonusToday} hakkın kaldı`} color="#ffd700" compact onReward={() => claimAdCarrots()} />
+              <AdButton label={t('Bedava {n} havuç', { n: AD_DAILY_CARROTS })} sub={t('Bugün {n} hakkın kaldı', { n: AD_DAILY_MAX - adBonusToday })} color="#ffd700" compact onReward={() => claimAdCarrots()} />
             )}
             {!isGameOver && (
-              <AdButton label="Süper Nal ile başla" sub="Bu koşuya mıknatıs boost'u ile başla" color="#00cfff" compact onReward={() => { armStartBoost(); startRun(); }} />
+              <AdButton label={t('Süper Nal ile başla')} sub={t('Bu koşuya mıknatıs boost\'u ile başla')} color="#00cfff" compact onReward={() => { armStartBoost(); startRun(); }} />
             )}
           </div>
 
@@ -495,23 +498,23 @@ export default function MainMenu() {
         {/* Alt sekme çubuğu */}
         <div style={styles.bottomNav}>
           <button style={{ ...styles.navBtn, ...styles.navActive }}>
-            <span style={styles.navIcon}>🏠</span><span style={styles.navLabel}>Ana</span>
+            <span style={styles.navIcon}>🏠</span><span style={styles.navLabel}>{t('Ana')}</span>
           </button>
           <button style={styles.navBtn} onClick={() => useGameStore.getState().enterPaddock()}>
-            <span style={styles.navIcon}>🐎</span><span style={styles.navLabel}>Çiftlik</span>
+            <span style={styles.navIcon}>🐎</span><span style={styles.navLabel}>{t('Çiftlik')}</span>
           </button>
           <button style={styles.navBtn} onClick={() => openGarage()}>
-            <span style={styles.navIcon}>🏇</span><span style={styles.navLabel}>Garaj</span>
+            <span style={styles.navIcon}>🏇</span><span style={styles.navLabel}>{t('Garaj')}</span>
           </button>
           <button style={styles.navBtn} onClick={() => openGarage('hara')}>
-            <span style={styles.navIcon}>🐣</span><span style={styles.navLabel}>Ahır</span>
+            <span style={styles.navIcon}>🐣</span><span style={styles.navLabel}>{t('Ahır')}</span>
           </button>
           <button style={styles.navBtn} onClick={() => setShowMissions(true)}>
-            <span style={styles.navIcon}>🎯</span><span style={styles.navLabel}>Görev</span>
+            <span style={styles.navIcon}>🎯</span><span style={styles.navLabel}>{t('Görev')}</span>
             {canClaimStreak && <span style={styles.navDot} />}
           </button>
           <button style={styles.navBtn} onClick={() => setShowShop(true)}>
-            <span style={styles.navIcon}>💎</span><span style={styles.navLabel}>Mağaza</span>
+            <span style={styles.navIcon}>💎</span><span style={styles.navLabel}>{t('Mağaza')}</span>
           </button>
         </div>
       </div>
@@ -521,24 +524,24 @@ export default function MainMenu() {
         <div style={styles.nameOverlay}>
           <div style={styles.nameBox}>
             <div style={{ fontSize: 40, marginBottom: 6 }}>🏇</div>
-            <div style={styles.nameTitle}>KULLANICI ADINI SEÇ</div>
-            <div style={styles.nameSub}>Liderlik tablosunda bu adla görüneceksin</div>
+            <div style={styles.nameTitle}>{t('KULLANICI ADINI SEÇ')}</div>
+            <div style={styles.nameSub}>{t('Liderlik tablosunda bu adla görüneceksin')}</div>
             <input
               autoFocus
               value={nameInput}
               maxLength={16}
-              placeholder="ör. ŞimşekBinici"
+              placeholder={t('ör. ŞimşekBinici')}
               onChange={e => setNameInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') saveName(); }}
               style={styles.nameInput}
             />
-            <div style={styles.nameHint}>{nameInput.trim().length < 3 ? 'En az 3 karakter' : `${nameInput.trim().length}/16`}</div>
+            <div style={styles.nameHint}>{nameInput.trim().length < 3 ? t('En az 3 karakter') : `${nameInput.trim().length}/16`}</div>
             <button
               style={{ ...styles.nameBtn, opacity: nameInput.trim().length < 3 ? 0.4 : 1 }}
               disabled={nameInput.trim().length < 3}
               onClick={saveName}
             >
-              BAŞLA 🏁
+              {t('BAŞLA')} 🏁
             </button>
 
             {/* Daha önce oynadıysa: kurtarma koduyla ilerlemeyi geri al */}
@@ -547,14 +550,14 @@ export default function MainMenu() {
                 style={{ marginTop: 12, fontSize: 11, color: '#7fd4ff', textDecoration: 'underline', cursor: 'pointer', fontWeight: 700 }}
                 onClick={() => setRestoreMode(true)}
               >
-                ☁️ Daha önce oynadın mı? İlerlemeni geri yükle
+                ☁️ {t('Daha önce oynadın mı? İlerlemeni geri yükle')}
               </div>
             ) : (
               <div style={{ marginTop: 12, width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <input
                   value={restoreCode}
                   maxLength={12}
-                  placeholder="Kurtarma kodun (Ayarlar'daydı)"
+                  placeholder={t('Kurtarma kodun (Ayarlar\'daydı)')}
                   onChange={e => setRestoreCode(e.target.value.toUpperCase())}
                   onKeyDown={e => { if (e.key === 'Enter') doRestore(); }}
                   style={{ ...styles.nameInput, letterSpacing: 2 }}
@@ -564,13 +567,13 @@ export default function MainMenu() {
                   disabled={restoreCode.trim().length < 6}
                   onClick={doRestore}
                 >
-                  ☁️ GERİ YÜKLE
+                  ☁️ {t('GERİ YÜKLE')}
                 </button>
                 <button
                   style={{ ...styles.nameBtn, background: '#fff', color: '#1a1a2a' }}
                   onClick={() => signInWith('google')}
                 >
-                  🇬 Google hesabımla geri yükle
+                  🇬 {t('Google hesabımla geri yükle')}
                 </button>
                 {restoreMsg && <div style={{ fontSize: 10, fontWeight: 700, color: restoreMsg.startsWith('⚠') ? '#ff8866' : '#33ff99' }}>{restoreMsg}</div>}
               </div>
@@ -600,13 +603,13 @@ export default function MainMenu() {
         <div style={styles.chestOverlay} onClick={() => setChestReward(null)}>
           <div style={styles.chestBox} onClick={(e) => e.stopPropagation()}>
             <div style={{ fontSize: 64, animation: 'pulse 0.6s ease-out' }}>🎁</div>
-            <div style={styles.chestTitle}>SANDIK AÇILDI!</div>
+            <div style={styles.chestTitle}>{t('SANDIK AÇILDI!')}</div>
             <div style={{ fontSize: 44, margin: '8px 0' }}>{chestReward.icon}</div>
             <div style={styles.chestReward}>
-              {chestReward.type === 'carrots' ? `+${chestReward.amount.toLocaleString()} 🥕` : chestReward.label}
+              {chestReward.type === 'carrots' ? `+${chestReward.amount.toLocaleString()} 🥕` : t(chestReward.label)}
             </div>
-            <div style={styles.chestSub}>{chestReward.type === 'carrots' ? chestReward.label : 'Sonraki koşunda aktif!'}</div>
-            <button style={styles.chestBtn} onClick={() => setChestReward(null)}>HARİKA!</button>
+            <div style={styles.chestSub}>{chestReward.type === 'carrots' ? t(chestReward.label) : t('Sonraki koşunda aktif!')}</div>
+            <button style={styles.chestBtn} onClick={() => setChestReward(null)}>{t('HARİKA!')}</button>
           </div>
         </div>
       )}
@@ -619,13 +622,13 @@ export default function MainMenu() {
               {MEDAL_ICONS[newMedals[newMedals.length - 1].tier - 1]}
             </div>
             <div style={styles.chestTitle}>
-              {newMedals.length > 1 ? `${newMedals.length} MADALYA KAZANDIN!` : 'MADALYA KAZANDIN!'}
+              {newMedals.length > 1 ? t('{n} MADALYA KAZANDIN!', { n: newMedals.length }) : t('MADALYA KAZANDIN!')}
             </div>
             <div style={styles.chestReward}>
               +{newMedals.reduce((a, m) => a + m.reward, 0).toLocaleString()} 🥕
             </div>
-            <div style={styles.chestSub}>Yeni hedef için tekrar koş!</div>
-            <button style={styles.chestBtn} onClick={clearNewMedals}>HARİKA!</button>
+            <div style={styles.chestSub}>{t('Yeni hedef için tekrar koş!')}</div>
+            <button style={styles.chestBtn} onClick={clearNewMedals}>{t('HARİKA!')}</button>
           </div>
         </div>
       )}

@@ -6,6 +6,8 @@ import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.j
 import useGameStore from '@/store/useGameStore';
 import { HORSES } from '@/constants/horses';
 import { sfx } from '@/utils/audio';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // ── Çiftlik: 4 tarafı çitle çevrili sarı kumlu serbest antrenman alanı ────────
 // Sürükle → at o yöne yürür/koşar. ZIPLA butonu (veya boşluk) ile zıplar.
@@ -268,7 +270,7 @@ export default function PaddockScene() {
           sfx.collect();
           st.showPaddockToast(
             leveled.length
-              ? `🎉 SEVİYE ATLADI! (+${XP_PER_JUMP} XP)`
+              ? '🎉 ' + t('SEVİYE ATLADI!') + ` (+${XP_PER_JUMP} XP)`
               : `+${XP_PER_JUMP} XP`
           );
         }
@@ -297,7 +299,7 @@ export default function PaddockScene() {
     const x = THREE.MathUtils.clamp(e.point.x, -HALF + 2, HALF - 2);
     const z = THREE.MathUtils.clamp(e.point.z, -HALF + 2, HALF - 2);
     st.placePaddockObstacle(x, z);
-    st.showPaddockToast('✅ Engel yerleştirildi');
+    st.showPaddockToast('✅ ' + t('Engel yerleştirildi'));
   };
 
   return (
@@ -346,6 +348,7 @@ const SHOP_ITEMS = [
 ];
 
 export function PaddockUI() {
+  useLang();
   const exitPaddock  = useGameStore((s) => s.exitPaddock);
   const carrots      = useGameStore((s) => s.carrots);
   const selectedHorseId = useGameStore((s) => s.selectedHorseId);
@@ -447,16 +450,16 @@ export function PaddockUI() {
     <>
       {/* Üst bar: çık + at bilgisi + XP */}
       <div style={S.topBar}>
-        <button style={S.exitBtn} onClick={exitPaddock}>← ÇIK</button>
+        <button style={S.exitBtn} onClick={exitPaddock}>← {t('ÇIK')}</button>
         <div style={S.horseInfo}>
-          <div style={S.horseName}>🐎 {horse.name} <span style={S.lv}>SV {Math.min(totalLv, 10)}/10{totalLv >= 10 ? ' ✓' : ''}</span></div>
+          <div style={S.horseName}>🐎 {t(horse.name)} <span style={S.lv}>{t('SV')} {Math.min(totalLv, 10)}/10{totalLv >= 10 ? ' ✓' : ''}</span></div>
           {totalLv < 10 ? (
             <>
               <div style={S.xpBarBg}><div style={{ ...S.xpBarFill, width: `${xp}%` }} /></div>
-              <div style={S.xpText}>Antrenman: {xp}/100 XP</div>
+              <div style={S.xpText}>{t('Antrenman:')} {xp}/100 XP</div>
             </>
           ) : (
-            <div style={S.xpText}>🏆 Antrenman tamamlandı! Günlük ücretsiz yükseltme aç.</div>
+            <div style={S.xpText}>🏆 {t('Antrenman tamamlandı! Günlük ücretsiz yükseltme aç.')}</div>
           )}
         </div>
         <div style={S.carrots}>🥕 {carrots.toLocaleString()}</div>
@@ -465,8 +468,8 @@ export function PaddockUI() {
       {/* Yerleştirme ipucu */}
       {placing && (
         <div style={S.placingHint}>
-          👇 Zemine dokun → engeli yerleştir
-          <button style={S.cancelPlace} onClick={() => setPaddockPlacing(null)}>İptal</button>
+          👇 {t('Zemine dokun → engeli yerleştir')}
+          <button style={S.cancelPlace} onClick={() => setPaddockPlacing(null)}>{t('İptal')}</button>
         </div>
       )}
 
@@ -474,16 +477,16 @@ export function PaddockUI() {
       {toastVisible && <div style={S.toast}>{toast}</div>}
 
       {/* Alt kontroller */}
-      <div style={S.hint}>parmağını sürükle → yürü / koş</div>
+      <div style={S.hint}>{t('parmağını sürükle → yürü / koş')}</div>
       <button
         style={S.jumpBtn}
         onTouchStart={(e) => { e.stopPropagation(); paddockInput.jump = true; }}
         onTouchEnd={(e) => e.stopPropagation()}
         onMouseDown={(e) => { e.stopPropagation(); paddockInput.jump = true; }}
       >
-        ⬆<br /><span style={{ fontSize: 10 }}>ZIPLA</span>
+        ⬆<br /><span style={{ fontSize: 10 }}>{t('ZIPLA')}</span>
       </button>
-      <button style={S.shopBtn} onClick={() => setShopOpen(true)}>🛒 ENGEL AL</button>
+      <button style={S.shopBtn} onClick={() => setShopOpen(true)}>🛒 {t('ENGEL AL')}</button>
 
       {/* Antrenman 10'a ulaştıysa: günlük ücretsiz yükseltme */}
       {totalLv >= 10 && (
@@ -491,7 +494,7 @@ export function PaddockUI() {
           style={{ ...S.freeBtn, opacity: canClaimFreeUpgrade(selectedHorseId) ? 1 : 0.5 }}
           onClick={() => setFreeOpen(true)}
         >
-          🎁 {canClaimFreeUpgrade(selectedHorseId) ? 'ÜCRETSİZ YÜKSELT' : 'BUGÜN KULLANILDI'}
+          🎁 {canClaimFreeUpgrade(selectedHorseId) ? t('ÜCRETSİZ YÜKSELT') : t('BUGÜN KULLANILDI')}
         </button>
       )}
 
@@ -500,16 +503,16 @@ export function PaddockUI() {
         <div style={S.shopModal}>
           <div style={S.shopBox}>
             <div style={S.shopHeader}>
-              <span style={S.shopTitle}>🎁 GÜNLÜK ÜCRETSİZ YÜKSELTME</span>
+              <span style={S.shopTitle}>🎁 {t('GÜNLÜK ÜCRETSİZ YÜKSELTME')}</span>
               <button style={S.close} onClick={() => setFreeOpen(false)}>✕</button>
             </div>
             <div style={S.shopNote}>
-              {horse.name} antrenmanı tamamladı! Günde 1 kez bir özelliği ücretsiz yükselt.
+              {t('{name} antrenmanı tamamladı! Günde 1 kez bir özelliği ücretsiz yükselt.', { name: t(horse.name) })}
             </div>
             {[
-              { key: 'speedLevel',  icon: '⚡', label: 'HIZ',     color: '#ff9800' },
-              { key: 'maneuvLevel', icon: '🎯', label: 'MANEVRA', color: '#4fc3f7' },
-              { key: 'jumpLevel',   icon: '🌙', label: 'ZIPLAMA', color: '#ce93d8' },
+              { key: 'speedLevel',  icon: '⚡', label: t('HIZ'),     color: '#ff9800' },
+              { key: 'maneuvLevel', icon: '🎯', label: t('MANEVRA'), color: '#4fc3f7' },
+              { key: 'jumpLevel',   icon: '🌙', label: t('ZIPLAMA'), color: '#ce93d8' },
             ].map(({ key, icon, label, color }) => {
               const lvl = ups[key] ?? 0;
               const maxed = lvl >= 5;
@@ -532,12 +535,12 @@ export function PaddockUI() {
                       ))}
                     </div>
                   </div>
-                  <span style={{ fontWeight: 800, color: maxed ? '#888' : '#33ff99' }}>{maxed ? 'MAKS' : `+1 →${lvl + 1}`}</span>
+                  <span style={{ fontWeight: 800, color: maxed ? '#888' : '#33ff99' }}>{maxed ? t('MAKS') : `+1 →${lvl + 1}`}</span>
                 </button>
               );
             })}
             {!canClaimFreeUpgrade(selectedHorseId) && (
-              <div style={{ ...S.shopNote, color: '#ff9966' }}>Bugünkü ücretsiz yükseltme kullanıldı — yarın tekrar gel!</div>
+              <div style={{ ...S.shopNote, color: '#ff9966' }}>{t('Bugünkü ücretsiz yükseltme kullanıldı — yarın tekrar gel!')}</div>
             )}
           </div>
         </div>
@@ -548,10 +551,10 @@ export function PaddockUI() {
         <div style={S.shopModal}>
           <div style={S.shopBox}>
             <div style={S.shopHeader}>
-              <span style={S.shopTitle}>🛒 ENGEL MAĞAZASI</span>
+              <span style={S.shopTitle}>🛒 {t('ENGEL MAĞAZASI')}</span>
               <button style={S.close} onClick={() => setShopOpen(false)}>✕</button>
             </div>
-            <div style={S.shopNote}>Engel al, zemine yerleştir, üzerinden atlayarak atını geliştir! Her atlayış +{XP_PER_JUMP} XP.</div>
+            <div style={S.shopNote}>{t('Engel al, zemine yerleştir, üzerinden atlayarak atını geliştir!')} {t('Her atlayış +{n} XP.', { n: XP_PER_JUMP })}</div>
             {SHOP_ITEMS.map((it) => (
               <button
                 key={it.type}
@@ -562,7 +565,7 @@ export function PaddockUI() {
                 }}
               >
                 <span style={{ fontSize: 22 }}>{it.emoji}</span>
-                <span style={{ flex: 1, textAlign: 'left' }}>{it.name}</span>
+                <span style={{ flex: 1, textAlign: 'left' }}>{t(it.name)}</span>
                 <span style={{ color: '#ffd700', fontWeight: 800 }}>🥕 {it.cost}</span>
               </button>
             ))}

@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { controlsState } from '@/hooks/useHorseControls';
 import useGameStore from '@/store/useGameStore';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // Swipe kontrolü — her "swipe segmenti" kendi baskın eksenini seçer:
 //  • Parmak eşiği geçince o anki baskın yön uygulanır (yatay→şerit, dikey→zıpla)
@@ -18,6 +20,7 @@ function pulse(dir) {
 }
 
 export default function TouchPad() {
+  useLang();
   const phase = useGameStore(s => s.phase);
 
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function TouchPad() {
   }, [phase]);
 
   if (phase !== 'playing') return null;
-  return <div style={hint}>kaydır: ← → şerit · ↑ zıpla · ↓ eğil</div>;
+  return <div style={hint}>{t('kaydır: ← → şerit · ↑ zıpla · ↓ eğil')}</div>;
 }
 
 const hint = {

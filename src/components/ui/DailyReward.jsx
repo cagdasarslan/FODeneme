@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { STREAK_REWARDS, STREAK_MAX_REWARD } from '@/constants/daily';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // Günlük giriş ödülü — 7 günlük takvim, her gün artan ödül.
 export default function DailyReward({ onClose }) {
+  useLang();
   const streakDay   = useGameStore(s => s.streakDay);
   const canClaim    = useGameStore(s => s.canClaimStreak)();
   const claimStreak = useGameStore(s => s.claimStreak);
@@ -11,19 +14,19 @@ export default function DailyReward({ onClose }) {
 
   const handleClaim = () => {
     const r = claimStreak();
-    if (r > 0) setFlash(`+${r} 🥕 alındı!`);
+    if (r > 0) setFlash(`+${r} 🥕 ` + t('alındı!'));
   };
 
   return (
     <div style={S.modal}>
       <div style={S.box}>
         <div style={S.header}>
-          <span style={S.title}>🎁 GÜNLÜK ÖDÜL</span>
+          <span style={S.title}>🎁 {t('GÜNLÜK ÖDÜL')}</span>
           <button style={S.close} onClick={onClose}>✕</button>
         </div>
 
         <div style={S.sub}>
-          {streakDay > 7 ? '🔥 7+ gün! Artık her gün 7000 🥕' : 'Her gün giriş yap, ödülün büyüsün!'}
+          {streakDay > 7 ? '🔥 ' + t('7+ gün! Artık her gün 7000 havuç') : t('Her gün giriş yap, ödülün büyüsün!')}
         </div>
 
         <div style={S.grid}>
@@ -52,10 +55,10 @@ export default function DailyReward({ onClose }) {
 
         {canClaim ? (
           <button style={S.claimBtn} onClick={handleClaim}>
-            {`${streakDay}. GÜN ÖDÜLÜNÜ AL (🥕 ${streakDay <= 7 ? STREAK_REWARDS[streakDay - 1] : STREAK_MAX_REWARD})`}
+            {t('{n}. GÜN ÖDÜLÜNÜ AL', { n: streakDay }) + ` (🥕 ${streakDay <= 7 ? STREAK_REWARDS[streakDay - 1] : STREAK_MAX_REWARD})`}
           </button>
         ) : (
-          <div style={S.done}>✓ Bugünün ödülü alındı — yarın tekrar gel!</div>
+          <div style={S.done}>✓ {t('Bugünün ödülü alındı — yarın tekrar gel!')}</div>
         )}
       </div>
     </div>

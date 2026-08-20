@@ -29,7 +29,7 @@ const SAVE_KEYS = [
   'hs_map1', 'hs_map2', 'hs_map3', 'hs_map4', 'hs_map5', 'hs_map6',
   'totalScore', 'adsRemoved', 'daily_v1', 'life_v1', 'achClaimed', 'medals_v1', 'onboard_v1',
   'foals', 'stableSlots', 'lastBreedAt', 'trainingXP', 'paddockObstacles', 'freeUpgradeDate',
-  'mapId', 'soundOn', 'musicOn',
+  'mapId', 'soundOn', 'musicOn', 'lang',
 ];
 
 const headers = () => ({

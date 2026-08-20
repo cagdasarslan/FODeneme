@@ -3,9 +3,12 @@ import useGameStore from '@/store/useGameStore';
 import { sfx } from '@/utils/audio';
 import { getRecoveryCode, restoreFromCloud, pushCloudSave } from '@/services/CloudSave';
 import { getAuthUser, signInWith, signOut } from '@/services/AuthService';
+import { t, getLang, setLang } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // Ayarlar: ses aç/kapat + görüntü kalitesi (DÜŞÜK / YÜKSEK)
 export default function Settings({ onClose }) {
+  useLang();
   const soundOn   = useGameStore(s => s.soundOn);
   const musicOn   = useGameStore(s => s.musicOn);
   const graphics  = useGameStore(s => s.graphics);
@@ -17,41 +20,41 @@ export default function Settings({ onClose }) {
     <div style={S.modal}>
       <div style={S.box}>
         <div style={S.header}>
-          <span style={S.title}>⚙️ AYARLAR</span>
+          <span style={S.title}>⚙️ {t('AYARLAR')}</span>
           <button style={S.close} onClick={onClose}>✕</button>
         </div>
 
         {/* Oyun sesleri (SFX + nal) */}
         <div style={S.row}>
-          <span style={S.label}>🔊 Oyun Sesleri</span>
+          <span style={S.label}>🔊 {t('Oyun Sesleri')}</span>
           <div style={S.seg}>
             {[['AÇIK', true], ['KAPALI', false]].map(([txt, val]) => (
               <button
                 key={txt}
                 style={{ ...S.segBtn, ...(soundOn === val ? S.segOn : {}) }}
                 onClick={() => { setSoundOn(val); if (val) sfx.click(); }}
-              >{txt}</button>
+              >{t(txt)}</button>
             ))}
           </div>
         </div>
 
         {/* Harita müziği */}
         <div style={S.row}>
-          <span style={S.label}>🎵 Harita Müziği</span>
+          <span style={S.label}>🎵 {t('Harita Müziği')}</span>
           <div style={S.seg}>
             {[['AÇIK', true], ['KAPALI', false]].map(([txt, val]) => (
               <button
                 key={txt}
                 style={{ ...S.segBtn, ...(musicOn === val ? S.segOn : {}) }}
                 onClick={() => setMusicOn(val)}
-              >{txt}</button>
+              >{t(txt)}</button>
             ))}
           </div>
         </div>
 
         {/* Görüntü — 3 kademe: DÜŞÜK / ORTA / YÜKSEK */}
         <div style={S.row}>
-          <span style={S.label}>🎮 Görüntü</span>
+          <span style={S.label}>🎮 {t('Görüntü')}</span>
           <div style={S.seg}>
             {[['DÜŞÜK', 'low'], ['ORTA', 'medium'], ['YÜKSEK', 'high']].map(([txt, val]) => (
               <button
@@ -62,6 +65,21 @@ export default function Settings({ onClose }) {
                   setGraphics(val);
                   sfx.click();
                 }}
+              >{t(txt)}</button>
+            ))}
+          </div>
+        </div>
+
+
+        {/* Dil / Language */}
+        <div style={S.row}>
+          <span style={S.label}>🌐 {t('Dil')}</span>
+          <div style={S.seg}>
+            {[['Türkçe', 'tr'], ['English', 'en']].map(([txt, val]) => (
+              <button
+                key={val}
+                style={{ ...S.segBtn, ...(getLang() === val ? S.segOn : {}) }}
+                onClick={() => { setLang(val); sfx.click(); }}
               >{txt}</button>
             ))}
           </div>
@@ -71,7 +89,7 @@ export default function Settings({ onClose }) {
         <CloudSection />
 
         <div style={S.note}>
-          DÜŞÜK: gölge yok, en akıcı · ORTA: dengeli · YÜKSEK: gölge + ışıltı (bloom). Yavaş telefonlar için DÜŞÜK/ORTA önerilir.
+          {t('DÜŞÜK: gölge yok, en akıcı · ORTA: dengeli · YÜKSEK: gölge + ışıltı (bloom). Yavaş telefonlar için DÜŞÜK/ORTA önerilir.')}
         </div>
       </div>
     </div>
@@ -89,10 +107,10 @@ function CloudSection() {
   const doRestore = async () => {
     if (busy || code.trim().length < 6) return;
     setBusy(true);
-    setMsg('Yükleniyor…');
+    setMsg(t('Yükleniyor…'));
     const r = await restoreFromCloud(code);
     if (r.ok) {
-      setMsg('✓ Geri yüklendi! Oyun yeniden başlatılıyor…');
+      setMsg('✓ ' + t('Geri yüklendi! Oyun yeniden başlatılıyor…'));
       setTimeout(() => window.location.reload(), 1200);
     } else {
       setMsg('⚠ ' + r.reason);
@@ -105,7 +123,7 @@ function CloudSection() {
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12, marginBottom: 12 }}>
       <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 700, marginBottom: 6 }}>
-        ☁️ Bulut Kaydı
+        ☁️ {t('Bulut Kaydı')}
       </div>
 
       {/* Google / Apple hesabı: yedek hesaba bağlanır, kod gerekmez */}
@@ -114,13 +132,13 @@ function CloudSection() {
           background: 'rgba(51,255,153,0.08)', border: '1px solid rgba(51,255,153,0.35)',
           borderRadius: 8, padding: '8px 12px', marginBottom: 10 }}>
           <div>
-            <div style={{ fontSize: 10, color: '#33ff99', fontWeight: 700 }}>✓ HESABA BAĞLI</div>
+            <div style={{ fontSize: 10, color: '#33ff99', fontWeight: 700 }}>✓ {t('HESABA BAĞLI')}</div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{user.email || user.name || user.provider}</div>
           </div>
           <button
             style={{ ...S.segBtn, minWidth: 60, border: '1px solid rgba(255,255,255,0.2)' }}
             onClick={() => { signOut(); sfx.click(); window.location.reload(); }}
-          >ÇIKIŞ</button>
+          >{t('ÇIKIŞ')}</button>
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
@@ -129,20 +147,20 @@ function CloudSection() {
               fontFamily: 'var(--game-font)', borderRadius: 8, cursor: 'pointer',
               background: '#fff', color: '#1a1a2a', border: 'none' }}
             onClick={() => { sfx.click(); signInWith('google'); }}
-          >🇬 Google ile Giriş</button>
+          >🇬 {t('Google ile Giriş')}</button>
           <button
             style={{ flex: 1, padding: '10px 8px', fontSize: 11, fontWeight: 700, letterSpacing: 1,
               fontFamily: 'var(--game-font)', borderRadius: 8, cursor: 'pointer',
               background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}
             onClick={() => { sfx.click(); signInWith('apple'); }}
-          > Apple ile Giriş</button>
+          > {t('Apple ile Giriş')}</button>
         </div>
       )}
 
       <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: 8 }}>
         {user
-          ? 'İlerlemen hesabına otomatik yedekleniyor. Oyunu silsen bile giriş yapınca her şey geri gelir.'
-          : <>Giriş yaparsan ilerlemen hesabına bağlanır. Giriş yapmazsan da bu kodla geri alabilirsin — <b style={{ color: '#ffd700' }}>kodu bir yere not et!</b></>}
+          ? t('İlerlemen hesabına otomatik yedekleniyor. Oyunu silsen bile giriş yapınca her şey geri gelir.')
+          : <>{t('Giriş yaparsan ilerlemen hesabına bağlanır. Giriş yapmazsan da bu kodla geri alabilirsin —')} <b style={{ color: '#ffd700' }}>{t('kodu bir yere not et!')}</b></>}
       </div>
       <div
         style={{
@@ -154,17 +172,17 @@ function CloudSection() {
           navigator.clipboard?.writeText(myCode).catch(() => {});
           pushCloudSave();
           sfx.click();
-          setMsg('✓ Kod kopyalandı + yedek alındı');
+          setMsg('✓ ' + t('Kod kopyalandı + yedek alındı'));
         }}
       >
-        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>KURTARMA KODUN</span>
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>{t('KURTARMA KODUN')}</span>
         <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: 3, color: '#ffd700' }}>{myCode}</span>
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         <input
           value={code}
           maxLength={12}
-          placeholder="Eski kodunu gir…"
+          placeholder={t('Eski kodunu gir…')}
           onChange={e => setCode(e.target.value.toUpperCase())}
           onKeyDown={e => { if (e.key === 'Enter') doRestore(); }}
           style={{ ...S.nameInput, letterSpacing: 2 }}
@@ -173,7 +191,7 @@ function CloudSection() {
           style={{ ...S.segBtn, ...S.segOn, minWidth: 90, opacity: code.trim().length < 6 || busy ? 0.4 : 1 }}
           disabled={code.trim().length < 6 || busy}
           onClick={doRestore}
-        >GERİ YÜKLE</button>
+        >{t('GERİ YÜKLE')}</button>
       </div>
       {msg && <div style={{ fontSize: 10, marginTop: 6, color: msg.startsWith('⚠') ? '#ff8866' : '#33ff99', fontWeight: 700 }}>{msg}</div>}
     </div>

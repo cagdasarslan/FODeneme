@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { fetchLeaderboard } from '@/services/LeaderboardService';
 import { fetchPeriodTop, fetchTotalTop, getTotalScore, getPlayerName, isSupaConfigured, getPlayerLocalId } from '@/services/SupaLeaderboard';
+import { t } from '@/i18n';
+import useLang from '@/i18n/useLang';
 
 // Sekmeler: sezonluk tablolar (Supabase) + TÜMÜ (LootLocker, tüm zamanlar).
 // Sezonluk tablolar dönem sonunda kendiliğinden "sıfırlanır" (tarih filtresi) —
@@ -15,6 +17,7 @@ const TABS = [
 ];
 
 export default function Leaderboard({ onClose }) {
+  useLang();
   const [tab, setTab] = useState(isSupaConfigured() ? 'week' : 'all');
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +47,7 @@ export default function Leaderboard({ onClose }) {
             })
           : fetchLeaderboard(20).then(data => data.map((e, i) => ({
               key: e.rank ?? i,
-              name: e.player?.name || `Oyuncu ${e.player?.id}`,
+              name: e.player?.name || `${t('Oyuncu')} ${e.player?.id}`,
               score: e.score ?? 0,
               isMe: String(e.player?.id) === String(playerId),
             }))))
@@ -56,7 +59,7 @@ export default function Leaderboard({ onClose }) {
         })));
     load
       .then(list => { if (on) { setEntries(list); setLoading(false); } })
-      .catch(() => { if (on) { setError('Bağlantı hatası'); setLoading(false); } });
+      .catch(() => { if (on) { setError(t('Bağlantı hatası')); setLoading(false); } });
     return () => { on = false; };
   }, [tab, playerId]);
 
@@ -67,36 +70,36 @@ export default function Leaderboard({ onClose }) {
       <div style={S.panel}>
         <div style={S.header}>
           <span>🏆</span>
-          <h2 style={S.title}>LİDERLİK</h2>
+          <h2 style={S.title}>{t('LİDERLİK')}</h2>
           <button style={S.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         {/* Dönem sekmeleri */}
         <div style={S.tabs}>
-          {TABS.map(t => (
+          {TABS.map(tb => (
             <button
-              key={t.id}
-              style={{ ...S.tab, ...(tab === t.id ? S.tabOn : {}) }}
-              onClick={() => setTab(t.id)}
-            >{t.label}</button>
+              key={tb.id}
+              style={{ ...S.tab, ...(tab === tb.id ? S.tabOn : {}) }}
+              onClick={() => setTab(tb.id)}
+            >{t(tb.label)}</button>
           ))}
         </div>
 
         {tab === 'all' && isSupaConfigured() && (
           <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 8, letterSpacing: 1 }}>
-            🧮 Tüm haritalardaki her oynayışın TOPLAM skoru
+            🧮 {t('Tüm haritalardaki her oynayışın TOPLAM skoru')}
           </div>
         )}
 
         {seasonalUnavailable ? (
           <div style={S.status}>
-            📅 Sezonluk tablolar yakında!<br />
+            📅 {t('Sezonluk tablolar yakında!')}<br />
             <span style={{ fontSize: 10, opacity: 0.7 }}>
-              (Supabase yapılandırması bekleniyor — TÜMÜ sekmesi aktif)
+              {t('(Supabase yapılandırması bekleniyor — TÜMÜ sekmesi aktif)')}
             </span>
           </div>
         ) : loading ? (
-          <div style={S.status}>Yükleniyor...</div>
+          <div style={S.status}>{t('Yükleniyor...')}</div>
         ) : error ? (
           <div style={{ ...S.status, color: '#ff6644' }}>{error}</div>
         ) : (
@@ -107,13 +110,13 @@ export default function Leaderboard({ onClose }) {
                 <div key={e.key} style={{ ...S.row, background: e.isMe ? 'rgba(255,215,0,0.12)' : 'transparent', borderColor: e.isMe ? '#ffd700' : 'rgba(255,255,255,0.07)' }}>
                   <span style={S.rank}>{medal}</span>
                   <span style={{ ...S.name, color: e.isMe ? '#ffd700' : '#fff' }}>
-                    {e.name}{e.isMe ? ' (Sen)' : ''}
+                    {e.name}{e.isMe ? ' (' + t('Sen') + ')' : ''}
                   </span>
                   <span style={S.score}>{(e.score ?? 0).toLocaleString()}</span>
                 </div>
               );
             })}
-            {entries.length === 0 && <div style={S.status}>Bu dönemde henüz skor yok — ilk sen ol! 🏇</div>}
+            {entries.length === 0 && <div style={S.status}>{t('Bu dönemde henüz skor yok — ilk sen ol!')} 🏇</div>}
           </div>
         )}
       </div>
