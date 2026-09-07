@@ -5,6 +5,7 @@ import { getRecoveryCode, restoreFromCloud, pushCloudSave } from '@/services/Clo
 import { getAuthUser, signInWith, signOut } from '@/services/AuthService';
 import { t, getLang, setLang } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 
 // Ayarlar: ses aç/kapat + görüntü kalitesi (DÜŞÜK / YÜKSEK)
 export default function Settings({ onClose }) {
@@ -202,6 +203,7 @@ const S = {
   modal: {
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 650, padding: 16,
+    paddingTop: `calc(16px + ${SAFE_TOP})`, paddingBottom: `calc(16px + ${BOTTOM_SPACE})`, boxSizing: 'border-box',
   },
   box: {
     width: '100%', maxWidth: 360,

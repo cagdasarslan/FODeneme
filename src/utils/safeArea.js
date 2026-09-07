@@ -18,3 +18,11 @@ export const SAFE_BOTTOM = isIOS
 // "calc(8px + <üst güvenli alan>)" gibi ifadeler için yardımcı
 export const topPlus = (px) => `calc(${px}px + ${SAFE_TOP})`;
 export const bottomPlus = (px) => `calc(${px}px + ${SAFE_BOTTOM})`;
+
+// AdMob banner web görünümünün üzerine çizilir. Yüksekliğini AdService
+// --banner-h değişkenine yazar; tam ekran katmanlar bu kadar alt boşluk
+// bırakmalı ki içerik reklamın arkasında kalmasın.
+const isNative = Capacitor.getPlatform() !== 'web';
+export const BOTTOM_SPACE = isNative
+  ? `calc(var(--banner-h, 0px) + ${SAFE_BOTTOM})`
+  : '0px';

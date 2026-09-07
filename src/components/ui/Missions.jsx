@@ -1,4 +1,5 @@
 import useGameStore from '@/store/useGameStore';
+import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
 
@@ -107,7 +108,7 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
 }
 
 const S = {
-  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 640, padding: 14 },
+  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 640, padding: 14, paddingTop: `calc(14px + ${SAFE_TOP})`, paddingBottom: `calc(14px + ${BOTTOM_SPACE})`, boxSizing: 'border-box' },
   box: { width: '100%', maxWidth: 400, maxHeight: '88vh', overflowY: 'auto', background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 16, padding: '18px 16px', fontFamily: 'var(--game-font)' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#fff' },

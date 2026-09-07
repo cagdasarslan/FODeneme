@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { t } from '@/i18n';
-import { SAFE_BOTTOM, topPlus } from '@/utils/safeArea';
+import { BOTTOM_SPACE, topPlus } from '@/utils/safeArea';
 import useLang from '@/i18n/useLang';
 
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
@@ -533,7 +533,7 @@ const s = {
     borderRadius: isMobile ? 0 : 14, display: 'flex', flexDirection: 'column',
     overflow: 'hidden', boxShadow: '0 12px 50px rgba(0,0,0,0.7)',
     // Tam ekranda (mobil) başlık ve alt kenar güvenli alanda kalsın
-    paddingBottom: isMobile ? SAFE_BOTTOM : 0,
+    paddingBottom: isMobile ? BOTTOM_SPACE : 0,
     boxSizing: 'border-box',
   },
   header: {

@@ -4,6 +4,7 @@ import { fetchLeaderboard } from '@/services/LeaderboardService';
 import { fetchPeriodTop, fetchTotalTop, getTotalScore, getPlayerName, isSupaConfigured, getPlayerLocalId } from '@/services/SupaLeaderboard';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 
 // Sekmeler: sezonluk tablolar (Supabase) + TÜMÜ (LootLocker, tüm zamanlar).
 // Sezonluk tablolar dönem sonunda kendiliğinden "sıfırlanır" (tarih filtresi) —
@@ -129,6 +130,7 @@ const S = {
     position: 'fixed', inset: 0, zIndex: 12000,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(4px)',
+    paddingTop: SAFE_TOP, paddingBottom: BOTTOM_SPACE, boxSizing: 'border-box',
   },
   panel: {
     background: 'rgba(8,10,22,0.97)',

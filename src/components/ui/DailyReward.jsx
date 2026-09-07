@@ -3,6 +3,7 @@ import useGameStore from '@/store/useGameStore';
 import { STREAK_REWARDS, STREAK_MAX_REWARD } from '@/constants/daily';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 
 // Günlük giriş ödülü — 7 günlük takvim, her gün artan ödül.
 export default function DailyReward({ onClose }) {
@@ -66,7 +67,7 @@ export default function DailyReward({ onClose }) {
 }
 
 const S = {
-  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 680, padding: 14 },
+  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 680, padding: 14, paddingTop: `calc(14px + ${SAFE_TOP})`, paddingBottom: `calc(14px + ${BOTTOM_SPACE})`, boxSizing: 'border-box' },
   box: { width: '100%', maxWidth: 380, background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))', border: '1px solid rgba(255,215,0,0.3)', borderRadius: 16, padding: '18px 16px', fontFamily: 'var(--game-font)' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#ffd700' },

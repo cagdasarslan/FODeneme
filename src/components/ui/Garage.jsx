@@ -11,7 +11,7 @@ import AdButton from '@/components/ui/AdButton';
 import { AD_UPGRADE_DISCOUNT } from '@/constants/game';
 import { POWERUPS, POWERUP_MAX_LEVEL, powerupDuration, powerupUpgradeCost } from '@/constants/powerups';
 import { t } from '@/i18n';
-import { SAFE_TOP, SAFE_BOTTOM } from '@/utils/safeArea';
+import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import useLang from '@/i18n/useLang';
 
 const CHAR_BASE = '/assets/models/characters/';
@@ -514,7 +514,7 @@ const S = {
     userSelect: 'none',
     // iOS çentiği paneli kesmesin
     paddingTop: SAFE_TOP,
-    paddingBottom: SAFE_BOTTOM,
+    paddingBottom: BOTTOM_SPACE,
     boxSizing: 'border-box',
   },
   panel: {

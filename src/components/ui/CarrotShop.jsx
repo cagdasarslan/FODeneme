@@ -3,6 +3,7 @@ import useGameStore from '@/store/useGameStore';
 import { CARROT_PACKAGES, REMOVE_ADS_ID } from '@/constants/iap';
 import { initBilling, purchase, setGrantHandler, setRemoveAdsHandler, setPricesUpdatedHandler, getDisplayPrice, getRemoveAdsPrice } from '@/services/BillingService';
 import { hideBanner } from '@/services/AdService';
+import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
 
@@ -101,6 +102,7 @@ const S = {
   modal: {
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 700, padding: 12,
+    paddingTop: `calc(12px + ${SAFE_TOP})`, paddingBottom: `calc(12px + ${BOTTOM_SPACE})`, boxSizing: 'border-box',
   },
   box: {
     width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto',

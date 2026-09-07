@@ -18,7 +18,7 @@ import { Capacitor } from '@capacitor/core';
 import { restoreFromCloud } from '@/services/CloudSave';
 import { signInWith } from '@/services/AuthService';
 import { GAME_BUILD } from '@/constants/game';
-import { SAFE_TOP, SAFE_BOTTOM, topPlus } from '@/utils/safeArea';
+import { SAFE_TOP, BOTTOM_SPACE, topPlus } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
 
@@ -650,7 +650,7 @@ const styles = {
     userSelect: 'none',
     // Native'de alttaki AdMob banner'ı alt sekme çubuğunu kapatmasın:
     // kartın tamamını banner yüksekliği kadar yukarı kaldır.
-    paddingBottom: isNative ? `calc(64px + ${SAFE_BOTTOM})` : 0,
+    paddingBottom: BOTTOM_SPACE,
     // Çentik / Dynamic Island menü kartını kesmesin (iOS)
     paddingTop: SAFE_TOP,
     boxSizing: 'border-box',
