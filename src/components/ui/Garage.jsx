@@ -511,6 +511,10 @@ const S = {
     zIndex: 200,
     fontFamily: 'var(--game-font)',
     userSelect: 'none',
+    // iOS çentiği paneli kesmesin
+    paddingTop: 'env(safe-area-inset-top, 0px)',
+    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+    boxSizing: 'border-box',
   },
   panel: {
     background: 'rgba(8,8,18,0.97)',

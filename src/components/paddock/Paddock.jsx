@@ -579,7 +579,9 @@ export function PaddockUI() {
 const S = {
   topBar: {
     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 5000,
-    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+    display: 'flex', alignItems: 'center', gap: 10,
+    // Çentik/durum çubuğu ÇIK butonunu örtmesin
+    padding: 'calc(10px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) 10px calc(12px + env(safe-area-inset-left, 0px))',
     background: 'linear-gradient(180deg, rgba(0,0,0,0.55), transparent)',
     fontFamily: 'var(--game-font)', userSelect: 'none',
   },
@@ -596,7 +598,7 @@ const S = {
   xpText: { color: 'rgba(255,255,255,0.75)', fontSize: 9, marginTop: 2, textShadow: '0 1px 2px #000' },
   carrots: { color: '#ffd700', fontWeight: 800, fontSize: 13, textShadow: '0 1px 3px #000' },
   placingHint: {
-    position: 'fixed', top: 74, left: '50%', transform: 'translateX(-50%)', zIndex: 5001,
+    position: 'fixed', top: 'calc(74px + env(safe-area-inset-top, 0px))', left: '50%', transform: 'translateX(-50%)', zIndex: 5001,
     background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,215,0,0.5)', color: '#ffd700',
     borderRadius: 10, padding: '10px 14px', fontFamily: 'var(--game-font)', fontSize: 12, fontWeight: 700,
     display: 'flex', alignItems: 'center', gap: 10,
