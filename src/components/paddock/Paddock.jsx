@@ -8,6 +8,7 @@ import { HORSES } from '@/constants/horses';
 import { sfx } from '@/utils/audio';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { SAFE_TOP, topPlus, bottomPlus } from '@/utils/safeArea';
 
 // ── Çiftlik: 4 tarafı çitle çevrili sarı kumlu serbest antrenman alanı ────────
 // Sürükle → at o yöne yürür/koşar. ZIPLA butonu (veya boşluk) ile zıplar.
@@ -581,7 +582,7 @@ const S = {
     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 5000,
     display: 'flex', alignItems: 'center', gap: 10,
     // Çentik/durum çubuğu ÇIK butonunu örtmesin
-    padding: 'calc(10px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) 10px calc(12px + env(safe-area-inset-left, 0px))',
+    padding: `${topPlus(10)} calc(12px + env(safe-area-inset-right, 0px)) 10px calc(12px + env(safe-area-inset-left, 0px))`,
     background: 'linear-gradient(180deg, rgba(0,0,0,0.55), transparent)',
     fontFamily: 'var(--game-font)', userSelect: 'none',
   },
@@ -598,7 +599,7 @@ const S = {
   xpText: { color: 'rgba(255,255,255,0.75)', fontSize: 9, marginTop: 2, textShadow: '0 1px 2px #000' },
   carrots: { color: '#ffd700', fontWeight: 800, fontSize: 13, textShadow: '0 1px 3px #000' },
   placingHint: {
-    position: 'fixed', top: 'calc(74px + env(safe-area-inset-top, 0px))', left: '50%', transform: 'translateX(-50%)', zIndex: 5001,
+    position: 'fixed', top: topPlus(74), left: '50%', transform: 'translateX(-50%)', zIndex: 5001,
     background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,215,0,0.5)', color: '#ffd700',
     borderRadius: 10, padding: '10px 14px', fontFamily: 'var(--game-font)', fontSize: 12, fontWeight: 700,
     display: 'flex', alignItems: 'center', gap: 10,
@@ -610,25 +611,25 @@ const S = {
     textShadow: '0 0 14px rgba(51,255,153,0.7), 0 2px 4px #000', pointerEvents: 'none',
   },
   hint: {
-    position: 'fixed', bottom: 'calc(14px + env(safe-area-inset-bottom, 0px))', left: 14, zIndex: 5000,
+    position: 'fixed', bottom: bottomPlus(14), left: 14, zIndex: 5000,
     color: 'rgba(255,255,255,0.65)', fontFamily: 'var(--game-font)', fontSize: 11, pointerEvents: 'none',
     textShadow: '0 1px 3px #000',
   },
   jumpBtn: {
-    position: 'fixed', right: 16, bottom: 'calc(20px + env(safe-area-inset-bottom, 0px))', zIndex: 5000,
+    position: 'fixed', right: 16, bottom: bottomPlus(20), zIndex: 5000,
     width: 76, height: 76, borderRadius: '50%',
     background: 'rgba(255,165,0,0.25)', border: '2px solid rgba(255,165,0,0.6)', color: '#fff',
     fontSize: 22, fontFamily: 'var(--game-font)', fontWeight: 800, cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent',
   },
   shopBtn: {
-    position: 'fixed', bottom: 'calc(20px + env(safe-area-inset-bottom, 0px))', left: '50%', transform: 'translateX(-50%)', zIndex: 5000,
+    position: 'fixed', bottom: bottomPlus(20), left: '50%', transform: 'translateX(-50%)', zIndex: 5000,
     background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,215,0,0.5)', color: '#ffd700',
     borderRadius: 22, padding: '11px 18px', fontFamily: 'var(--game-font)', fontWeight: 800, fontSize: 12,
     letterSpacing: 1, cursor: 'pointer',
   },
   freeBtn: {
-    position: 'fixed', bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))', left: '50%', transform: 'translateX(-50%)', zIndex: 5000,
+    position: 'fixed', bottom: bottomPlus(64), left: '50%', transform: 'translateX(-50%)', zIndex: 5000,
     background: 'linear-gradient(135deg,#2a8a4a,#1a6a30)', border: '1px solid rgba(51,255,153,0.6)', color: '#eafff2',
     borderRadius: 22, padding: '11px 20px', fontFamily: 'var(--game-font)', fontWeight: 800, fontSize: 12,
     letterSpacing: 1, cursor: 'pointer', boxShadow: '0 0 20px rgba(51,255,153,0.35)',

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { t } from '@/i18n';
+import { SAFE_BOTTOM, topPlus } from '@/utils/safeArea';
 import useLang from '@/i18n/useLang';
 
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
@@ -532,12 +533,12 @@ const s = {
     borderRadius: isMobile ? 0 : 14, display: 'flex', flexDirection: 'column',
     overflow: 'hidden', boxShadow: '0 12px 50px rgba(0,0,0,0.7)',
     // Tam ekranda (mobil) başlık ve alt kenar güvenli alanda kalsın
-    paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0px)' : 0,
+    paddingBottom: isMobile ? SAFE_BOTTOM : 0,
     boxSizing: 'border-box',
   },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: isMobile ? 'calc(12px + env(safe-area-inset-top,0px)) 16px 12px' : '14px 20px',
+    padding: isMobile ? `${topPlus(12)} 16px 12px` : '14px 20px',
     borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0,
   },
   headerTitle: { fontSize: isMobile ? 15 : 16, fontWeight: 700, letterSpacing: 2, color: '#ffd700' },

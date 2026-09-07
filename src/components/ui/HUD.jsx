@@ -7,6 +7,7 @@ import { HORSES } from '@/constants/horses';
 const TOP_SPEED = Math.max(...HORSES.map(h => h.baseMaxSpeed ?? 40)) * 1.3;
 import TouchPad from '@/components/ui/TouchPad';
 import { POWERUP_IDS, POWERUP_BY_ID } from '@/constants/powerups';
+import { SAFE_TOP, topPlus } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
 
@@ -260,7 +261,7 @@ const styles = {
     cursor: 'pointer',
   },
   pauseBtn: {
-    position: 'fixed', top: 'calc(8px + env(safe-area-inset-top, 0px))', right: 10, zIndex: 60,
+    position: 'fixed', top: topPlus(8), right: 10, zIndex: 60,
     width: 40, height: 40, borderRadius: 10, fontSize: 18, lineHeight: 1,
     background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.25)',
     color: '#fff', cursor: 'pointer', fontFamily: 'var(--game-font)',
@@ -268,7 +269,7 @@ const styles = {
   topBar: {
     position: 'fixed',
     // Çentik / Dynamic Island altında kalmasın (iOS)
-    top: 'env(safe-area-inset-top, 0px)',
+    top: SAFE_TOP,
     left: '50%',
     transform: 'translateX(-50%)',
     display: 'flex',
