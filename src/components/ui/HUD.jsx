@@ -267,7 +267,8 @@ const styles = {
   },
   topBar: {
     position: 'fixed',
-    top: 0,
+    // Çentik / Dynamic Island altında kalmasın (iOS)
+    top: 'env(safe-area-inset-top, 0px)',
     left: '50%',
     transform: 'translateX(-50%)',
     display: 'flex',

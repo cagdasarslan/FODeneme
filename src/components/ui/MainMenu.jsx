@@ -650,6 +650,8 @@ const styles = {
     // Native'de alttaki AdMob banner'ı alt sekme çubuğunu kapatmasın:
     // kartın tamamını banner yüksekliği kadar yukarı kaldır.
     paddingBottom: isNative ? 'calc(64px + env(safe-area-inset-bottom, 0px))' : 0,
+    // Çentik / Dynamic Island menü kartını kesmesin (iOS)
+    paddingTop: 'env(safe-area-inset-top, 0px)',
     boxSizing: 'border-box',
   },
   card: {
