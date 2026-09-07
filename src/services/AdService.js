@@ -5,19 +5,34 @@ import {
 } from '@capacitor-community/admob';
 
 // ── AdMob reklam kimlikleri ──────────────────────────────────────────────────
-// Kendi AdMob birim kimliklerini buraya yapıştır. Aşağıdakiler Google'ın TEST
-// kimlikleridir; gerçek kimlik girilene kadar reklamlar KAPALI kalır (test
-// reklamlarını yayına göndermek AdMob politikasını ihlal eder). Ayrıca
-// AndroidManifest.xml'deki AdMob App ID'yi de kendi uygulamanınkiyle değiştir.
+// Kimlikler platforma özeldir: Android birimleri iOS'ta çalışmaz, tersi de.
+// Uygulama kimlikleri (App ID) kodda değil, platform dosyalarında durur:
+//   Android → AndroidManifest.xml, com.google.android.gms.ads.APPLICATION_ID
+//   iOS     → ios/App/App/Info.plist, GADApplicationIdentifier
+// iOS'ta bu anahtar yoksa Google SDK'sı uygulamayı bilerek çökertir.
 const TEST_PREFIX = 'ca-app-pub-3940256099942544';
-const REWARD_AD_ID = 'ca-app-pub-3920099901614778/4114106996';
-const BANNER_AD_ID = 'ca-app-pub-3920099901614778/7670354416';
+
+const AD_IDS = {
+  android: {
+    reward: 'ca-app-pub-3920099901614778/4114106996',
+    banner: 'ca-app-pub-3920099901614778/7670354416',
+  },
+  ios: {
+    reward: 'ca-app-pub-3920099901614778/1435142184',
+    banner: 'ca-app-pub-3920099901614778/7808978847',
+  },
+};
+
+const ids = AD_IDS[Capacitor.getPlatform()] ?? { reward: '', banner: '' };
+const REWARD_AD_ID = ids.reward;
+const BANNER_AD_ID = ids.banner;
 
 // Gerçek kimlik girilmediyse ilgili reklam türü devre dışı kalır — test
 // reklamı asla yayınlanmaz (AdMob politikası ihlali olur). İki tür ayrı ayrı
 // kontrol edilir ki biri hazırken diğeri beklemesin.
-export const ADS_ENABLED = !REWARD_AD_ID.startsWith(TEST_PREFIX);
-export const BANNER_ENABLED = !BANNER_AD_ID.startsWith(TEST_PREFIX);
+const isReal = (id) => !!id && !id.startsWith(TEST_PREFIX);
+export const ADS_ENABLED = isReal(REWARD_AD_ID);
+export const BANNER_ENABLED = isReal(BANNER_AD_ID);
 
 const isNative = Capacitor.getPlatform() !== 'web';
 let initialized = false;
