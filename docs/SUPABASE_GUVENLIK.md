@@ -58,4 +58,4 @@ uygulanırsa 1.0.3'teki oyuncuların bulut yedeği çalışmaz.
   sonra yeni sızıntı olmaz.
 - Liderlik toplamları (`totals`) hâlâ istemciden güncelleniyor; biri kendi
   toplamını şişirebilir. Tam çözüm skorun sunucuda hesaplanması — ileride.
-- Satın alma doğrulaması: `docs/SATIN_ALMA_DOGRULAMA.md`.
+- Satın alma doğrulaması (sunucu tarafı makbuz kontrolü) henüz yok — ileride.

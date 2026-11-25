@@ -15,8 +15,6 @@ const BLD_CENTER_X  = ROAD_HALF + SIDEWALK_W + BLD_HALF; // 6+3+5 = 14
 
 const K = '/assets/models/kaykit/';
 
-// Buildings A-H (2×2m modules scaled to 10m)
-const BUILDINGS = ['A','B','C','D','E','F','G','H'].map(l => K+`building_${l}.gltf`);
 // Props
 const K_ROAD     = K+'road_straight.gltf';
 const K_LIGHT    = K+'streetlight.gltf';
@@ -30,8 +28,8 @@ const K_HYDRANT  = K+'firehydrant.gltf';
 const K_TOWER    = K+'watertower.gltf';
 const K_BENCH    = K+'bench.gltf';
 
-[...BUILDINGS, K_ROAD, K_LIGHT, K_TRAFFIC, K_BUSH, K_CAR_S, K_CAR_T,
-  K_CAR_P, K_DUMP, K_HYDRANT, K_TOWER, K_BENCH]
+[K_TOWER, K_ROAD, K_LIGHT, K_TRAFFIC, K_BUSH, K_CAR_S, K_CAR_T,
+  K_CAR_P, K_DUMP, K_HYDRANT, K_BENCH]
   .forEach(p => useGLTF.preload(p));
 
 // ── Per-instance GLB clone ────────────────────────────────────────────────────
@@ -94,34 +92,68 @@ const BLD_COUNT = Math.ceil(SEG_LEN / BLD_STEP); // 12
 // height lookup so we can place water towers only on tall buildings
 const BLD_HEIGHTS = [1.65, 1.65, 2.98, 2.97, 2.35, 2.35, 2.98, 3.05];
 
+// Binalar kodla üretilir. Eskiden 8 GLB bina modeli (×144 kopya) şehirdeki
+// ~160.000 üçgenin neredeyse tamamıydı; kutu gövde + pencere dokusu + çatı
+// kenarıyla bina başına ~36 üçgen kalıyor, görünüm aynı ölçü ve renklerde.
+const BLD_COLORS = ['#c9b79c', '#a8584a', '#8fa3b5', '#d8cfc0', '#7c6a5a', '#b9926a', '#6f8a7a', '#c4a484'];
+function makeFacadeTex(night) {
+  const cv = document.createElement('canvas');
+  cv.width = 64; cv.height = 64;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, 64, 64);
+  // 2×2 pencere: dokuda kat başına bir sıra, iki sütun
+  for (let c = 0; c < 2; c++) {
+    const lit = night && c === 0;
+    g.fillStyle = lit ? '#ffe7a0' : '#3b4a5c';
+    g.fillRect(c * 32 + 7, 10, 18, 30);
+    g.fillStyle = 'rgba(255,255,255,0.25)';
+    g.fillRect(c * 32 + 7, 10, 18, 4);
+  }
+  g.fillStyle = 'rgba(0,0,0,0.12)';
+  g.fillRect(0, 56, 64, 8); // kat çizgisi
+  const t = new THREE.CanvasTexture(cv);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const _facadeTex = typeof document !== 'undefined' ? makeFacadeTex(false) : null;
+const bldBoxGeo  = new THREE.BoxGeometry(1, 1, 1);
+const roofMat    = new THREE.MeshStandardMaterial({ color: '#55534f', roughness: 0.9 });
+// Tip başına malzeme (renk) — dokunun tekrarı yüksekliğe göre ayarlanır
+const _bldMats = new Map();
+function bldMat(typeIdx, floors) {
+  const key = typeIdx * 100 + floors;
+  let m = _bldMats.get(key);
+  if (!m) {
+    const tex = _facadeTex.clone();
+    tex.repeat.set(4, floors);
+    tex.needsUpdate = true;
+    m = new THREE.MeshStandardMaterial({ color: BLD_COLORS[typeIdx], map: tex, roughness: 0.85 });
+    _bldMats.set(key, m);
+  }
+  return m;
+}
+
 function BuildingRow({ side, seed }) {
   const sx = side === 'left' ? -BLD_CENTER_X : BLD_CENTER_X;
-  // face inward toward road
-  const rotY = side === 'left' ? Math.PI / 2 : -Math.PI / 2;
-
+  const W = BLD_STEP - 0.4;
   return (
     <>
       {Array.from({ length: BLD_COUNT }, (_, i) => {
-        // deterministic type per (side, segment seed, position)
-        const typeIdx = (seed * 13 + i * 7 + (side === 'right' ? 4 : 0)) % BUILDINGS.length;
+        const typeIdx = (seed * 13 + i * 7 + (side === 'right' ? 4 : 0)) % BLD_COLORS.length;
         const zc = -(i * BLD_STEP + BLD_STEP / 2);
         const h = BLD_HEIGHTS[typeIdx] * BLD_SCALE;
-
-        // occasionally add a water tower on top of taller buildings
+        const floors = Math.max(2, Math.round(h / 3.2));
         const hasTower = (seed * 17 + i * 11) % 7 === 0 && BLD_HEIGHTS[typeIdx] > 2.5;
-
         return (
           <group key={i}>
-            <GLB path={BUILDINGS[typeIdx]}
-              position={[sx, 0, zc]}
-              scale={BLD_SCALE}
-              rotY={rotY}
-            />
+            <mesh castShadow receiveShadow geometry={bldBoxGeo} material={bldMat(typeIdx, floors)}
+              position={[sx, h / 2, zc]} scale={[W, h, W]} />
+            <mesh geometry={bldBoxGeo} material={roofMat}
+              position={[sx, h + 0.25, zc]} scale={[W + 0.5, 0.5, W + 0.5]} />
             {hasTower && (
-              <GLB path={K_TOWER}
-                position={[sx, h + 1.5, zc]}
-                scale={3}
-              />
+              <GLB path={K_TOWER} position={[sx, h + 0.5, zc]} scale={3} />
             )}
           </group>
         );

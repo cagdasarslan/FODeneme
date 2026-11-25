@@ -15,8 +15,6 @@ const DUN = '/assets/models/dungeon/';
 const D_WALL       = DUN + 'wall.glb';
 const D_WALL_BROKE = DUN + 'wall_broken.glb';
 const D_WALL_GATE  = DUN + 'wall_gate.glb';
-const D_PILLAR     = DUN + 'pillar.glb';
-const D_PILLAR_BRK = DUN + 'pillar_broken.glb';
 const D_TORCH      = DUN + 'torch.glb';
 const D_BANNER     = DUN + 'banner.glb';
 const D_BARREL     = DUN + 'barrelDark.glb';
@@ -33,7 +31,7 @@ const D_BRICKS     = DUN + 'bricks.glb';
 
 // Yalnızca gerçekten kullanılan modeller preload edilir (bellek/yük için).
 const ALL_MODELS = [
-  D_WALL_BROKE, D_WALL_GATE, D_PILLAR, D_PILLAR_BRK, D_TORCH, D_BANNER,
+  D_WALL_BROKE, D_WALL_GATE, D_TORCH, D_BANNER,
   D_BARREL, D_CRATE, D_CHEST, D_WEAPONRACK, D_POTS, D_LOOT,
 ];
 ALL_MODELS.forEach((p) => useGLTF.preload(p));
@@ -53,6 +51,23 @@ function Model({ path, position, scale = 1, rotation = [0, 0, 0] }) {
   return (
     <group position={position} scale={s} rotation={rotation}>
       <primitive object={cloned.current} position={[-off.current[0], 0, -off.current[1]]} />
+    </group>
+  );
+}
+
+// Sütunlar kodla üretilir: GLB sütun 2.656 üçgendi (×30 ≈ 80.000), bu
+// sürüm aynı ölçüde (3.2 m taban, 8 m boy) ~44 üçgen.
+const pillarMat   = new THREE.MeshStandardMaterial({ color: '#77736c', roughness: 0.95 });
+const pillarBoxG  = new THREE.BoxGeometry(1, 1, 1);
+const pillarShaft = new THREE.CylinderGeometry(1.05, 1.15, 1, 8);
+function Pillar({ position, broken }) {
+  const shaftH = broken ? 5.2 : 6.8;
+  return (
+    <group position={position}>
+      <mesh geometry={pillarBoxG} material={pillarMat} position={[0, 0.3, 0]} scale={[3.2, 0.6, 3.2]} />
+      <mesh geometry={pillarShaft} material={pillarMat} position={[0, 0.6 + shaftH / 2, 0]} scale={[1, shaftH, 1]}
+        rotation={[broken ? 0.06 : 0, 0, broken ? 0.05 : 0]} />
+      {!broken && <mesh geometry={pillarBoxG} material={pillarMat} position={[0, 7.7, 0]} scale={[3.2, 0.6, 3.2]} />}
     </group>
   );
 }
@@ -180,7 +195,7 @@ function getSideProps(segIdx) {
     const z = -half + i * pillarStep + pillarStep / 2;
     for (const side of [-1, 1]) {
       const broken = pr(i * 3 + side + 200, segIdx) < 0.25;
-      props.push({ id: `p${i}s${side}`, x: side * 11.5, z, m: broken ? D_PILLAR_BRK : D_PILLAR, scale: 2.0, ry: 0 });
+      props.push({ id: `p${i}s${side}`, x: side * 11.5, z, m: broken ? 'pillar_broken' : 'pillar', scale: 2.0, ry: 0 });
     }
   }
 
@@ -208,7 +223,9 @@ function SegmentContent({ segIdx }) {
     <>
       <RoadSegment segIdx={segIdx} />
       {props.map((p) => (
-        <Model key={p.id} path={p.m} position={[p.x, 0, p.z]} scale={p.scale} rotation={[0, p.ry ?? 0, 0]} />
+        p.m.startsWith('pillar')
+          ? <Pillar key={p.id} position={[p.x, 0, p.z]} broken={p.m === 'pillar_broken'} />
+          : <Model key={p.id} path={p.m} position={[p.x, 0, p.z]} scale={p.scale} rotation={[0, p.ry ?? 0, 0]} />
       ))}
       {torches.map((t) => (
         <group key={t.id} position={[t.x, 0, t.z]}>
