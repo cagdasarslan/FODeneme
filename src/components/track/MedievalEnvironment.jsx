@@ -1,6 +1,5 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 import { SHADOW_MAP, IS_MOBILE } from '@/utils/device';
@@ -10,61 +9,141 @@ const SEG_LEN = 120;
 const SEG_COUNT = 6;
 const RECYCLE_AFTER = SEG_LEN + 20;
 
-const MED = '/assets/models/medieval/';
 // Büyük yapılar — yol kenarı dekoru
-const M_CASTLE     = MED + 'castle.glb';
-const M_HOUSE      = MED + 'house.glb';
-const M_MARKET     = MED + 'market.glb';
-const M_MILL       = MED + 'mill.glb';
-const M_WATERMILL  = MED + 'watermill.glb';
-const M_WATCHTOWER = MED + 'watchtower.glb';
-const M_BARRACKS   = MED + 'barracks.glb';
-const M_ARCHERY    = MED + 'archeryrange.glb';
-const M_LUMBER     = MED + 'lumbermill.glb';
-const M_MINE       = MED + 'mine.glb';
-const M_WALL       = MED + 'wall_straight.glb';
-const M_WALL_GATE  = MED + 'wall_gate.glb';
-const M_WALL_TOWER = MED + 'wall_corner.glb';
-// Doğa — küçük dolgu dekoru
-const M_TREE_A     = MED + 'detail_treeA.glb';
-const M_TREE_B     = MED + 'detail_treeB.glb';
-const M_TREE_C     = MED + 'detail_treeC.glb';
-const M_FOREST     = MED + 'forest.glb';
-const M_FORESTA    = MED + 'detail_forestA.glb';
-const M_FORESTB    = MED + 'detail_forestB.glb';
-const M_ROCKS      = MED + 'detail_rocks.glb';
-const M_ROCKS_SM   = MED + 'detail_rocks_small.glb';
-const M_HILL       = MED + 'detail_hill.glb';
-const M_MOUNTAIN   = MED + 'mountain.glb';
-const M_WELL       = MED + 'well.glb';
-const M_FARM       = MED + 'farm_plot.glb';
+// Ortaçağ dekoru tamamen kodla üretilir. Eskiden 25 GLB model (yapı başına
+// ~1.700-2.300, orman/tepe ~1.700-2.900 üçgen) haritanın ~165.000 üçgeninin
+// büyük kısmıydı. Aynı ölçü ve renklerde basit gövdelerle her öğe 20-150 üçgen.
+const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, flatShading: true, ...extra });
+const MAT = {
+  plaster: mat('#e6d8b8'), plaster2: mat('#d9c39a'), stone: mat('#9a958c'), stoneDk: mat('#7a756c'),
+  wood: mat('#6b4a2e'), roofRed: mat('#9c3b2a'), roofBlue: mat('#3f5a86'), roofBrown: mat('#6e4b32'),
+  leaf: mat('#4f8a3a'), leaf2: mat('#3e7232'), leaf3: mat('#6a9a3e'), trunk: mat('#5a3d24'),
+  rock: mat('#8d8a84'), grass: mat('#6f9a48'), mountain: mat('#7f8a78'), snow: mat('#f2f4f6'),
+  crop: mat('#c9a84a'),
+};
+const G = {
+  box: new THREE.BoxGeometry(1, 1, 1),
+  roof: new THREE.ConeGeometry(0.75, 1, 4, 1).rotateY(Math.PI / 4),
+  cone8: new THREE.ConeGeometry(1, 1, 8, 1),
+  cone6: new THREE.ConeGeometry(1, 1, 6, 1),
+  cyl8: new THREE.CylinderGeometry(1, 1, 1, 8),
+  trunk: new THREE.CylinderGeometry(0.12, 0.16, 1, 5),
+  blob: new THREE.IcosahedronGeometry(1, 0),
+  rock: new THREE.DodecahedronGeometry(1, 0),
+  hill: new THREE.SphereGeometry(1, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2),
+};
+[G.cone8, G.cone6, G.cyl8, G.trunk, G.box].forEach((g) => g.translate(0, 0.5, 0)); // tabanı y=0
+G.roof.translate(0, 0.5, 0);
+const shadow = !IS_MOBILE;
+function P({ g, m, p, s, r }) {
+  return <mesh geometry={G[g]} material={MAT[m]} position={p} scale={s} rotation={r} castShadow={shadow} receiveShadow={shadow} />;
+}
 
-const ALL_MODELS = [
-  M_CASTLE, M_HOUSE, M_MARKET, M_MILL, M_WATERMILL, M_WATCHTOWER, M_BARRACKS,
-  M_ARCHERY, M_LUMBER, M_MINE, M_WALL, M_WALL_GATE, M_WALL_TOWER,
-  M_TREE_A, M_TREE_B, M_TREE_C, M_FOREST, M_FORESTA, M_FORESTB,
-  M_ROCKS, M_ROCKS_SM, M_HILL, M_MOUNTAIN, M_WELL, M_FARM,
-];
-ALL_MODELS.forEach((p) => useGLTF.preload(p));
-
-// Model döndürüldükten sonra yatayda merkeze çek (pivot kaymalarını giderir)
-function Model({ path, position, scale = 1, rotation = [0, 0, 0] }) {
-  const { scene } = useGLTF(path);
-  const cloned = useRef(null);
-  const off    = useRef([0, 0]);
-  if (!cloned.current) {
-    cloned.current = scene.clone(true);
-    // Mobilde yan dekorların gölge üretmesi en büyük performans yükü → kapat
-    cloned.current.traverse((n) => { if (n.isMesh) { n.castShadow = !IS_MOBILE; n.receiveShadow = !IS_MOBILE; } });
-    const box = new THREE.Box3().setFromObject(cloned.current);
-    off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
-  }
-  const s = Array.isArray(scale) ? scale : [scale, scale, scale];
-  return (
-    <group position={position} scale={s} rotation={rotation}>
-      <primitive object={cloned.current} position={[-off.current[0], 0, -off.current[1]]} />
+// Birim ölçüde (≈1.7 m taban) çizilir, çağıran ölçekler — GLB'lerle aynı düzen
+function House({ roof = 'roofRed', wall = 'plaster', h = 0.55 }) {
+  return (<>
+    <P g="box" m={wall} p={[0, 0, 0]} s={[1.5, h, 1.2]} />
+    <P g="box" m="wood" p={[0, h * 0.45, 0.605]} s={[1.52, 0.05, 0.02]} />
+    <P g="box" m="wood" p={[0, 0, 0.61]} s={[0.25, 0.32, 0.02]} />
+    <P g="roof" m={roof} p={[0, h, 0]} s={[2.15, 0.55, 1.75]} />
+  </>);
+}
+function Tower({ h = 1.6, r = 0.4, roof = 'roofBlue' }) {
+  return (<>
+    <P g="cyl8" m="stone" p={[0, 0, 0]} s={[r, h, r]} />
+    <P g="cone8" m={roof} p={[0, h, 0]} s={[r * 1.3, r * 1.8, r * 1.3]} />
+  </>);
+}
+function Castle() {
+  return (<>
+    <P g="box" m="stone" p={[0, 0, 0]} s={[1.3, 1.2, 1.3]} />
+    <P g="box" m="stoneDk" p={[0, 1.2, 0]} s={[0.7, 0.7, 0.7]} />
+    <P g="roof" m="roofBlue" p={[0, 1.9, 0]} s={[1.0, 0.6, 1.0]} />
+    {[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, z], i) => (
+      <group key={i} position={[x * 0.7, 0, z * 0.7]}><Tower h={1.7} r={0.24} /></group>
+    ))}
+  </>);
+}
+function Mill() {
+  return (<>
+    <P g="cyl8" m="plaster2" p={[0, 0, 0]} s={[0.45, 1.1, 0.45]} />
+    <P g="cone8" m="roofBrown" p={[0, 1.1, 0]} s={[0.55, 0.5, 0.55]} />
+    <group position={[0, 1.05, 0.5]}>
+      <P g="box" m="wood" p={[0, -0.6, 0]} s={[0.08, 1.2, 0.03]} />
+      <P g="box" m="wood" p={[0, -0.04, 0]} s={[1.2, 0.08, 0.03]} />
     </group>
-  );
+  </>);
+}
+function Well() {
+  return (<>
+    <P g="cyl8" m="stone" p={[0, 0, 0]} s={[0.45, 0.3, 0.45]} />
+    <P g="box" m="wood" p={[-0.38, 0, 0]} s={[0.06, 0.7, 0.06]} />
+    <P g="box" m="wood" p={[0.38, 0, 0]} s={[0.06, 0.7, 0.06]} />
+    <P g="roof" m="roofBrown" p={[0, 0.68, 0]} s={[1.1, 0.3, 0.9]} />
+  </>);
+}
+function Farm() {
+  return (<>
+    <P g="box" m="trunk" p={[0, 0, 0]} s={[1.4, 0.05, 1.2]} />
+    {[-0.45, -0.15, 0.15, 0.45].map((x) => <P key={x} g="box" m="crop" p={[x, 0.05, 0]} s={[0.16, 0.18, 1.1]} />)}
+  </>);
+}
+function Tree({ kind = 0 }) {
+  const leaf = ['leaf', 'leaf2', 'leaf3'][kind % 3];
+  return (<>
+    <P g="trunk" m="trunk" p={[0, 0, 0]} s={[1, 0.35, 1]} />
+    {kind === 1
+      ? <P g="cone6" m={leaf} p={[0, 0.2, 0]} s={[0.26, 0.6, 0.26]} />
+      : <P g="blob" m={leaf} p={[0, 0.48, 0]} s={[0.26, 0.3, 0.26]} />}
+  </>);
+}
+const FOREST_SPOTS = [[-0.6, -0.3, 0], [-0.2, 0.25, 1], [0.25, -0.35, 2], [0.6, 0.2, 0], [0.05, 0, 1], [-0.45, 0.45, 2], [0.5, -0.5, 1]];
+function Forest({ n = 5, big = 1 }) {
+  return FOREST_SPOTS.slice(0, n).map(([x, z, k], i) => (
+    <group key={i} position={[x, 0, z]} scale={big * (0.9 + (i % 3) * 0.15)}><Tree kind={k} /></group>
+  ));
+}
+function Rocks({ n = 3 }) {
+  return [[0, 0, 0.4], [0.5, 0.2, 0.28], [-0.45, -0.15, 0.22]].slice(0, n).map(([x, z, r], i) => (
+    <P key={i} g="rock" m="rock" p={[x, r * 0.4, z]} s={[r, r * 0.7, r]} r={[0, i * 1.3, 0]} />
+  ));
+}
+function Hill() {
+  return (<>
+    <P g="hill" m="grass" p={[0, 0, 0]} s={[0.9, 0.9, 0.8]} />
+    <group position={[0.3, 0.55, 0.1]} scale={0.8}><Tree kind={0} /></group>
+  </>);
+}
+function Mountain() {
+  return (<>
+    <P g="cone6" m="mountain" p={[0, 0, 0]} s={[0.95, 1.25, 0.95]} />
+    <P g="cone6" m="snow" p={[0, 0.85, 0]} s={[0.31, 0.41, 0.31]} />
+  </>);
+}
+
+const ITEMS = {
+  house: () => <House />, market: () => <House roof="roofBlue" wall="plaster2" h={0.45} />,
+  barracks: () => <House roof="roofBrown" wall="stone" h={0.65} />,
+  lumber: () => <House roof="roofBrown" wall="plaster2" h={0.5} />,
+  mine: () => <House roof="roofBrown" wall="stoneDk" h={0.4} />,
+  archery: () => (<><House roof="roofRed" h={0.5} /><group position={[0.7, 0, 0.5]}><Tower h={1.0} r={0.18} roof="roofRed" /></group></>),
+  watchtower: () => <Tower h={1.6} r={0.35} roof="roofRed" />,
+  mill: () => <Mill />, watermill: () => <Mill />, well: () => <Well />, farm: () => <Farm />, castle: () => <Castle />,
+  treeA: () => <Tree kind={0} />, treeB: () => <Tree kind={1} />, treeC: () => <Tree kind={2} />,
+  forestA: () => <Forest n={5} />, forestB: () => <Forest n={4} />, forest: () => <Forest n={7} big={1.6} />,
+  rocks: () => <Rocks n={3} />, rocksSm: () => <group scale={0.5}><Rocks n={2} /></group>,
+  hill: () => <Hill />, mountain: () => <Mountain />,
+};
+const M_CASTLE = 'castle', M_HOUSE = 'house', M_MARKET = 'market', M_MILL = 'mill', M_WATERMILL = 'watermill',
+  M_WATCHTOWER = 'watchtower', M_BARRACKS = 'barracks', M_ARCHERY = 'archery', M_LUMBER = 'lumber', M_MINE = 'mine',
+  M_TREE_A = 'treeA', M_TREE_B = 'treeB', M_TREE_C = 'treeC', M_FOREST = 'forest', M_FORESTA = 'forestA',
+  M_FORESTB = 'forestB', M_ROCKS = 'rocks', M_ROCKS_SM = 'rocksSm', M_HILL = 'hill', M_MOUNTAIN = 'mountain',
+  M_WELL = 'well', M_FARM = 'farm';
+
+function Model({ path, position, scale = 1, rotation = [0, 0, 0] }) {
+  const s = Array.isArray(scale) ? scale : [scale, scale, scale];
+  const make = ITEMS[path];
+  return <group position={position} scale={s} rotation={rotation}>{make ? make() : null}</group>;
 }
 
 // ── Gökyüzü dekoru ────────────────────────────────────────────────────────────
