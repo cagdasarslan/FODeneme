@@ -33,6 +33,7 @@ import { obstacleRegistry } from '@/utils/obstacleRegistry';
 import { horseRef } from '@/utils/horseRef';
 import { controlsState } from '@/hooks/useHorseControls';
 import { getKind, getHitbox } from '@/components/obstacles/ObstacleSpawner';
+import { initAds } from '@/services/AdService';
 
 // Test köprüsü — yalnız localStorage.dbg === '1' iken (bot/QA); oyuncuda kapalı
 if (typeof window !== 'undefined' && localStorage.getItem('dbg') === '1') {
@@ -77,6 +78,7 @@ export default function App() {
     initSession(); initDaily(); initNotifications(); initCloudSave();
     refreshSessionIfNeeded();
     initAuth(linkCloudToAccount); // Google/Apple dönüşünü yakala → bulut kaydını bağla
+    initAds(); // AB onay formu reklamlardan önce sorulsun
   }, [initSession, initDaily]);
 
   // Uygulama arka plana alınınca hatırlatma bildirimlerini planla

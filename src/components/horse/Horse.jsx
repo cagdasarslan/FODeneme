@@ -580,7 +580,11 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
         const [hbDx] = getHitbox(obs.TypeFn);
         const dx = Math.abs(pos.x - obs.x);
         const dz = Math.abs(pos.z - obs.z);
-        if (dx < hbDx * HIT_TOL_X && dz < OVERHEAD_DZ) {
+        // Süpürmeli kontrol: kapı bu karede at hizasını geçtiyse de say
+        // (yüksek hız / düşük FPS'te tek karede kapının içinden geçilmesin)
+        const stepO = useGameStore.getState().speed * delta;
+        const crossO = obs.z > pos.z - OVERHEAD_DZ && obs.z - stepO < pos.z + OVERHEAD_DZ;
+        if (dx < hbDx * HIT_TOL_X && crossO) {
           if (sliding) {
             if (!slidUnderRef.current.has(id)) {
               slidUnderRef.current.add(id);
@@ -643,7 +647,13 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       const [hbDx, hbDz] = getHitbox(obs.TypeFn);
       const dx = Math.abs(pos.x - obs.x);
       const dz = Math.abs(pos.z - obs.z);
-      if (dx < hbDx * tolX && dz < hbDz * tolZ) {
+      // Süpürmeli kontrol: engelin önceki kareden bu kareye kat ettiği yol at
+      // hizasından geçiyorsa çarpışma (tek kare kontrolünde turbo / düşük FPS'te
+      // engel atın üstünden atlıyor, bazen geçilip bazen ölünüyordu).
+      const wZ = hbDz * tolZ;
+      const stepG = useGameStore.getState().speed * delta;
+      const crossG = obs.z > pos.z - wZ && obs.z - stepG < pos.z + wZ;
+      if (dx < hbDx * tolX && crossG) {
         // Nal Zırhı: ilk çarpmayı emer
         if (useGameStore.getState().consumeShield()) {
           graceRef.current = 1.0;

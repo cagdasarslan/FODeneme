@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { showRewardedAds } from '@/services/AdService';
+import { showRewardedAds, REWARDED_AVAILABLE } from '@/services/AdService';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
 
@@ -11,6 +11,10 @@ export default function AdButton({
   const [busy, setBusy] = useState(false);
   useLang();
   const [prog, setProg] = useState({ c: 0, t: 0 });
+
+  // Reklam gösterilemiyorsa (reklam kimliği yok / yayın web sürümü) buton hiç
+  // görünmez — reklam izlemeden ödül vermek politika ihlalidir.
+  if (!REWARDED_AVAILABLE) return null;
 
   const handle = async () => {
     if (busy || disabled) return;

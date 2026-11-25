@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import useGameStore from '@/store/useGameStore';
-import { showRewardedAds } from '@/services/AdService';
+import { showRewardedAds, REWARDED_AVAILABLE } from '@/services/AdService';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
 
@@ -23,20 +23,29 @@ export default function ContinueOverlay() {
   const [countdown, setCountdown] = useState(0);
   const pendingRef = useRef(null);
 
-  // 3-2-1 geri sayım; 0'a inince devam (revive) işlemini tetikler
+  // 3-2-1 geri sayım; 0'a inince devam (revive) işlemini tetikler.
+  // Uygulama arka plandayken geri sayım DURUR — aksi halde at oyuncu
+  // görmeden koşmaya başlıyordu.
+  const [hidden, setHidden] = useState(() => typeof document !== 'undefined' && document.hidden);
   useEffect(() => {
-    if (countdown <= 0) return;
-    const t = setTimeout(() => {
+    const onVis = () => setHidden(document.hidden);
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+  useEffect(() => {
+    if (countdown <= 0 || hidden) return;
+    const tm = setTimeout(() => {
       if (countdown === 1) pendingRef.current?.();
       setCountdown((c) => c - 1);
     }, 1000);
-    return () => clearTimeout(t);
-  }, [countdown]);
+    return () => clearTimeout(tm);
+  }, [countdown, hidden]);
 
   if (phase !== 'crashed') return null;
 
   const cost = continueCost();
   const canAfford = carrots >= cost.carrots;
+  const adOffered = REWARDED_AVAILABLE && cost.adAllowed;
 
   const startCountdown = (action) => { pendingRef.current = action; setCountdown(3); };
 
@@ -55,7 +64,7 @@ export default function ContinueOverlay() {
       <div style={S.backdrop}>
         <div style={S.countWrap}>
           <div style={{ fontSize: 56 }}>📺</div>
-          <div style={S.countText}>Reklam izleniyor</div>
+          <div style={S.countText}>{t('Reklam izleniyor')}</div>
           <div style={S.countNum}>{adProg.c} / {adProg.t}</div>
         </div>
       </div>
@@ -78,7 +87,7 @@ export default function ContinueOverlay() {
     <div style={S.backdrop}>
       <div style={S.panel}>
         <div style={S.title}>{t('ÇARPTIN!')}</div>
-        <div style={S.sub}>Devam etmek ister misin?</div>
+        <div style={S.sub}>{t('Devam etmek ister misin?')}</div>
 
         <button
           style={{ ...S.btn, ...S.carrotBtn, ...(canAfford ? {} : S.disabled) }}
@@ -90,20 +99,22 @@ export default function ContinueOverlay() {
           </span>
         </button>
 
-        <button
-          style={{ ...S.btn, ...S.adBtn, ...(watching ? S.disabled : {}) }}
-          onClick={handleAd}
-        >
-          <span style={S.btnMain}>📺 {t('Reklam izle ({n} reklam)', { n: cost.ads })}</span>
-          <span style={S.btnSubText}>{watching ? t('Reklam yükleniyor…') : t('İzleyerek ücretsiz devam et')}</span>
-        </button>
+        {adOffered && (
+          <button
+            style={{ ...S.btn, ...S.adBtn, ...(watching ? S.disabled : {}) }}
+            onClick={handleAd}
+          >
+            <span style={S.btnMain}>📺 {t('Reklam izleyerek devam et')}</span>
+            <span style={S.btnSubText}>{watching ? t('Reklam yükleniyor…') : t('İzleyerek ücretsiz devam et')}</span>
+          </button>
+        )}
 
         <button style={S.giveUp} onClick={() => giveUp()} disabled={watching}>
-          VAZGEÇ
+          {t('VAZGEÇ')}
         </button>
 
         {reviveCount > 0 && (
-          <div style={S.note}>{t('Bu koşuda {n}. devam — maliyet her seferinde 3 katına çıkar', { n: reviveCount })}</div>
+          <div style={S.note}>{t('Bu koşuda {n}. devam — havuç maliyeti her seferinde 3 katına çıkar', { n: reviveCount })}</div>
         )}
       </div>
     </div>

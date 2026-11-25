@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import useGameStore from '@/store/useGameStore';
-import { INITIAL_SPEED } from '@/constants/game';
+import { INITIAL_SPEED, STUMBLE_WINDOW_MS } from '@/constants/game';
 import { HORSES } from '@/constants/horses';
 
 // Gösterge skalası: en hızlı atın boost'lu üst hızına göre (40'ta doygunlaşmasın)
@@ -172,13 +172,18 @@ export default function HUD() {
 
       {/* Tökezleme uyarısı — pencere içinde ikinci çarpma öldürür */}
       {stumbleActive && (
-        <div style={{ position:'fixed', top:160, left:'50%', transform:'translateX(-50%)',
+        <div style={{ position:'fixed', top: topPlus(118), left:'50%', transform:'translateX(-50%)', textAlign:'center',
           fontFamily:'var(--game-font)', fontSize:14, fontWeight:900, color:'#ff5544',
           textShadow:'0 0 12px #ff2200', letterSpacing:2, pointerEvents:'none',
           background:'rgba(0,0,0,0.45)', padding:'6px 14px', borderRadius:8,
           border:'1px solid rgba(255,60,40,0.5)',
           animation:'pulse 0.6s infinite alternate' }}>
-          ⚠️ TÖKEZLEDİN — bir daha çarparsan düşersin!
+          ⚠️ {t('TÖKEZLEDİN — bir daha çarparsan düşersin!')}
+          {/* Kalan tehlike süresi — oyuncu ikinci çarpmanın neden öldürdüğünü görsün */}
+          <div style={{ marginTop:5, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, overflow:'hidden' }}>
+            <div style={{ height:'100%', background:'#ff5544',
+              width: `${Math.max(0, Math.min(100, (useGameStore.getState().stumbleUntil - Date.now()) / STUMBLE_WINDOW_MS * 100))}%` }} />
+          </div>
         </div>
       )}
 

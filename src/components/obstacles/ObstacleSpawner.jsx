@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, Suspense } from 'react';
+import { useRef, useCallback, useEffect, useState, memo, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
@@ -418,7 +418,11 @@ export function getHitbox(TypeFnOrName) {
 }
 
 // ── Tek engel bileşeni ────────────────────────────────────────────────────────
-function Obstacle({ data, onRef }) {
+// Görsel tip PROP olarak gelir: yuva yeniden kullanılıp tipi değişince bileşen
+// yeniden çizilir. Eskiden tip yalnızca ref nesnesinde değişiyordu; React
+// yeniden render etmediği için ekranda eski engel (ör. fıçı) kalırken çarpışma
+// yeni tipe (ör. üst bariyer) göre yapılıyordu → "çarpmadan ölme" hatası.
+const Obstacle = memo(function Obstacle({ data, Type, onRef }) {
   return (
     <RigidBody
       ref={rb => onRef(data.id, rb)}
@@ -428,11 +432,11 @@ function Obstacle({ data, onRef }) {
       userData={{ tag: 'obstacle' }}
     >
       <Suspense fallback={null}>
-        <data.Type />
+        <Type />
       </Suspense>
     </RigidBody>
   );
-}
+}, (a, b) => a.Type === b.Type && a.data === b.data);
 
 // ── Spawner ───────────────────────────────────────────────────────────────────
 export default function ObstacleSpawner() {
@@ -449,6 +453,8 @@ export default function ObstacleSpawner() {
       active: false,
     }))
   );
+  // Her yuvanın ekranda çizilen tipi — çarpışma tipiyle (registry) aynı kaynak
+  const [slotTypes, setSlotTypes] = useState(() => poolRef.current.map(o => o.Type));
   const rbRefs   = useRef({});
   const timerRef = useRef(0);
   const waveIdx  = useRef(0);
@@ -507,6 +513,7 @@ export default function ObstacleSpawner() {
     lastFullRef.current = pattern.length === 3;
     waveIdx.current++;
 
+    let typesChanged = false;
     pattern.forEach((laneIdx, pi) => {
       const slot = poolRef.current.find((o) => !o.active);
       if (!slot) return;
@@ -519,6 +526,7 @@ export default function ObstacleSpawner() {
       slot.x         = LANES[laneIdx];
       slot.z         = SPAWN_Z + pi * 0.5;
       slot.typeIdx   = typeIdx;
+      if (slot.Type !== TypeFn) typesChanged = true;
       slot.Type      = TypeFn;
       slot.TypeFn    = TypeFn;
       // Hareketli engel: yalnızca TEK şeritli dalgalarda, yüksek hızda, zemin
@@ -533,12 +541,14 @@ export default function ObstacleSpawner() {
       setObstacleActive(slot.id, true);
       rbRefs.current[slot.id]?.setTranslation({ x: slot.x, y: 0.15, z: slot.z }, true);
     });
+    // Görseli yeni tiple eşitle (dalga başına tek render; engel henüz uzakta)
+    if (typesChanged) setSlotTypes(poolRef.current.map(o => o.Type));
   });
 
   return (
     <>
       {poolRef.current.map((obs) => (
-        <Obstacle key={obs.id} data={obs} onRef={onRef} />
+        <Obstacle key={obs.id} data={obs} Type={slotTypes[obs.id] ?? obs.Type} onRef={onRef} />
       ))}
     </>
   );

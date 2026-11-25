@@ -18,6 +18,8 @@ import {
   CONTINUE_BASE_CARROTS,
   CONTINUE_BASE_ADS,
   CONTINUE_MULTIPLIER,
+  MAX_AD_REVIVES,
+  REVIVE_INVULN_MS,
   AD_DAILY_CARROTS,
   AD_DAILY_MAX,
   AD_UPGRADE_DISCOUNT,
@@ -159,6 +161,8 @@ const useGameStore = create(
     stumbleActive: false,
     stumbleRecover: 0, // tökezleme sonrası dönülecek hız (0 = yok)
     dying: false,      // ölümcül çarpma sonrası slow-mo penceresi (overlay gecikir)
+    invulnUntil: 0,    // devam (revive) sonrası kısa dokunulmazlık
+    pausedAt: 0,       // duraklatma anı — zaman pencerelerini dondurmak için
     runCarrots: 0,      // bu koşuda toplanan havuç (oyun sonu 2x için)
     carrotsDoubled: false, // oyun sonu havuç katlama kullanıldı mı
     startBoost: false,  // sonraki koşuya boost (mıknatıs) ile başla
@@ -284,12 +288,28 @@ const useGameStore = create(
         adrenalinBoosting: false,
         adrenalinBoostTimer: 0,
         combo: 0, comboExpire: 0, comboMult: 1,
-        stumbleUntil: 0, stumbleActive: false, stumbleRecover: 0, dying: false,
+        stumbleUntil: 0, stumbleActive: false, stumbleRecover: 0, dying: false, invulnUntil: 0, pausedAt: 0,
       }));
     },
 
-    pauseRun: () => set({ phase: 'paused' }),
-    resumeRun: () => set({ phase: 'playing' }),
+    pauseRun: () => {
+      const s = get();
+      if (s.phase !== 'playing' || s.dying) return; // ölüm anında duraklatma yok
+      set({ phase: 'paused', pausedAt: Date.now() });
+    },
+    resumeRun: () => {
+      const s = get();
+      if (s.phase !== 'paused') return;
+      // Duraklatmada geçen süre kadar zaman pencerelerini ileri kaydır
+      const away = s.pausedAt ? Date.now() - s.pausedAt : 0;
+      const shift = (v) => (v > 0 ? v + away : v);
+      set({
+        phase: 'playing', pausedAt: 0,
+        stumbleUntil: shift(s.stumbleUntil),
+        comboExpire: shift(s.comboExpire),
+        invulnUntil: shift(s.invulnUntil),
+      });
+    },
 
     endRun: async () => {
       flushCarrotSave(get); // bekleyen havuç yazımını hemen diske al
@@ -534,6 +554,7 @@ const useGameStore = create(
       const s = get();
       if (s.phase !== 'playing' || s.dying) return; // ölüm slow-mo'su sürerken tekrar tetikleme
       const now = Date.now();
+      if (now < s.invulnUntil) return; // devam sonrası kısa dokunulmazlık
       if (now < s.stumbleUntil) {
         // ── ÖLÜMCÜL çarpma ── sinematik yavaş-çekim OYNA, sonra overlay'i göster
         sfx.crash();
@@ -541,7 +562,14 @@ const useGameStore = create(
         triggerSlowmo();
         set({ dying: true });
         // dünya slow-mo ile kayarken ölüm anını göster; ~620ms sonra devam ekranı
-        setTimeout(() => { if (get().dying) set({ phase: 'crashed', dying: false }); }, 620);
+        const runAtDeath = s.runId;
+        setTimeout(() => {
+          const st = get();
+          // Yalnızca aynı koşu hâlâ ölüm anındaysa devam ekranına geç
+          if (st.dying && st.runId === runAtDeath && (st.phase === 'playing' || st.phase === 'paused')) {
+            set({ phase: 'crashed', dying: false });
+          }
+        }, 620);
       } else {
         // ── TÖKEZLEME (hayatta kalınır) ── kısa slow-mo + yavaşlama, oyun sürer
         sfx.crash();
@@ -565,7 +593,8 @@ const useGameStore = create(
       const n = get().reviveCount;
       return {
         carrots: CONTINUE_BASE_CARROTS * Math.pow(CONTINUE_MULTIPLIER, n),
-        ads:     CONTINUE_BASE_ADS     * Math.pow(CONTINUE_MULTIPLIER, n),
+        ads:     CONTINUE_BASE_ADS,              // AdMob: bir ödül = bir reklam
+        adAllowed: n < MAX_AD_REVIVES,           // koşu başına sınırlı reklamlı devam
       };
     },
 
@@ -582,6 +611,7 @@ const useGameStore = create(
         adrenalinBoostTimer: 0,
         combo: 0, comboExpire: 0, comboMult: 1,
         stumbleUntil: 0, stumbleActive: false,
+        invulnUntil: Date.now() + REVIVE_INVULN_MS, // önde kalan engele anında çarpmasın
         wingsActive: false,  wingsTimer: 0,
         turboActive: false,  turboTimer: 0,
         slowmoActive: false, slowmoTimer: 0,

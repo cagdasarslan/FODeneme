@@ -35,47 +35,103 @@ export const ADS_ENABLED = isReal(REWARD_AD_ID);
 export const BANNER_ENABLED = isReal(BANNER_AD_ID);
 
 const isNative = Capacitor.getPlatform() !== 'web';
-let initialized = false;
+const IS_DEV = !!import.meta.env?.DEV;
 
-async function ensureInit() {
-  if (initialized || !isNative) return;
+// Ödüllü reklam bu cihazda gerçekten gösterilebilir mi? Web'de yalnızca
+// geliştirme modunda simüle edilir; yayındaki sürümde reklam yoksa butonlar
+// gizlenir — reklam izlemeden ödül vermek AdMob politikası ihlalidir.
+export const REWARDED_AVAILABLE = (isNative && ADS_ENABLED) || (!isNative && IS_DEV);
+
+let initPromise = null;
+
+// AB/EEA kullanıcıları için Google UMP onay formu reklamlardan ÖNCE sorulmalı
+// (Google EU User Consent Policy). Onay gerekmiyorsa form hiç açılmaz.
+async function requestConsent() {
   try {
-    await AdMob.initialize({});
-    initialized = true;
+    const info = await AdMob.requestConsentInfo();
+    if (info?.isConsentFormAvailable && info.status === 'REQUIRED') {
+      await AdMob.showConsentForm();
+    }
   } catch (e) {
-    console.warn('[AdService] init failed:', e);
+    console.warn('[AdService] consent failed:', e);
   }
 }
 
-// Tek bir ödüllü reklam göster. Ödül kazanılırsa true, aksi halde false döner.
-// Web/native olmayan ortamda (geliştirme) ~5sn bekleyip true döner (placeholder)
-// ki reklam ekranı erken kapanmasın (3 reklam ≈ 15sn+ simülasyonda).
-export async function showRewardedAd() {
-  // Gerçek AdMob kimliği yoksa reklam gösterme (test reklamı yayınlama) —
-  // ödülü doğrudan ver ki oyuncu bonus butonlarını yine de kullanabilsin.
-  if (!isNative || !ADS_ENABLED) { await new Promise(r => setTimeout(r, 400)); return true; }
-  await ensureInit();
-
-  return new Promise((resolve) => {
-    let rewarded = false;
-    let settled = false;
-    const listeners = [];
-    const cleanup = () => { listeners.forEach(l => l?.remove?.()); };
-    const finish = (val) => { if (settled) return; settled = true; cleanup(); resolve(val); };
-
-    AdMob.addListener(RewardAdPluginEvents.Rewarded, () => { rewarded = true; }).then(l => listeners.push(l));
-    AdMob.addListener(RewardAdPluginEvents.Dismissed, () => finish(rewarded)).then(l => listeners.push(l));
-    AdMob.addListener(RewardAdPluginEvents.FailedToShow, () => finish(false)).then(l => listeners.push(l));
-
-    (async () => {
+function ensureInit() {
+  if (!isNative) return Promise.resolve();
+  if (!initPromise) {
+    initPromise = (async () => {
+      await requestConsent();
       try {
-        await AdMob.prepareRewardVideoAd({ adId: REWARD_AD_ID });
-        await AdMob.showRewardVideoAd();
+        // Aile dostu bir oyun: yetişkin içerikli reklamları kapat
+        await AdMob.initialize({ maxAdContentRating: 'ParentalGuidance' });
       } catch (e) {
-        console.warn('[AdService] showRewardedAd failed:', e);
-        finish(false);
+        console.warn('[AdService] init failed:', e);
+        initPromise = null; // bir sonraki denemede tekrar dene
       }
     })();
+  }
+  return initPromise;
+}
+
+// Uygulama açılışında çağrılır: onay formu oyuncu bir reklama basmadan önce
+// sorulmuş olur (reklam anında form açılması kötü deneyim).
+export function initAds() {
+  if (isNative && (ADS_ENABLED || BANNER_ENABLED)) ensureInit();
+}
+
+const AD_TIMEOUT_MS = 90_000;     // hiç olay gelmezse oyuncu kilitlenmesin
+const REWARD_GRACE_MS = 1500;     // iOS'ta ödül olayı kapanıştan SONRA gelebiliyor
+
+// Tek bir ödüllü reklam göster. Ödül kazanılırsa true, aksi halde false döner.
+export async function showRewardedAd() {
+  if (!REWARDED_AVAILABLE) return false;
+  if (!isNative) { await new Promise(r => setTimeout(r, 600)); return true; } // geliştirme simülasyonu
+  await ensureInit();
+
+  return new Promise(async (resolve) => {
+    let rewarded = false;
+    let dismissed = false;
+    let settled = false;
+    const handles = [];
+    let graceTimer = null;
+    const finish = (val) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(graceTimer);
+      clearTimeout(timeout);
+      handles.forEach(h => { try { h.remove(); } catch (e) {} });
+      resolve(val);
+    };
+    const timeout = setTimeout(() => finish(rewarded), AD_TIMEOUT_MS);
+
+    const onReward = () => { rewarded = true; if (dismissed) finish(true); };
+
+    try {
+      // Dinleyicileri reklam gösterilmeden ÖNCE kesin olarak kaydet; aksi halde
+      // erken gelen olaylar kaçıyor ve geç eklenen dinleyiciler hiç kaldırılmıyordu.
+      handles.push(...await Promise.all([
+        AdMob.addListener(RewardAdPluginEvents.Rewarded, onReward),
+        AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
+          dismissed = true;
+          if (rewarded) finish(true);
+          // Ödül olayı kapanıştan sonra gelirse kaybetme: kısa süre bekle
+          else graceTimer = setTimeout(() => finish(rewarded), REWARD_GRACE_MS);
+        }),
+        AdMob.addListener(RewardAdPluginEvents.FailedToShow, () => finish(false)),
+        AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => finish(false)),
+      ]));
+      if (settled) { handles.forEach(h => { try { h.remove(); } catch (e) {} }); return; }
+
+      await AdMob.prepareRewardVideoAd({ adId: REWARD_AD_ID });
+      // showRewardVideoAd ödül kazanıldığında ödül nesnesiyle çözülür — olaylara
+      // ek bir güvence olarak bunu da ödül sayıyoruz.
+      const item = await AdMob.showRewardVideoAd();
+      if (item && (item.amount != null || item.type)) onReward();
+    } catch (e) {
+      console.warn('[AdService] showRewardedAd failed:', e);
+      finish(rewarded);
+    }
   });
 }
 

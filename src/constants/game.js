@@ -18,6 +18,8 @@ export const ADRENALINE_MAX             = 100;
 export const CONTINUE_BASE_CARROTS = 200;
 export const CONTINUE_BASE_ADS     = 1;
 export const CONTINUE_MULTIPLIER   = 3;
+export const MAX_AD_REVIVES        = 2;     // koşu başına en fazla reklamlı devam
+export const REVIVE_INVULN_MS      = 2000;  // devam sonrası dokunulmazlık süresi
 
 // Eğilme (slide) — üstten geçen engellerin altından kaymak için
 export const SLIDE_DURATION_MS = 700;
