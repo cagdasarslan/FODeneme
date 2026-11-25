@@ -1,9 +1,9 @@
-import { useRef, useEffect, Suspense } from 'react';
+import { useRef, useEffect, useCallback, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { sfx, setGallopSpeed } from '@/utils/audio';
 import { useGLTF, useAnimations } from '@react-three/drei';
-import { RigidBody, CapsuleCollider } from '@react-three/rapier';
+import { makeKinematicBody } from '@/utils/kinematicBody';
 import * as THREE from 'three';
 import { useHorseControls } from '@/hooks/useHorseControls';
 import useGameStore from '@/store/useGameStore';
@@ -99,7 +99,7 @@ function PegasusWings() {
 }
 
 const FLY_Y = 4.2;            // uçuş yüksekliği (RigidBody y)
-const _horseT = { x: 0, y: 0, z: 0 }; // her kare rapier setTranslation için paylaşılan obje (allocation yok)
+const _horseT = { x: 0, y: 0, z: 0 }; // her kare setTranslation için paylaşılan obje (allocation yok)
 // Çarpışma toleransı: hitbox'ın kenarına sürtmek öldürmesin — yalnızca
 // gerçekten engelin İÇİNE girince çarpma sayılır (yanlardan %25, önden %12 pay)
 const HIT_TOL_X = 0.68;
@@ -353,6 +353,8 @@ function HorseModel({ modelPath, scale, groupRef, horseVariant }) {
 // Three.js Horse.glb scale 0.013 ≈ 1.3 birim yükseklik
 export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   const rigidBodyRef   = useRef(null);
+  // Kinematik gövde (eski Rapier RigidBody'nin yerine); başlangıç konumu yalnızca ilk bağlanışta
+  const bodyRefCb = useCallback((g) => { rigidBodyRef.current = g ? makeKinematicBody(g, [0, 1.2, 0]) : null; }, []);
   const modelGroupRef  = useRef(null);
   const placeholderRef = useRef(null);
   const tiltRef        = useRef(0);
@@ -677,13 +679,7 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
   });
 
   return (
-    <RigidBody
-      ref={rigidBodyRef}
-      type="kinematicPosition"
-      colliders={false}
-      position={[0, 1.2, 0]}
-    >
-      <CapsuleCollider args={[0.5, 0.55]} />
+    <group ref={bodyRefCb}>
 
       {/* Çömelme sarmalayıcısı: eğilirken model + jokey birlikte bastırılır */}
       <group ref={crouchRef}>
@@ -698,6 +694,6 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
         <Jockey />
         <PegasusWings />
       </group>
-    </RigidBody>
+    </group>
   );
 }

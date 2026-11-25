@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Physics } from '@react-three/rapier';
 import useGameStore from '@/store/useGameStore';
 import CameraRig from '@/components/CameraRig';
 import Horse from '@/components/horse/Horse';
@@ -197,7 +196,8 @@ export default function App() {
                 segment'ler iç içe geçmez/çoğalmaz. */}
             <EnvLayer mapId={mapId} key={`${mapId}-${runId}`} />
             <Weather />
-            <Physics gravity={[0,-20,0]}>
+            {/* Fizik motoru yok: tüm hareket kinematik, çarpışma obstacleRegistry ile */}
+            <>
               <Track />
               {/* key=runId: spawners fully remount on every new run so pools are
                   re-created with the current map's obstacle/carrot types and no
@@ -209,7 +209,7 @@ export default function App() {
               <CarrotSpawner />
               <SuperNalSpawner key={`nal-${runId}`} />
               <Horse />
-            </Physics>
+            </>
           </>
         )}
         {/* Hafif bloom — yalnız YÜKSEK kalitede (emissive havuç/nesneler parlar).

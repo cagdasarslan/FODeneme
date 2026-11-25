@@ -1,6 +1,5 @@
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 import { getActiveEvent } from '@/constants/events';
@@ -190,7 +189,6 @@ export default function Track() {
   const INIT_POS = () => Array.from({ length: TILE_COUNT }, (_, i) => 5 - i * TILE_LENGTH);
   const posRef  = useRef(INIT_POS());
   const grpRefs = useRef([]);
-  const phyRefs = useRef([]);
   const phase   = useGameStore((s) => s.phase);
   const runId   = useGameStore((s) => s.runId);
   // Maps 3 (Desert) and 4 (Space) render their own road visuals; show farm road only on 1-2
@@ -200,7 +198,6 @@ export default function Track() {
     posRef.current = INIT_POS();
     posRef.current.forEach((z, i) => {
       grpRefs.current[i]?.position.set(0, 0, z);
-      phyRefs.current[i]?.setTranslation({ x: 0, y: -0.12, z }, true);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId]);
@@ -212,7 +209,6 @@ export default function Track() {
       const next     = z + speed * delta;
       const recycled = next > RECYCLE_AFTER ? next - TILE_COUNT * TILE_LENGTH : next;
       grpRefs.current[i]?.position.set(0, 0, recycled);
-      phyRefs.current[i]?.setTranslation({ x: 0, y: -0.12, z: recycled }, true);
       return recycled;
     });
   });
@@ -223,13 +219,6 @@ export default function Track() {
         <group key={i} ref={el => (grpRefs.current[i] = el)} position={[0, 0, z]}>
           {showRoad && <RoadTile seed={i} />}
         </group>
-      ))}
-      {posRef.current.map((z, i) => (
-        <RigidBody key={`p${i}`} ref={el => (phyRefs.current[i] = el)}
-          type="kinematicPosition" position={[0, -0.12, z]} colliders="cuboid">
-          <mesh><boxGeometry args={[160, 0.22, TILE_LENGTH]} />
-            <meshStandardMaterial transparent opacity={0} /></mesh>
-        </RigidBody>
       ))}
     </>
   );

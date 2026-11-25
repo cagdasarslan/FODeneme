@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect, useState, memo, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
-import { RigidBody } from '@react-three/rapier';
+import { makeKinematicBody } from '@/utils/kinematicBody';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 import { upsertObstacle, setObstacleActive, clearRegistry } from '@/utils/obstacleRegistry';
@@ -424,17 +424,13 @@ export function getHitbox(TypeFnOrName) {
 // yeni tipe (ör. üst bariyer) göre yapılıyordu → "çarpmadan ölme" hatası.
 const Obstacle = memo(function Obstacle({ data, Type, onRef }) {
   return (
-    <RigidBody
-      ref={rb => onRef(data.id, rb)}
-      type="kinematicPosition"
-      position={[data.x, -100, data.z]}
-      colliders={false}
-      userData={{ tag: 'obstacle' }}
-    >
+    // Kinematik gövde: başlangıçta görünmez (-100), konumu spawner her karede verir.
+    // position özelliği yok — yeniden çizimde (tip değişince) engel ışınlanmasın.
+    <group ref={g => onRef(data.id, g ? makeKinematicBody(g, [data.x, -100, data.z]) : null)} userData={{ tag: 'obstacle' }}>
       <Suspense fallback={null}>
         <Type />
       </Suspense>
-    </RigidBody>
+    </group>
   );
 }, (a, b) => a.Type === b.Type && a.data === b.data);
 
