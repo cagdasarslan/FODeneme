@@ -125,7 +125,7 @@ function CloudSection() {
       setMsg('✓ ' + t('Geri yüklendi! Oyun yeniden başlatılıyor…'));
       setTimeout(() => window.location.reload(), 1200);
     } else {
-      setMsg('⚠ ' + r.reason);
+      setMsg('⚠ ' + t(r.reason));
       setBusy(false);
     }
   };
@@ -143,22 +143,22 @@ function CloudSection() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           background: '#d8f0c8', border: `3px solid ${C.greenEdge}`,
           borderRadius: 12, padding: '8px 12px', marginBottom: 10 }}>
-          <div>
+          <div style={{ minWidth: 0, overflow: 'hidden' }}>
             <div style={{ fontSize: 11, color: C.greenEdge, fontWeight: 800 }}>✓ {t('HESABA BAĞLI')}</div>
-            <div style={{ fontSize: 11, color: C.ink, fontWeight: 700, marginTop: 2 }}>{user.email || user.name || user.provider}</div>
+            <div style={{ fontSize: 11, color: C.ink, fontWeight: 700, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email || user.name || user.provider}</div>
           </div>
           <button
             className="hr-press"
-            style={{ ...btn.secondary, minWidth: 60, minHeight: 44, padding: '6px 12px', fontSize: 13 }}
+            style={{ ...btn.secondary, flexShrink: 0, whiteSpace: 'nowrap', minWidth: 60, minHeight: 44, padding: '6px 12px', fontSize: 13 }}
             onClick={() => { signOut(); sfx.click(); window.location.reload(); }}
           >{t('ÇIKIŞ')}</button>
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-          <GoogleButton style={{ flex: 1 }} onClick={() => { sfx.click(); signInWith('google'); }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+          <GoogleButton style={{ width: '100%' }} onClick={() => { sfx.click(); signInWith('google'); }}>
             {t('Google ile Giriş')}
           </GoogleButton>
-          <AppleButton style={{ flex: 1 }} onClick={() => { sfx.click(); signInWith('apple'); }}>
+          <AppleButton style={{ width: '100%' }} onClick={() => { sfx.click(); signInWith('apple'); }}>
             {t('Apple ile Giriş')}
           </AppleButton>
         </div>
@@ -171,7 +171,7 @@ function CloudSection() {
       </div>
       <div
         style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
           background: C.creamDk, border: `3px dashed ${C.edge}`, minHeight: 44, boxSizing: 'border-box',
           borderRadius: 12, padding: '8px 12px', marginBottom: 10, cursor: 'pointer',
         }}
@@ -182,8 +182,8 @@ function CloudSection() {
           setMsg('✓ ' + t('Kod kopyalandı + yedek alındı'));
         }}
       >
-        <span style={{ fontSize: 11, color: C.inkSoft, fontWeight: 800 }}>{t('KURTARMA KODUN')}</span>
-        <span style={{ fontSize: 18, fontFamily: DISPLAY, letterSpacing: 3, color: C.ink }}>{myCode}</span>
+        <span style={{ fontSize: 11, color: C.inkSoft, fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{t('KURTARMA KODUN')}</span>
+        <span style={{ fontSize: 17, fontFamily: DISPLAY, letterSpacing: 1.5, color: C.ink, flexShrink: 0, whiteSpace: 'nowrap' }}>{myCode}</span>
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         <input
@@ -196,7 +196,7 @@ function CloudSection() {
         />
         <button
           className="hr-press"
-          style={{ ...btn.primary, minWidth: 90, minHeight: 44, fontSize: 13, padding: '6px 10px', boxShadow: `0 4px 0 ${C.edge}`, opacity: code.trim().length < 6 || busy ? 0.4 : 1 }}
+          style={{ ...btn.primary, flexShrink: 0, whiteSpace: 'nowrap', minWidth: 96, height: 44, fontSize: 13, padding: '6px 10px', boxShadow: `0 4px 0 ${C.edge}`, opacity: code.trim().length < 6 || busy ? 0.4 : 1 }}
           disabled={code.trim().length < 6 || busy}
           onClick={doRestore}
         >{t('GERİ YÜKLE')}</button>

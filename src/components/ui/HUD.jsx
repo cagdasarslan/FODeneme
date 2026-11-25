@@ -17,7 +17,8 @@ import { C, FONT, DISPLAY, btn, panel, pill, titleText, backdrop, fmt } from '@/
 // için translateX(-50%) ile ortalanan öğeler sağa kayıyordu; ortalama dış kutuda.
 const CENTER_ROW = (top) => ({ position: 'fixed', top, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' });
 
-const CLOSE_TEXTS = ['MAKAS!', 'KIL PAYI!', 'ADRENALIN!', 'YAKINDI!', 'ATEŞ!'];
+// Kısa ve vurucu (390px'e sığar). EN karşılıkları en.js'te.
+const CLOSE_TEXTS = ['KIL PAYI!', 'SIYRILDIN!', 'AZ KALDI!', 'GÖZÜ KARA!'];
 // çeviri: CLOSE_TEXTS öğeleri gösterilirken t() ile geçirilir
 
 function CloseCallFlash() {
@@ -150,7 +151,7 @@ export default function HUD() {
         <div style={{ textAlign:'center', maxWidth:'92vw',
           ...titleText(20, C.goldHi), letterSpacing:2, pointerEvents:'none',
           animation:'pulse 0.3s infinite alternate' }}>
-          ⚡ {t('ADRENALİN PATLAMASI — 2X SKOR!')}
+          ⚡ {t('ADRENALİN! 2X PUAN')}
         </div>
         </div>
       )}
@@ -160,7 +161,7 @@ export default function HUD() {
         <div style={CENTER_ROW(topPlus(90))}>
         <div style={{ ...titleText(20, C.carrot), letterSpacing:3, pointerEvents:'none',
           animation:'pulse 0.4s infinite alternate' }}>
-          🔥 COMBO x{comboMult}
+          🔥 {t('SERİ x{n}!', { n: comboMult })}
         </div>
         </div>
       )}
@@ -175,7 +176,7 @@ export default function HUD() {
           background:C.red, padding:'6px 14px', borderRadius:12,
           border:`3px solid ${C.cream}`, boxShadow:`0 4px 0 ${C.redEdge}`,
           animation:'pulse 0.6s infinite alternate' }}>
-          ⚠️ {t('TÖKEZLEDİN — bir daha çarparsan düşersin!')}
+          ⚠️ {t('TÖKEZLEDİN! Bir çarpma daha = son')}
           {/* Kalan tehlike süresi — oyuncu ikinci çarpmanın neden öldürdüğünü görsün */}
           <div style={{ marginTop:5, height:5, background:C.redEdge, borderRadius:3, overflow:'hidden' }}>
             <div style={{ height:'100%', background:C.cream,

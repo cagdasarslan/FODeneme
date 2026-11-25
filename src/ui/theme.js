@@ -85,9 +85,13 @@ export const titleText = (size = 40, color = C.cream) => ({
   fontFamily: DISPLAY,
   fontSize: size,
   color,
-  WebkitTextStroke: `${Math.max(2, Math.round(size / 18))}px ${C.edge}`,
+  fontWeight: 400,
+  // paint-order: kontur dolgunun ALTINDA çizilir → ğ/ş/İ/ü gibi işaretler
+  // konturla yenip "lekelenmez". Görünen dış kontur genişlik/2 olduğu için ×2.
+  WebkitTextStroke: `${Math.max(3, Math.round(size / 9))}px ${C.edge}`,
+  paintOrder: 'stroke fill',
   textShadow: `0 ${Math.max(3, Math.round(size / 10))}px 0 ${C.edge}`,
-  lineHeight: 1,
+  lineHeight: 1.12,
   letterSpacing: 1,
 });
 

@@ -108,7 +108,7 @@ function FoalCard({ foal, onFlash }) {
   const saveName = () => {
     const res = renameFoal(foal.id, nameInput);
     if (res.ok) { setEditingName(false); onFlash('✏️ ' + t('İsim güncellendi')); }
-    else onFlash(`❌ ${res.reason}`);
+    else onFlash(`❌ ${t(res.reason)}`);
   };
 
   const [, forceUpdate] = useState(0);

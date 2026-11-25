@@ -123,7 +123,7 @@ export default function MainMenu() {
       setRestoreMsg('✓ ' + t('Hesabın geri yüklendi!'));
       setTimeout(() => window.location.reload(), 1000);
     } else {
-      setRestoreMsg('⚠ ' + r.reason);
+      setRestoreMsg('⚠ ' + t(r.reason));
     }
   };
 

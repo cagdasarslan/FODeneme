@@ -40,7 +40,7 @@ export default function CarrotShop({ onClose }) {
     setBusy(pkg.id);
     const res = await purchase(pkg.id);
     setBusy(null);
-    if (!res.ok) setFlash(`❌ ${res.reason || t('Satın alma başarısız')}`), setTimeout(() => setFlash(''), 2500);
+    if (!res.ok) setFlash(`❌ ${t(res.reason || 'Satın alma başarısız')}`), setTimeout(() => setFlash(''), 2500);
   };
 
   return (

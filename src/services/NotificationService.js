@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
@@ -31,22 +32,22 @@ export async function scheduleReminders({ hasFoals = false } = {}) {
     const notifications = [
       {
         id: 1,
-        title: '🎁 Günlük ödülün hazır!',
-        body: 'Giriş serini sürdür ve havuçlarını topla.',
+        title: t('🎁 Günlük ödülün hazır!'),
+        body: t('Giriş serini sürdür ve havuçlarını topla.'),
         schedule: { at: atHour(1, 19) },
       },
       {
         id: 2,
-        title: '🔥 Serini kaçırma!',
-        body: 'Bugün oynamazsan giriş serin sıfırlanır.',
+        title: t('🔥 Serini kaçırma!'),
+        body: t('Bugün oynamazsan giriş serin sıfırlanır.'),
         schedule: { at: atHour(1, 21) },
       },
     ];
     if (hasFoals) {
       notifications.push({
         id: 3,
-        title: '🐴 Tayın seni özledi!',
-        body: 'Ahırdaki tayını besle ve tımarla, büyümesi için sana ihtiyacı var.',
+        title: t('🐴 Tayın seni özledi!'),
+        body: t('Ahırdaki tayını besle ve tımarla, büyümesi için sana ihtiyacı var.'),
         schedule: { at: atHour(0, 12) },
       });
     }
