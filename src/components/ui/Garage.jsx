@@ -11,6 +11,7 @@ import AdButton from '@/components/ui/AdButton';
 import { AD_UPGRADE_DISCOUNT } from '@/constants/game';
 import { POWERUPS, POWERUP_MAX_LEVEL, powerupDuration, powerupUpgradeCost } from '@/constants/powerups';
 import { t } from '@/i18n';
+import { C, FONT, DISPLAY, btn, panel, tile, pill, titleText, backdrop } from '@/ui/theme';
 import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import useLang from '@/i18n/useLang';
 
@@ -38,7 +39,7 @@ function CharModel3DInner({ file }) {
 
 function CharPreview3D({ charFile, accentColor }) {
   return (
-    <div style={{ width: '100%', height: 200, borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.3)' }}>
+    <div style={{ width: '100%', height: 200, borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(180deg, #f7e2b0, #d9b677)', border: `3px solid ${C.edge}`, boxSizing: 'border-box' }}>
       <Canvas camera={{ position: [0, 0.5, 3.2], fov: 42 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[3, 6, 4]} intensity={1.8} castShadow />
@@ -116,7 +117,7 @@ function HorseModel3DInner({ variant }) {
 
 function HorsePreview3D({ variant }) {
   return (
-    <div style={{ width: '100%', height: 200, borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.3)' }}>
+    <div style={{ width: '100%', height: 200, borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(180deg, #f7e2b0, #d9b677)', border: `3px solid ${C.edge}`, boxSizing: 'border-box' }}>
       <Canvas camera={{ position: [0, 0.8, 3.5], fov: 42 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[3, 6, 4]} intensity={1.8} castShadow />
@@ -225,7 +226,7 @@ export default function Garage() {
         <div style={S.header}>
           <span style={S.title}>🏇 {t('MAĞAZA')}</span>
           <span style={S.gold}>🥕 {carrots}</span>
-          <button aria-label={t('Kapat')} style={S.closeBtn} onClick={closeGarage}>✕</button>
+          <button aria-label={t('Kapat')} className="hr-press" style={S.closeBtn} onClick={closeGarage}>✕</button>
         </div>
 
         {/* Tabs */}
@@ -233,6 +234,7 @@ export default function Garage() {
           {[['jockey','🥷 '+t('JOKEYLERİM')],['horse','🐴 '+t('ATLARIM')],['hara','🐣 '+t('HARA')],['powerups','⚡ '+t('YETENEKLER')]].map(([id, label]) => (
             <button
               key={id}
+              className="hr-press"
               style={{ ...S.tab, ...(tab === id ? S.tabActive : {}) }}
               onClick={() => { setTab(id); setFlash(''); }}
             >
@@ -252,17 +254,18 @@ export default function Garage() {
                 return (
                   <div key={c.id}
                     style={{ ...S.card,
-                      borderColor: active ? '#f5d060' : selected ? '#4aaa66' : 'rgba(255,255,255,0.1)',
-                      background:  active ? 'rgba(245,208,96,0.12)' : selected ? 'rgba(74,170,102,0.10)' : 'rgba(255,255,255,0.04)',
-                      opacity: owned ? 1 : 0.75,
+                      borderColor: active ? C.goldLo : selected ? C.green : C.edge,
+                      background:  active ? '#fbe7b8' : selected ? '#dcefc8' : C.creamDk,
+                      boxShadow: active ? `0 0 0 3px ${C.gold}, 0 4px 0 ${C.edge}` : `0 4px 0 ${C.edge}`,
+                      filter: owned ? 'none' : 'saturate(0.45)',
                     }}
                     onClick={() => setCharPreview(c.id)}
                   >
                     <div style={S.cardEmoji}>{c.emoji}</div>
                     <div style={S.cardName}>{t(c.name)}</div>
                     {selected && <div style={S.badge}>✓ {t('AKTİF')}</div>}
-                    {!owned  && <div style={{ ...S.cardPrice, color: carrots >= c.price ? '#ffd700' : '#ff6666' }}>🥕 {c.price}</div>}
-                    {owned && !selected && <div style={{ ...S.cardPrice, color: '#aaa' }}>{t('SAHİPSİN')}</div>}
+                    {!owned  && <div style={{ ...S.cardPrice, color: carrots >= c.price ? C.ink : C.red }}>🥕 {c.price}</div>}
+                    {owned && !selected && <div style={{ ...S.cardPrice, color: C.inkSoft }}>{t('SAHİPSİN')}</div>}
                   </div>
                 );
               })}
@@ -271,20 +274,21 @@ export default function Garage() {
             {/* 3D Preview */}
             <div style={{ ...S.preview, borderColor: previewChar.color }}>
               <CharPreview3D charFile={previewChar.file} accentColor={previewChar.color} />
-              <div style={{ ...S.previewName, color: previewChar.color }}>{t(previewChar.name)}</div>
+              <div style={{ ...S.previewName }}>{t(previewChar.name)}</div>
               <div style={S.previewDesc}>{t(previewChar.desc)}</div>
               {!charOwned && (
                 <div style={S.priceRow}>
-                  <span style={{ color: carrots >= previewChar.price ? '#ffd700' : '#ff6666', fontWeight: 700, fontSize: 18 }}>🥕 {previewChar.price}</span>
+                  <span style={{ color: carrots >= previewChar.price ? C.ink : C.red, fontFamily: DISPLAY, fontSize: 22 }}>🥕 {previewChar.price}</span>
                   <span style={S.priceSub}>{t('havuç')}</span>
                 </div>
               )}
               {flash ? (
-                <div style={{ ...S.actionBtn, background: flashBad ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{t(flash)}</div>
+                <div style={{ ...S.actionBtn, ...(flashBad ? btn.danger : btn.success), cursor: 'default' }}>{t(flash)}</div>
               ) : (
                 <button
+                  className="hr-press"
                   style={{ ...S.actionBtn,
-                    background: charSel ? '#2a4a2a' : charOwned ? 'linear-gradient(135deg,#2a8a4a,#1a6a30)' : carrots >= previewChar.price ? 'linear-gradient(135deg,#c8a000,#a07800)' : '#3a2a2a',
+                    ...(charSel ? { ...btn.secondary, opacity: 0.8 } : charOwned ? btn.success : carrots >= previewChar.price ? btn.primary : { ...btn.secondary, filter: 'saturate(0.4)' }),
                     cursor: charSel ? 'default' : 'pointer',
                   }}
                   onClick={handleCharAction}
@@ -308,9 +312,10 @@ export default function Garage() {
                 return (
                   <div key={h.id}
                     style={{ ...S.card,
-                      borderColor: active ? '#f5d060' : selected ? '#4aaa66' : 'rgba(255,255,255,0.1)',
-                      background:  active ? 'rgba(245,208,96,0.12)' : selected ? 'rgba(74,170,102,0.10)' : 'rgba(255,255,255,0.04)',
-                      opacity: owned ? 1 : 0.75,
+                      borderColor: active ? C.goldLo : selected ? C.green : C.edge,
+                      background:  active ? '#fbe7b8' : selected ? '#dcefc8' : C.creamDk,
+                      boxShadow: active ? `0 0 0 3px ${C.gold}, 0 4px 0 ${C.edge}` : `0 4px 0 ${C.edge}`,
+                      filter: owned ? 'none' : 'saturate(0.45)',
                     }}
                     onClick={() => setHorsePrev(h.id)}
                   >
@@ -318,8 +323,8 @@ export default function Garage() {
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: h.bodyColor, border: `3px solid ${h.maneColor}`, marginBottom: 4 }} />
                     <div style={S.cardName}>{t(h.name)}</div>
                     {selected && <div style={S.badge}>✓ {t('AKTİF')}</div>}
-                    {!owned && <div style={{ ...S.cardPrice, color: carrots >= h.price ? '#ffd700' : '#ff6666' }}>🥕 {h.price}</div>}
-                    {owned && !selected && <div style={{ ...S.cardPrice, color: '#aaa' }}>{t('SAHİPSİN')}</div>}
+                    {!owned && <div style={{ ...S.cardPrice, color: carrots >= h.price ? C.ink : C.red }}>🥕 {h.price}</div>}
+                    {owned && !selected && <div style={{ ...S.cardPrice, color: C.inkSoft }}>{t('SAHİPSİN')}</div>}
                   </div>
                 );
               })}
@@ -328,7 +333,7 @@ export default function Garage() {
             {/* 3D Horse Preview */}
             <div style={{ ...S.preview, borderColor: previewHorse.accentColor }}>
               <HorsePreview3D variant={previewHorse} />
-              <div style={{ ...S.previewName, color: previewHorse.accentColor }}>{t(previewHorse.name)}</div>
+              <div style={{ ...S.previewName }}>{t(previewHorse.name)}</div>
               <div style={S.previewDesc}>{t(previewHorse.desc)}</div>
 
               {/* 3-stat upgrade section */}
@@ -343,7 +348,7 @@ export default function Garage() {
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {/* Reklam izle → sonraki yükseltme %50 indirimli */}
                     {upgradeDiscount ? (
-                      <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#33ff99', letterSpacing: 1, padding: '6px', border: '1px solid #33ff9955', borderRadius: 8 }}>
+                      <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 800, color: C.greenEdge, letterSpacing: 1, padding: '8px', background: '#d8f0c8', border: `3px solid ${C.greenEdge}`, borderRadius: 12 }}>
                         ✓ {t('İNDİRİM AKTİF — sonraki yükseltme %50')}
                       </div>
                     ) : (
@@ -362,23 +367,23 @@ export default function Garage() {
                       const cost = upgradeDiscount ? Math.ceil(baseCost * (1 - AD_UPGRADE_DISCOUNT)) : baseCost;
                       const canAfford = !maxed && carrots >= cost;
                       return (
-                        <div key={key} style={{ ...S.statBox, borderColor: `${color}44` }}>
+                        <div key={key} style={{ ...S.statBox, borderColor: C.edge }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
                             <span style={{ fontSize: 18 }}>{icon}</span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color }}>{t(label)}</div>
-                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{t(sub)}</div>
+                              <div style={{ fontSize: 13, fontFamily: DISPLAY, letterSpacing: 1, color: C.ink }}>{t(label)}</div>
+                              <div style={{ fontSize: 10, color: C.inkSoft, fontWeight: 700, marginTop: 2 }}>{t(sub)}</div>
                               {/* Progress bar */}
                               <div style={{ display: 'flex', gap: 3, marginTop: 5 }}>
                                 {Array.from({ length: 5 }, (_, i) => (
                                   <div key={i} style={{
-                                    flex: 1, height: 4, borderRadius: 2,
-                                    background: i < lvl ? color : 'rgba(255,255,255,0.15)',
+                                    flex: 1, height: 8, borderRadius: 4, border: `2px solid ${C.edge}`,
+                                    background: i < lvl ? `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})` : C.edgeDk,
                                     transition: 'background 0.2s',
                                   }} />
                                 ))}
                               </div>
-                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>
+                              <div style={{ fontSize: 10, color: C.inkSoft, fontWeight: 700, marginTop: 3 }}>
                                 {t('SEVİYE')} {lvl}/5
                               </div>
                             </div>
@@ -387,9 +392,10 @@ export default function Garage() {
                             <div style={S.maxBadge}>{t('MAKSİMUM')}</div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 80 }}>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: canAfford ? '#ffd700' : '#ff6666' }}>🥕 {cost}</span>
+                              <span style={{ fontSize: 15, fontFamily: DISPLAY, color: canAfford ? C.ink : C.red }}>🥕 {cost}</span>
                               <button
-                                style={{ ...S.upgradeBtn, background: canAfford ? `linear-gradient(135deg, ${color}, ${color}99)` : '#3a2a2a', cursor: canAfford ? 'pointer' : 'not-allowed', opacity: canAfford ? 1 : 0.5 }}
+                                className="hr-press"
+                                style={{ ...S.upgradeBtn, ...(canAfford ? btn.success : { ...btn.secondary, filter: 'saturate(0.4)' }), cursor: canAfford ? 'pointer' : 'not-allowed', opacity: canAfford ? 1 : 0.5 }}
                                 onClick={() => {
                                   const ok = upgradeHorseStat(previewHorse.id, key);
                                   if (!ok) doFlash('YETERSİZ HAVUÇ!');
@@ -410,16 +416,17 @@ export default function Garage() {
 
               {!horseOwned && (
                 <div style={S.priceRow}>
-                  <span style={{ color: carrots >= previewHorse.price ? '#ffd700' : '#ff6666', fontWeight: 700, fontSize: 18 }}>🥕 {previewHorse.price}</span>
+                  <span style={{ color: carrots >= previewHorse.price ? C.ink : C.red, fontFamily: DISPLAY, fontSize: 22 }}>🥕 {previewHorse.price}</span>
                   <span style={S.priceSub}>{t('havuç')}</span>
                 </div>
               )}
               {flash ? (
-                <div style={{ ...S.actionBtn, background: flashBad ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{t(flash)}</div>
+                <div style={{ ...S.actionBtn, ...(flashBad ? btn.danger : btn.success), cursor: 'default' }}>{t(flash)}</div>
               ) : (
                 <button
+                  className="hr-press"
                   style={{ ...S.actionBtn,
-                    background: horseSel ? '#2a4a2a' : horseOwned ? 'linear-gradient(135deg,#2a8a4a,#1a6a30)' : carrots >= previewHorse.price ? 'linear-gradient(135deg,#c8a000,#a07800)' : '#3a2a2a',
+                    ...(horseSel ? { ...btn.secondary, opacity: 0.8 } : horseOwned ? btn.success : carrots >= previewHorse.price ? btn.primary : { ...btn.secondary, filter: 'saturate(0.4)' }),
                     cursor: horseSel ? 'default' : 'pointer',
                   }}
                   onClick={handleHorseAction}
@@ -438,11 +445,11 @@ export default function Garage() {
         {/* ── YETENEKLER TAB ── */}
         {tab === 'powerups' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.inkSoft, textAlign: 'center' }}>
               {t('Koşuda yolda beliren yetenekleri topla. Havuçla geliştir → süreleri uzasın!')}
             </div>
             {flash && (
-              <div style={{ ...S.actionBtn, background: flashBad ? '#8b1a1a' : '#1a5c2a', cursor: 'default' }}>{t(flash)}</div>
+              <div style={{ ...S.actionBtn, ...(flashBad ? btn.danger : btn.success), cursor: 'default' }}>{t(flash)}</div>
             )}
             {POWERUPS.map(p => {
               const lvl    = powerupLevels[p.id] ?? 0;
@@ -452,22 +459,22 @@ export default function Garage() {
               const curDur  = powerupDuration(p.id, lvl);
               const nextDur = powerupDuration(p.id, lvl + 1);
               return (
-                <div key={p.id} style={{ ...S.statBox, borderColor: `${p.color}44` }}>
+                <div key={p.id} style={{ ...S.statBox, borderColor: C.edge }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
                     <span style={{ fontSize: 24 }}>{p.emoji}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: p.color }}>{t(p.name)}</div>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{t(p.desc)}</div>
+                      <div style={{ fontSize: 14, fontFamily: DISPLAY, letterSpacing: 1, color: C.ink }}>{t(p.name)}</div>
+                      <div style={{ fontSize: 10, color: C.inkSoft, fontWeight: 700, marginTop: 2 }}>{t(p.desc)}</div>
                       <div style={{ display: 'flex', gap: 3, marginTop: 5 }}>
                         {Array.from({ length: POWERUP_MAX_LEVEL }, (_, i) => (
                           <div key={i} style={{
-                            flex: 1, height: 4, borderRadius: 2,
-                            background: i < lvl ? p.color : 'rgba(255,255,255,0.15)',
+                            flex: 1, height: 8, borderRadius: 4, border: `2px solid ${C.edge}`,
+                            background: i < lvl ? `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})` : C.edgeDk,
                             transition: 'background 0.2s',
                           }} />
                         ))}
                       </div>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>
+                      <div style={{ fontSize: 10, color: C.inkSoft, fontWeight: 700, marginTop: 3 }}>
                         {t('SEVİYE')} {lvl}/{POWERUP_MAX_LEVEL} — {t('Süre:')} {curDur.toFixed(1)}s{!maxed && ` → ${nextDur.toFixed(1)}s`}
                       </div>
                     </div>
@@ -476,9 +483,10 @@ export default function Garage() {
                     <div style={S.maxBadge}>{t('MAKSİMUM')}</div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 80 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: canAfford ? '#ffd700' : '#ff6666' }}>🥕 {cost}</span>
+                      <span style={{ fontSize: 15, fontFamily: DISPLAY, color: canAfford ? C.ink : C.red }}>🥕 {cost}</span>
                       <button
-                        style={{ ...S.upgradeBtn, background: canAfford ? `linear-gradient(135deg, ${p.color}, ${p.color}99)` : '#3a2a2a', cursor: canAfford ? 'pointer' : 'not-allowed', opacity: canAfford ? 1 : 0.5, color: '#111' }}
+                        className="hr-press"
+                        style={{ ...S.upgradeBtn, ...(canAfford ? btn.success : { ...btn.secondary, filter: 'saturate(0.4)' }), cursor: canAfford ? 'pointer' : 'not-allowed', opacity: canAfford ? 1 : 0.6 }}
                         onClick={() => {
                           const ok = upgradePowerup(p.id);
                           if (!ok) doFlash('YETERSİZ HAVUÇ!');
@@ -502,119 +510,63 @@ export default function Garage() {
 
 const S = {
   overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.85)',
-    backdropFilter: 'blur(6px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 200,
-    fontFamily: 'var(--game-font)',
-    userSelect: 'none',
+    position: 'fixed', inset: 0, background: backdrop,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 200, fontFamily: FONT, userSelect: 'none',
     // iOS çentiği paneli kesmesin
-    paddingTop: SAFE_TOP,
-    paddingBottom: BOTTOM_SPACE,
-    boxSizing: 'border-box',
+    paddingTop: SAFE_TOP, paddingBottom: BOTTOM_SPACE, boxSizing: 'border-box',
   },
   panel: {
-    background: 'rgba(8,8,18,0.97)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 16,
-    padding: 24,
-    width: 680,
-    maxWidth: '96vw',
-    maxHeight: '92vh',
-    overflowY: 'auto',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-    boxShadow: '0 12px 60px rgba(0,0,0,0.8)',
+    ...panel, padding: 20, width: 680, maxWidth: '96vw', maxHeight: '92vh',
+    overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, boxSizing: 'border-box',
   },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: { fontSize: 20, fontWeight: 700, letterSpacing: 3, color: '#fff' },
-  gold: {
-    fontSize: 16, fontWeight: 700, color: '#ffd700',
-    background: 'rgba(255,215,0,0.1)', padding: '4px 14px',
-    borderRadius: 20, border: '1px solid rgba(255,215,0,0.3)',
-  },
-  closeBtn: {
-    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: 6, color: '#fff', fontSize: 16, padding: '4px 10px',
-    cursor: 'pointer', fontFamily: 'var(--game-font)',
-  },
-  tabs: { display: 'flex', gap: 8 },
+  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  title: { ...titleText(28), textTransform: 'uppercase' },
+  gold: { ...pill, fontFamily: DISPLAY, fontWeight: 400, fontSize: 18, letterSpacing: 1 },
+  closeBtn: { ...btn.icon, width: 44, height: 44, fontSize: 18 },
+  tabs: { display: 'flex', gap: 4, background: C.woodDk, border: `3px solid ${C.edge}`, borderRadius: 16, padding: 4 },
   tab: {
-    flex: 1, padding: '10px 0', fontSize: 13, fontWeight: 700, letterSpacing: 2,
-    fontFamily: 'var(--game-font)', cursor: 'pointer', borderRadius: 8,
-    border: '2px solid rgba(255,255,255,0.1)',
-    background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.5)',
-    transition: 'all 0.15s',
+    flex: 1, padding: '8px 2px', minHeight: 44, fontSize: 13, letterSpacing: 1,
+    fontFamily: DISPLAY, cursor: 'pointer', borderRadius: 12, border: 'none',
+    background: 'transparent', color: C.textOnDark,
   },
-  tabActive: {
-    border: '2px solid #f5d060',
-    background: 'rgba(245,208,96,0.12)', color: '#f5d060',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4,1fr)',
-    gap: 8,
-  },
+  tabActive: { background: `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})`, color: C.ink, boxShadow: `0 3px 0 ${C.edge}` },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10 },
   card: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    gap: 4, padding: '12px 6px', border: '2px solid',
-    borderRadius: 10, cursor: 'pointer', transition: 'all 0.15s',
+    ...tile, display: 'flex', flexDirection: 'column', alignItems: 'center',
+    gap: 4, padding: '12px 6px', border: '3px solid', cursor: 'pointer', minHeight: 44,
   },
   cardEmoji: { fontSize: 28 },
-  cardName: { fontSize: 10, letterSpacing: 1, color: '#fff', textAlign: 'center', fontWeight: 700 },
-  badge: { fontSize: 10, color: '#4aaa66', letterSpacing: 1 },
-  cardPrice: { fontSize: 10, fontWeight: 700, letterSpacing: 1 },
+  cardName: { fontSize: 12, color: C.ink, textAlign: 'center', fontWeight: 800 },
+  badge: { fontSize: 11, color: C.greenEdge, fontWeight: 800, letterSpacing: 1 },
+  cardPrice: { fontSize: 13, fontFamily: DISPLAY, letterSpacing: 1 },
   preview: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    gap: 8, background: 'rgba(255,255,255,0.04)',
-    border: '2px solid', borderRadius: 12, padding: '16px 24px',
+    ...tile, display: 'flex', flexDirection: 'column', alignItems: 'center',
+    gap: 8, border: '3px solid', padding: '14px 16px',
   },
-  previewName: { fontSize: 20, fontWeight: 700, letterSpacing: 3 },
-  previewDesc: { fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 },
+  previewName: { ...titleText(24) },
+  previewDesc: { fontSize: 13, color: C.inkSoft, fontWeight: 700, textAlign: 'center' },
   priceRow: { display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 },
-  priceSub: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
+  priceSub: { color: C.inkSoft, fontWeight: 700, fontSize: 13 },
   actionBtn: {
-    marginTop: 6, padding: '11px 44px', fontSize: 14,
-    fontWeight: 700, letterSpacing: 3, color: '#fff',
-    border: 'none', borderRadius: 8, fontFamily: 'var(--game-font)',
-    transition: 'opacity 0.15s', width: '100%', textAlign: 'center',
+    marginTop: 6, padding: '12px 24px', minHeight: 52, fontSize: 18,
+    textTransform: 'uppercase', fontFamily: DISPLAY, width: '100%', textAlign: 'center', boxSizing: 'border-box',
   },
   levelBox: {
-    width: '100%', background: 'rgba(255,215,0,0.06)',
-    border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8,
+    ...tile, width: '100%', border: `3px solid ${C.edge}`,
     padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6,
   },
-  levelBadge: {
-    fontSize: 12, fontWeight: 700, color: '#ffd700', letterSpacing: 2,
-  },
-  levelInfo: {
-    fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: 1,
-  },
-  upgradeRow: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-  },
-  upgradeBtn: {
-    padding: '6px 14px', fontSize: 10, fontWeight: 700, letterSpacing: 1,
-    color: '#fff', border: 'none', borderRadius: 6, fontFamily: 'var(--game-font)',
-    transition: 'opacity 0.15s',
-  },
+  levelBadge: { fontSize: 13, fontFamily: DISPLAY, color: C.ink, letterSpacing: 1 },
+  levelInfo: { fontSize: 12, color: C.inkSoft, fontWeight: 700 },
+  upgradeRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  upgradeBtn: { padding: '8px 12px', minHeight: 44, fontSize: 13, borderRadius: 12 },
   statBox: {
-    display: 'flex', alignItems: 'center', gap: 10,
-    background: 'rgba(255,255,255,0.04)', border: '1px solid',
-    borderRadius: 8, padding: '10px 12px',
+    ...tile, display: 'flex', alignItems: 'center', gap: 10, width: '100%', boxSizing: 'border-box',
+    background: C.cream, border: '3px solid', padding: '10px 12px',
   },
   maxBadge: {
-    fontSize: 10, fontWeight: 700, letterSpacing: 1, color: '#ffd700',
-    background: 'rgba(255,215,0,0.15)', border: '1px solid rgba(255,215,0,0.3)',
-    borderRadius: 4, padding: '4px 8px', whiteSpace: 'nowrap',
+    fontSize: 13, fontFamily: DISPLAY, letterSpacing: 1, color: C.ink,
+    background: `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})`, border: `3px solid ${C.edge}`,
+    borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap',
   },
 };

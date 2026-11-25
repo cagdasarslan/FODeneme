@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { t } from '@/i18n';
 import { BOTTOM_SPACE, topPlus } from '@/utils/safeArea';
 import useLang from '@/i18n/useLang';
+import { C, FONT, DISPLAY, btn, panel, tile, titleText, backdrop } from '@/ui/theme';
 
 const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
 
@@ -414,9 +415,9 @@ function renderContent(block, idx) {
       return (
         <div key={idx} style={s.cardsGrid}>
           {block.items.map((item, i) => (
-            <div key={i} style={{ ...s.mapCard, borderColor: item.color }}>
+            <div key={i} style={{ ...s.mapCard, borderLeftColor: item.color }}>
               <span style={s.mapCardIcon}>{item.icon}</span>
-              <div style={{ ...s.mapCardName, color: item.color }}>{t(item.name)}</div>
+              <div style={{ ...s.mapCardName }}>{t(item.name)}</div>
               <div style={s.mapCardSub}>{t(item.sub)}</div>
               <div style={s.mapCardDesc}>{t(item.desc)}</div>
             </div>
@@ -430,8 +431,8 @@ function renderContent(block, idx) {
           {block.title && <div style={s.listTitle}>{t(block.title)}</div>}
           <div style={s.stagesGrid}>
             {block.items.map((item, i) => (
-              <div key={i} style={{ ...s.stageCard, borderColor: item.color }}>
-                <div style={{ ...s.stageName, color: item.color }}>{t(item.stage)}</div>
+              <div key={i} style={{ ...s.stageCard, borderLeftColor: item.color }}>
+                <div style={{ ...s.stageName }}>{t(item.stage)}</div>
                 <div style={s.stageRow}>⏱ {t(item.duration)}</div>
                 <div style={s.stageRow}>📊 {t(item.bp)}</div>
                 <div style={s.stageRow}>📏 {t(item.scale)}</div>
@@ -458,7 +459,7 @@ export default function HowToPlay({ onClose }) {
         {/* Header */}
         <div style={s.header}>
           <div style={s.headerTitle}>📖 {t('OYUN REHBERİ')}</div>
-          <button aria-label={t('Kapat')} style={s.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} className="hr-press" style={s.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         {/* Mobilde: üstte yatay kaydırmalı sekme şeridi (tam genişlik içerik) */}
@@ -468,11 +469,12 @@ export default function HowToPlay({ onClose }) {
               {SECTIONS.map(sec => (
                 <button
                   key={sec.id}
+                  className="hr-press"
                   style={{
                     ...s.tabBtn,
-                    background: activeSection === sec.id ? 'rgba(255,215,0,0.15)' : 'rgba(255,255,255,0.04)',
-                    borderColor: activeSection === sec.id ? '#ffd700' : 'rgba(255,255,255,0.1)',
-                    color: activeSection === sec.id ? '#ffd700' : 'rgba(255,255,255,0.6)',
+                    background: activeSection === sec.id ? `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})` : C.wood,
+                    borderColor: C.edge,
+                    color: activeSection === sec.id ? C.ink : C.textOnDark,
                   }}
                   onClick={() => setActiveSection(sec.id)}
                 >
@@ -493,11 +495,12 @@ export default function HowToPlay({ onClose }) {
               {SECTIONS.map(sec => (
                 <button
                   key={sec.id}
+                  className="hr-press"
                   style={{
                     ...s.sideBtn,
-                    background: activeSection === sec.id ? 'rgba(255,215,0,0.12)' : 'transparent',
-                    borderLeft: activeSection === sec.id ? '3px solid #ffd700' : '3px solid transparent',
-                    color: activeSection === sec.id ? '#ffd700' : 'rgba(255,255,255,0.55)',
+                    background: activeSection === sec.id ? `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})` : 'transparent',
+                    borderLeft: activeSection === sec.id ? `4px solid ${C.edge}` : '4px solid transparent',
+                    color: activeSection === sec.id ? C.ink : C.textOnDark,
                   }}
                   onClick={() => setActiveSection(sec.id)}
                 >
@@ -520,18 +523,18 @@ export default function HowToPlay({ onClose }) {
 const s = {
   overlay: {
     position: 'fixed', inset: 0, zIndex: 200,
-    background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(4px)',
+    background: backdrop,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontFamily: 'var(--game-font)',
+    fontFamily: FONT,
     padding: isMobile ? '0' : '16px', boxSizing: 'border-box',
   },
   modal: {
+    ...panel,
     width: isMobile ? '100vw' : '92vw', maxWidth: 820,
     height: isMobile ? '100dvh' : '88vh', maxHeight: isMobile ? '100dvh' : 680,
-    background: 'linear-gradient(160deg,rgba(12,12,28,0.98) 0%,rgba(8,8,18,0.99) 100%)',
-    border: isMobile ? 'none' : '1px solid rgba(255,215,0,0.2)',
-    borderRadius: isMobile ? 0 : 14, display: 'flex', flexDirection: 'column',
-    overflow: 'hidden', boxShadow: '0 12px 50px rgba(0,0,0,0.7)',
+    border: isMobile ? 'none' : panel.border,
+    borderRadius: isMobile ? 0 : 24, display: 'flex', flexDirection: 'column',
+    overflow: 'hidden', boxShadow: isMobile ? 'none' : panel.boxShadow,
     // Tam ekranda (mobil) başlık ve alt kenar güvenli alanda kalsın
     paddingBottom: isMobile ? BOTTOM_SPACE : 0,
     boxSizing: 'border-box',
@@ -539,90 +542,79 @@ const s = {
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: isMobile ? `${topPlus(12)} 16px 12px` : '14px 20px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0,
+    background: C.wood, borderBottom: `4px solid ${C.edge}`, flexShrink: 0,
   },
-  headerTitle: { fontSize: isMobile ? 15 : 16, fontWeight: 700, letterSpacing: 2, color: '#ffd700' },
-  closeBtn: {
-    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-    color: '#fff', borderRadius: 8, padding: isMobile ? '8px 16px' : '4px 12px', cursor: 'pointer',
-    fontSize: 16, fontFamily: 'var(--game-font)',
-  },
+  headerTitle: { ...titleText(isMobile ? 22 : 24) },
+  closeBtn: { ...btn.icon, width: 44, height: 44, fontSize: 18, background: C.woodDk },
   // ── Mobil yatay sekme şeridi ──
   tabStrip: {
     display: 'flex', gap: 6, overflowX: 'auto', flexShrink: 0,
-    padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.07)',
+    padding: '10px 12px', background: C.woodDk, borderBottom: `4px solid ${C.edge}`,
     WebkitOverflowScrolling: 'touch',
   },
   tabBtn: {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-    padding: '8px 12px', minWidth: 66, flexShrink: 0,
-    border: '1px solid', borderRadius: 10, cursor: 'pointer',
-    fontFamily: 'var(--game-font)', fontWeight: 700,
+    padding: '8px 12px', minWidth: 66, minHeight: 48, flexShrink: 0,
+    border: '3px solid', borderRadius: 12, cursor: 'pointer', boxShadow: `0 3px 0 ${C.edge}`, '--hr-edge': C.edge,
+    fontFamily: FONT, fontWeight: 800,
   },
-  tabText: { fontSize: 10, letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.2, whiteSpace: 'nowrap' },
+  tabText: { fontSize: 11, letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.2, whiteSpace: 'nowrap' },
   // ── Masaüstü kenar çubuğu ──
   body: { display: 'flex', flex: 1, overflow: 'hidden' },
   sidebar: {
-    width: 180, minWidth: 140, borderRight: '1px solid rgba(255,255,255,0.07)',
+    width: 180, minWidth: 140, background: C.woodDk, borderRight: `4px solid ${C.edge}`,
     display: 'flex', flexDirection: 'column', gap: 2,
     padding: '10px 0', overflowY: 'auto',
   },
   sideBtn: {
-    display: 'flex', alignItems: 'center', gap: 8,
+    display: 'flex', alignItems: 'center', gap: 8, minHeight: 44,
     padding: '10px 16px', border: 'none', cursor: 'pointer',
-    fontFamily: 'var(--game-font)', fontSize: 11, letterSpacing: 1,
-    transition: 'all 0.12s', textAlign: 'left',
+    fontFamily: FONT, fontSize: 12, letterSpacing: 0.5, textAlign: 'left',
   },
   sideBtnIcon: { fontSize: 16, minWidth: 20 },
-  sideBtnText: { fontWeight: 700 },
+  sideBtnText: { fontWeight: 800 },
   // ── İçerik ──
   content: { flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px calc(24px + env(safe-area-inset-bottom,0px))' : '18px 22px', WebkitOverflowScrolling: 'touch' },
   sectionTitle: {
-    fontSize: isMobile ? 16 : 15, fontWeight: 700, letterSpacing: 2, color: '#ffd700',
+    fontFamily: DISPLAY, fontSize: isMobile ? 22 : 22, letterSpacing: 1, color: C.ink,
     marginBottom: 16, paddingBottom: 10,
-    borderBottom: '1px solid rgba(255,215,0,0.2)',
+    borderBottom: `3px dashed ${C.inkSoft}`,
   },
   bodyText: {
-    color: 'rgba(255,255,255,0.78)', fontSize: isMobile ? 14 : 13, lineHeight: 1.75,
+    color: C.ink, fontWeight: 700, fontSize: isMobile ? 14 : 13, lineHeight: 1.75,
     margin: '0 0 14px',
   },
-  listBlock: { marginBottom: 18 },
+  listBlock: { ...tile, padding: '10px 12px', marginBottom: 14 },
   listTitle: {
-    fontSize: isMobile ? 12 : 11, letterSpacing: 1.5, color: 'rgba(255,215,0,0.75)',
-    fontWeight: 700, marginBottom: 8, textTransform: 'uppercase',
+    fontFamily: DISPLAY, fontSize: isMobile ? 15 : 14, letterSpacing: 1, color: C.woodDk,
+    marginBottom: 8, textTransform: 'uppercase',
   },
   ul: { margin: 0, paddingLeft: 20 },
-  li: { color: 'rgba(255,255,255,0.72)', fontSize: isMobile ? 13.5 : 12, lineHeight: 1.85, letterSpacing: 0.2, marginBottom: 2 },
+  li: { color: C.ink, fontWeight: 700, fontSize: isMobile ? 13.5 : 12.5, lineHeight: 1.85, marginBottom: 2 },
   tableWrap: { marginBottom: 18, overflow: 'hidden' },
-  tableScroll: { overflowX: 'auto', WebkitOverflowScrolling: 'touch' },
+  tableScroll: { overflowX: 'auto', WebkitOverflowScrolling: 'touch', border: `3px solid ${C.edge}`, borderRadius: 12 },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: isMobile ? 12 : 11 },
   th: {
-    background: 'rgba(255,215,0,0.08)', color: 'rgba(255,215,0,0.8)',
+    background: C.wood, color: C.textOnDark, fontFamily: DISPLAY, fontWeight: 400,
     padding: isMobile ? '8px 8px' : '7px 10px', textAlign: 'left', letterSpacing: 0.5,
-    borderBottom: '1px solid rgba(255,215,0,0.2)', whiteSpace: 'nowrap',
+    borderBottom: `3px solid ${C.edge}`, whiteSpace: 'nowrap',
   },
   td: {
-    padding: isMobile ? '8px 8px' : '7px 10px', color: 'rgba(255,255,255,0.72)',
-    borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: isMobile ? 12.5 : 12, whiteSpace: 'nowrap',
+    padding: isMobile ? '8px 8px' : '7px 10px', color: C.ink, fontWeight: 700, background: C.creamDk,
+    borderBottom: `2px solid ${C.cream}`, fontSize: isMobile ? 12.5 : 12, whiteSpace: 'nowrap',
   },
   cardsGrid: {
     display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(2, 1fr)',
     gap: 10, marginBottom: 14,
   },
-  mapCard: {
-    border: '1px solid', borderRadius: 10, padding: '11px 10px',
-    background: 'rgba(255,255,255,0.03)',
-  },
+  mapCard: { ...tile, border: `3px solid ${C.edge}`, borderLeftWidth: 8, padding: '11px 10px' },
   mapCardIcon: { fontSize: 24 },
-  mapCardName: { fontSize: isMobile ? 11 : 11, fontWeight: 700, letterSpacing: 1, marginTop: 6 },
-  mapCardSub: { fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 3 },
-  mapCardDesc: { fontSize: isMobile ? 11 : 11, color: 'rgba(255,255,255,0.62)', marginTop: 6, lineHeight: 1.5 },
+  mapCardName: { fontFamily: DISPLAY, fontSize: 14, letterSpacing: 1, color: C.ink, marginTop: 6 },
+  mapCardSub: { fontSize: 11, fontWeight: 800, color: C.inkSoft, marginTop: 3 },
+  mapCardDesc: { fontSize: 11.5, fontWeight: 700, color: C.ink, marginTop: 6, lineHeight: 1.5 },
   stagesWrap: { marginBottom: 18 },
   stagesGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
-  stageCard: {
-    border: '1px solid', borderRadius: 8, padding: '10px 12px',
-    background: 'rgba(255,255,255,0.03)',
-  },
-  stageName: { fontSize: 13, fontWeight: 700, letterSpacing: 1, marginBottom: 6 },
-  stageRow: { fontSize: 11, color: 'rgba(255,255,255,0.62)', lineHeight: 1.8 },
+  stageCard: { ...tile, border: `3px solid ${C.edge}`, borderLeftWidth: 8, padding: '10px 12px' },
+  stageName: { fontFamily: DISPLAY, fontSize: 15, letterSpacing: 1, color: C.ink, marginBottom: 6 },
+  stageRow: { fontSize: 12, fontWeight: 700, color: C.ink, lineHeight: 1.8 },
 };

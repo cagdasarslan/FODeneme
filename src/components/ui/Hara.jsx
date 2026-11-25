@@ -4,25 +4,25 @@ import { HORSES } from '@/constants/horses';
 import { STAGE_CONFIG, BREED_COST, BREED_COOLDOWN_MS, SHOP_TIER1_COST, SHOP_TIER2_COST, EXTRA_SLOT_COST, TRAITS, GROOM_COOLDOWN_MS, TRAIN_COOLDOWN_MS, FEED_MAX_DAY } from '@/constants/foals';
 import AdButton from '@/components/ui/AdButton';
 import { t } from '@/i18n';
+import { C, FONT, DISPLAY, btn, panel, tile, titleText, backdrop } from '@/ui/theme';
 import useLang from '@/i18n/useLang';
 
 const STAGE_LABELS = { TAY: 'TAY', YAVRU: 'YAVRU', GENC: 'GENÇ', YETISKIN: 'YETİŞKİN' };
 const STAGE_COLORS = { TAY: '#81c784', YAVRU: '#64b5f6', GENC: '#ffb74d', YETISKIN: '#ffd700' };
 
 const nameBtn = {
-  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-  borderRadius: 5, color: '#fff', cursor: 'pointer', fontSize: 11,
-  padding: '2px 6px', lineHeight: 1,
+  ...btn.secondary, borderRadius: 10, fontSize: 14, fontFamily: FONT,
+  minWidth: 44, minHeight: 44, padding: '2px 6px', lineHeight: 1, boxShadow: `0 3px 0 ${C.edge}`,
 };
 
 function MeterBar({ label, value, color }) {
   return (
     <div style={{ marginBottom: 6 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.inkSoft, fontWeight: 700, marginBottom: 2 }}>
         <span>{label}</span><span>{Math.floor(value)}%</span>
       </div>
-      <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3 }}>
-        <div style={{ height: '100%', width: `${value}%`, background: color, borderRadius: 3, transition: 'width 0.3s' }} />
+      <div style={{ height: 10, background: C.edgeDk, border: `2px solid ${C.edge}`, borderRadius: 999, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${value}%`, background: color, borderRadius: 999, transition: 'width 0.3s' }} />
       </div>
     </div>
   );
@@ -31,9 +31,9 @@ function MeterBar({ label, value, color }) {
 function BondDots({ value }) {
   return (
     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{t('BAĞ')}</span>
+      <span style={{ fontSize: 11, color: C.inkSoft, fontWeight: 700 }}>{t('BAĞ')}</span>
       {Array.from({ length: 5 }, (_, i) => (
-        <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: i < value ? '#ffd700' : 'rgba(255,255,255,0.15)' }} />
+        <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: i < value ? C.goldLo : C.edgeDk, border: `2px solid ${C.edge}` }} />
       ))}
     </div>
   );
@@ -48,14 +48,15 @@ function StageTimeline({ stage }) {
         <div key={s} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
           <div style={{
             width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: i <= idx ? STAGE_COLORS[s] : 'rgba(255,255,255,0.1)',
-            fontSize: 10, fontWeight: 700, color: i <= idx ? '#000' : 'rgba(255,255,255,0.3)',
-            border: i === idx ? `2px solid ${STAGE_COLORS[s]}` : '2px solid transparent',
+            background: i <= idx ? STAGE_COLORS[s] : C.creamDk,
+            fontSize: 11, fontWeight: 700, color: C.ink,
+            filter: i <= idx ? 'none' : 'saturate(0.4)',
+            border: i === idx ? `3px solid ${C.edge}` : `2px solid ${C.inkSoft}`,
             flexShrink: 0,
           }}>
             {STAGE_LABELS[s].slice(0,3)}
           </div>
-          {i < 3 && <div style={{ flex: 1, height: 2, background: i < idx ? '#ffd700' : 'rgba(255,255,255,0.1)' }} />}
+          {i < 3 && <div style={{ flex: 1, height: 4, background: i < idx ? C.goldLo : C.creamDk }} />}
         </div>
       ))}
     </div>
@@ -67,10 +68,10 @@ function Countdown({ stageStartedAt, stage }) {
   const cfg = STAGE_CONFIG[stage];
   const elapsed = Date.now() - stageStartedAt;
   const remaining = Math.max(0, cfg.minMs - elapsed);
-  if (remaining === 0) return <div style={{ fontSize: 10, color: '#4caf50' }}>⏰ {t('Süre tamamlandı!')}</div>;
+  if (remaining === 0) return <div style={{ fontSize: 11, fontWeight: 800, color: C.greenEdge }}>⏰ {t('Süre tamamlandı!')}</div>;
   const h = Math.floor(remaining / 3600_000);
   const m = Math.floor((remaining % 3600_000) / 60_000);
-  return <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>⏱ {t('{h}s {m}dk kaldı', { h, m })}</div>;
+  return <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 700 }}>⏱ {t('{h}s {m}dk kaldı', { h, m })}</div>;
 }
 
 function BPProgress({ bp, stage }) {
@@ -79,11 +80,11 @@ function BPProgress({ bp, stage }) {
   const pct = Math.min(100, (bp / cfg.bp) * 100);
   return (
     <div style={{ marginBottom: 6 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.inkSoft, fontWeight: 700, marginBottom: 2 }}>
         <span>{t('BÜYÜME PUANI')}</span><span>{bp}/{cfg.bp}</span>
       </div>
-      <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3 }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, #ce93d8, #ab47bc)', borderRadius: 3 }} />
+      <div style={{ height: 10, background: C.edgeDk, border: `2px solid ${C.edge}`, borderRadius: 999, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${C.goldHi}, ${C.goldLo})`, borderRadius: 999 }} />
       </div>
     </div>
   );
@@ -145,27 +146,28 @@ function FoalCard({ foal, onFlash }) {
                 onChange={e => setNameInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
                 style={{
-                  flex: 1, minWidth: 0, fontSize: 12, fontWeight: 700, padding: '3px 6px',
-                  background: 'rgba(0,0,0,0.4)', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.3)', borderRadius: 5, fontFamily: 'inherit',
+                  flex: 1, minWidth: 0, minHeight: 44, boxSizing: 'border-box', fontSize: 14, fontWeight: 800, padding: '3px 8px',
+                  background: '#fffaf0', color: C.ink,
+                  border: `3px solid ${C.edge}`, borderRadius: 10, fontFamily: 'inherit', outline: 'none',
                 }}
               />
-              <button onClick={saveName} style={nameBtn}>✓</button>
-              <button onClick={() => setEditingName(false)} style={nameBtn}>✕</button>
+              <button className="hr-press" onClick={saveName} style={nameBtn}>✓</button>
+              <button className="hr-press" onClick={() => setEditingName(false)} style={nameBtn}>✕</button>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: stageColor }}>{foal.name}</div>
+              <div style={{ fontSize: 16, fontFamily: DISPLAY, letterSpacing: 1, color: C.ink }}>{foal.name}</div>
               <button
                 onClick={() => { setNameInput(foal.name); setEditingName(true); }}
-                style={{ ...nameBtn, opacity: 0.7 }}
+                className="hr-press"
+                style={nameBtn}
                 title={t('İsmi değiştir')}
               >✏️</button>
             </div>
           )}
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>
+          <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 700 }}>
             {foal.source === 'breed' ? '🧬 ' + t('Çiftleştirme') : '🏪 ' + t('Mağaza')}
-            {foal.genes.trait && <span style={{ marginLeft: 6, color: '#ffd700' }}>{t(TRAITS[foal.genes.trait]?.label ?? '')}</span>}
+            {foal.genes.trait && <span style={{ marginLeft: 6, color: C.woodDk, fontWeight: 800 }}>{t(TRAITS[foal.genes.trait]?.label ?? '')}</span>}
           </div>
         </div>
         <div style={{ width: 48, height: 48, borderRadius: '50%', background: foal.genes.bodyColor, border: `3px solid ${foal.genes.maneColor}` }} />
@@ -178,18 +180,18 @@ function FoalCard({ foal, onFlash }) {
           <Countdown stageStartedAt={foal.stageStartedAt} stage={foal.stage} />
           <BPProgress bp={foal.bp} stage={foal.stage} />
           <div style={{ marginTop: 4 }}>
-            <MeterBar label={t('TOKLUK')} value={foal.tokluk} color={foal.tokluk < 20 ? '#ef5350' : '#66bb6a'} />
-            <MeterBar label={t('MUTLULUK')} value={foal.mutluluk} color="#42a5f5" />
+            <MeterBar label={t('TOKLUK')} value={foal.tokluk} color={foal.tokluk < 20 ? C.red : `linear-gradient(90deg, ${C.greenHi}, ${C.green})`} />
+            <MeterBar label={t('MUTLULUK')} value={foal.mutluluk} color={`linear-gradient(90deg, ${C.goldHi}, ${C.goldLo})`} />
             <BondDots value={foal.bag} />
           </div>
-          {foal.tokluk < 20 && <div style={{ fontSize: 10, color: '#ef5350', marginTop: 4 }}>⚠️ {t('Tokluk düşük – büyüme durdu!')}</div>}
+          {foal.tokluk < 20 && <div style={{ fontSize: 11, fontWeight: 800, color: C.red, marginTop: 4 }}>⚠️ {t('Tokluk düşük – büyüme durdu!')}</div>}
         </>
       )}
 
       {isMature && (
-        <div style={{ textAlign: 'center', padding: '8px 0', color: '#ffd700', fontWeight: 700, fontSize: 12 }}>
+        <div style={{ textAlign: 'center', padding: '8px 0', color: C.greenEdge, fontWeight: 800, fontSize: 13 }}>
           🎉 {t('Olgunlaştı! Ahıra eklenmeye hazır.')}
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 700, marginTop: 4 }}>
             {t('Hız')} {foal.genes.speedMult.toFixed(2)}x · {t('Manevra')} {foal.genes.maneuvMult.toFixed(2)}x · {t('Zıplama')} {foal.genes.jumpMult.toFixed(2)}x
           </div>
         </div>
@@ -200,7 +202,8 @@ function FoalCard({ foal, onFlash }) {
         {!isMature && (
           <>
             <button
-              style={{ ...SC.actionBtn, background: canFeed ? '#388e3c' : '#2a2a2a', opacity: canFeed ? 1 : 0.5 }}
+              className="hr-press"
+              style={{ ...SC.actionBtn, ...btn.success, ...(canFeed ? {} : { filter: 'saturate(0.3)', opacity: 0.6 }) }}
               onClick={() => {
                 if (carrots < 15) { onFlash('❌ ' + t('Yetersiz havuç (15 gerekli)')); return; }
                 if (feedsToday >= FEED_MAX_DAY) { onFlash('❌ ' + t('Günlük limit doldu ({a}/{b})', { a: FEED_MAX_DAY, b: FEED_MAX_DAY })); return; }
@@ -211,7 +214,8 @@ function FoalCard({ foal, onFlash }) {
               🥕 {t('BESLE')}<br /><span style={{ fontSize: 10 }}>{t('15 havuç')}</span>
             </button>
             <button
-              style={{ ...SC.actionBtn, background: groomReady ? '#1565c0' : '#2a2a2a', opacity: groomReady ? 1 : 0.5 }}
+              className="hr-press"
+              style={{ ...SC.actionBtn, ...btn.info, ...(groomReady ? {} : { filter: 'saturate(0.3)', opacity: 0.6 }) }}
               onClick={() => {
                 if (!groomReady) { const h = Math.floor((GROOM_COOLDOWN_MS - (now - foal.lastGroomedAt)) / 3600_000); onFlash('❌ ' + t('{h}s sonra tımarlanabilir', { h })); return; }
                 const ok = groomFoal(foal.id); onFlash(ok ? '✨ ' + t('Tımarlandı! +1 BAĞ') : t('Bekleme süresi devam ediyor'));
@@ -220,7 +224,8 @@ function FoalCard({ foal, onFlash }) {
               ✨ {t('TIMARLA')}<br /><span style={{ fontSize: 10 }}>{t('Ücretsiz')}</span>
             </button>
             <button
-              style={{ ...SC.actionBtn, background: trainReady ? '#6a1b9a' : '#2a2a2a', opacity: trainReady ? 1 : 0.5 }}
+              className="hr-press"
+              style={{ ...SC.actionBtn, ...btn.secondary, ...(trainReady ? {} : { filter: 'saturate(0.3)', opacity: 0.6 }) }}
               onClick={() => {
                 if (!trainReady) { onFlash('❌ ' + t('Bugün antrenman yapıldı')); return; }
                 const ok = trainFoal(foal.id); onFlash(ok ? '🏃 ' + t('Antrenman yapıldı! +20 BP +1 BAĞ') : t('Bekleme süresi devam ediyor'));
@@ -232,7 +237,8 @@ function FoalCard({ foal, onFlash }) {
         )}
         {canAdvance && (
           <button
-            style={{ ...SC.actionBtn, background: 'linear-gradient(135deg,#f57f17,#e65100)', flex: 1 }}
+            className="hr-press"
+              style={{ ...SC.actionBtn, ...btn.primary, flex: 1 }}
             onClick={() => { advanceStageIfReady(foal.id); onFlash('🌟 ' + t('Aşama geçildi!')); }}
           >
             🌟 {t('AŞAMA GEÇER')}
@@ -240,7 +246,8 @@ function FoalCard({ foal, onFlash }) {
         )}
         {isMature && (
           <button
-            style={{ ...SC.actionBtn, background: 'linear-gradient(135deg,#ffd700,#ff8f00)', flex: 1, color: '#000' }}
+            className="hr-press"
+              style={{ ...SC.actionBtn, ...btn.primary, flex: 1 }}
             onClick={() => { const h = matureFoal(foal.id); onFlash(h ? '🐴 ' + t('{name} atlarına katıldı!', { name: h.name }) : t('Hata')); }}
           >
             🐴 {t('AHIRA EKLE')}
@@ -252,7 +259,8 @@ function FoalCard({ foal, onFlash }) {
       {!isMature && !canAdvance && elapsed < cfg.minMs && (
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
           <button
-            style={{ ...SC.actionBtn, flex: 1, background: carrots >= rushCost(foal.id) ? 'linear-gradient(135deg,#ff9f43,#e17055)' : 'rgba(255,255,255,0.1)', opacity: carrots >= rushCost(foal.id) ? 1 : 0.5 }}
+            className="hr-press"
+              style={{ ...SC.actionBtn, flex: 1, ...btn.primary, ...(carrots >= rushCost(foal.id) ? {} : { filter: 'saturate(0.3)', opacity: 0.6 }) }}
             disabled={carrots < rushCost(foal.id)}
             onClick={() => { if (rushFoalStage(foal.id, false)) onFlash('⏩ ' + t('Süre atlandı!')); }}
           >
@@ -321,18 +329,18 @@ function BreedModal({ onClose, onDone }) {
     <div style={{ ...SC.modal }}>
       <div style={{ ...SC.modalBox }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🧬 {t('ÇİFTLEŞTİRME')}</span>
-          <button aria-label={t('Kapat')} style={SC.closeBtn} onClick={onClose}>✕</button>
+          <span style={{ ...titleText(22) }}>🧬 {t('ÇİFTLEŞTİRME')}</span>
+          <button aria-label={t('Kapat')} className="hr-press" style={SC.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
           {[[t('Ebeveyn A'), selA, setSelA, selB], [t('Ebeveyn B'), selB, setSelB, selA]].map(([lbl, sel, setSel, other]) => (
             <div key={lbl}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>{lbl}</div>
+              <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 700, marginBottom: 4 }}>{lbl}</div>
               <select
                 value={sel ?? ''}
                 onChange={e => setSel(e.target.value)}
-                style={{ width: '100%', background: '#1a1a2e', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 6, padding: '6px 8px', fontFamily: 'var(--game-font)', fontSize: 11 }}
+                style={{ width: '100%', minHeight: 44, background: '#fffaf0', color: C.ink, border: `3px solid ${C.edge}`, borderRadius: 12, padding: '6px 8px', fontFamily: FONT, fontWeight: 800, fontSize: 13 }}
               >
                 {available.filter(h => h.id !== other).map(h => (
                   <option key={h.id} value={h.id}>{t(h.name)}</option>
@@ -343,15 +351,15 @@ function BreedModal({ onClose, onDone }) {
         </div>
 
         {previewGenes && (
-          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-            <div style={{ color: '#ffd700', fontWeight: 700, marginBottom: 4 }}>{t('Tahmini Özellikler (±%10 varyasyon)')}</div>
+          <div style={{ ...tile, padding: '8px 12px', marginBottom: 12, fontSize: 12, fontWeight: 700, color: C.ink }}>
+            <div style={{ color: C.ink, fontFamily: DISPLAY, letterSpacing: 1, marginBottom: 4 }}>{t('Tahmini Özellikler (±%10 varyasyon)')}</div>
             <div>{t('Hız')}: ~{previewGenes.speedMult.toFixed(2)}x &nbsp; {t('Manevra')}: ~{previewGenes.maneuvMult.toFixed(2)}x</div>
             <div>{t('Zıplama')}: ~{previewGenes.jumpMult.toFixed(2)}x &nbsp; {t('Max Hız')}: ~{previewGenes.maxSpeed.toFixed(0)}</div>
-            <div style={{ color: '#ce93d8', marginTop: 4 }}>{t('%5 nadir özellik şansı')}</div>
+            <div style={{ color: C.woodDk, fontWeight: 800, marginTop: 4 }}>{t('%5 nadir özellik şansı')}</div>
           </div>
         )}
 
-        {err && <div style={{ color: '#ef5350', fontSize: 11, marginBottom: 8 }}>{err}</div>}
+        {err && <div style={{ color: C.red, fontWeight: 800, fontSize: 12, marginBottom: 8 }}>{err}</div>}
 
         {/* Reklam izle → çiftleştirme bekleme süresini atla */}
         {breedCooldownActive && (
@@ -367,9 +375,10 @@ function BreedModal({ onClose, onDone }) {
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: canBreed ? '#ffd700' : '#ff6666', fontWeight: 700 }}>🥕 {BREED_COST} {t('havuç')}</span>
+          <span style={{ color: canBreed ? C.ink : C.red, fontFamily: DISPLAY, fontSize: 18 }}>🥕 {BREED_COST} {t('havuç')}</span>
           <button
-            style={{ ...SC.actionBtn, background: canBreed ? 'linear-gradient(135deg,#c8a000,#a07800)' : '#3a2a2a', opacity: canBreed ? 1 : 0.5, padding: '10px 24px' }}
+            className="hr-press"
+              style={{ ...SC.actionBtn, ...btn.primary, ...(canBreed ? {} : { filter: 'saturate(0.3)', opacity: 0.6 }), padding: '10px 24px' }}
             disabled={!canBreed}
             onClick={() => {
               const res = breedFoal(selA, selB);
@@ -395,21 +404,22 @@ function ShopModal({ onClose, onDone }) {
     <div style={SC.modal}>
       <div style={SC.modalBox}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🏪 {t('YAVRU SATIN AL')}</span>
-          <button aria-label={t('Kapat')} style={SC.closeBtn} onClick={onClose}>✕</button>
+          <span style={{ ...titleText(22) }}>🏪 {t('YAVRU SATIN AL')}</span>
+          <button aria-label={t('Kapat')} className="hr-press" style={SC.closeBtn} onClick={onClose}>✕</button>
         </div>
-        {err && <div style={{ color: '#ef5350', fontSize: 11, marginBottom: 8 }}>{err}</div>}
+        {err && <div style={{ color: C.red, fontWeight: 800, fontSize: 12, marginBottom: 8 }}>{err}</div>}
         {[
           { tier: 1, cost: SHOP_TIER1_COST, label: t('Tier 1 Yavru'), desc: t('Temel genetik · Hız 0.8–1.3x'), color: '#66bb6a' },
           { tier: 2, cost: SHOP_TIER2_COST, label: t('Tier 2 Yavru'), desc: t('Gelişmiş genetik · Hız 1.2–1.8x'), color: '#42a5f5' },
         ].map(({ tier, cost, label, desc, color }) => (
-          <div key={tier} style={{ ...SC.shopTier, borderColor: `${color}44` }}>
+          <div key={tier} style={{ ...SC.shopTier, borderColor: C.edge }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color }}>{label}</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{desc}</div>
+              <div style={{ fontSize: 15, fontFamily: DISPLAY, letterSpacing: 1, color: C.ink }}>{label}</div>
+              <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 700, marginTop: 2 }}>{desc}</div>
             </div>
             <button
-              style={{ ...SC.actionBtn, background: carrots >= cost ? `linear-gradient(135deg,${color},${color}99)` : '#3a2a2a', opacity: carrots >= cost ? 1 : 0.5, padding: '8px 16px' }}
+              className="hr-press"
+              style={{ ...SC.actionBtn, ...btn.success, ...(carrots >= cost ? {} : { filter: 'saturate(0.3)', opacity: 0.6 }), padding: '8px 16px' }}
               disabled={carrots < cost}
               onClick={() => { const res = buyFoal(tier); if (res.ok) onDone(res.foal); else setErr(t(res.reason)); }}
             >
@@ -444,19 +454,20 @@ export default function Hara() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Flash */}
       {flash && (
-        <div style={{ background: 'rgba(76,175,80,0.2)', border: '1px solid #4caf50', borderRadius: 8, padding: '8px 16px', textAlign: 'center', fontSize: 12, color: '#4caf50', fontWeight: 700 }}>
+        <div style={{ background: '#d8f0c8', border: `3px solid ${C.greenEdge}`, borderRadius: 12, padding: '8px 16px', textAlign: 'center', fontSize: 13, color: C.greenEdge, fontWeight: 800 }}>
           {flash}
         </div>
       )}
 
       {/* Slot info */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+        <span style={{ fontSize: 11, color: C.inkSoft, fontWeight: 700 }}>
           {t('Ahır:')} {foals.length}/{totalSlots} {t('slot')}{bonusSlots > 0 ? ` (+${bonusSlots} ${t('geçici')})` : ''}
         </span>
         {foals.length >= totalSlots && (
           <button
-            style={{ ...SC.actionBtn, padding: '6px 14px', fontSize: 10, background: carrots >= 1000 ? 'linear-gradient(135deg,#c8a000,#a07800)' : '#3a2a2a', opacity: carrots >= 1000 ? 1 : 0.5 }}
+            className="hr-press"
+              style={{ ...SC.actionBtn, padding: '6px 14px', fontSize: 11, ...btn.primary, ...(carrots >= 1000 ? {} : { filter: 'saturate(0.3)', opacity: 0.6 }) }}
             disabled={carrots < 1000}
             onClick={() => { const ok = buyStableSlot(); doFlash(ok ? '🏠 ' + t('Yeni slot açıldı!') : t('Yetersiz havuç')); }}
           >
@@ -486,12 +497,14 @@ export default function Hara() {
       {foals.length < totalSlots && (
         <div style={SC.emptySlot}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>🐣</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>{t('Ahır boş')}</div>
+          <div style={{ fontSize: 12, color: C.inkSoft, fontWeight: 700, marginBottom: 12 }}>{t('Ahır boş')}</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button style={{ ...SC.actionBtn, background: 'linear-gradient(135deg,#7b1fa2,#4a148c)', padding: '10px 20px' }} onClick={() => setModal('breed')}>
+            <button className="hr-press"
+              style={{ ...SC.actionBtn, ...btn.secondary, padding: '10px 20px' }} onClick={() => setModal('breed')}>
               🧬 {t('ÇİFTLEŞTİR')}
             </button>
-            <button style={{ ...SC.actionBtn, background: 'linear-gradient(135deg,#1565c0,#0d47a1)', padding: '10px 20px' }} onClick={() => setModal('shop')}>
+            <button className="hr-press"
+              style={{ ...SC.actionBtn, ...btn.success, padding: '10px 20px' }} onClick={() => setModal('shop')}>
               🏪 {t('SATIN AL')}
             </button>
           </div>
@@ -515,33 +528,23 @@ export default function Hara() {
 }
 
 const SC = {
-  card: {
-    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 12, padding: '14px 16px',
-  },
+  card: { ...tile, border: `3px solid ${C.edge}`, padding: '14px 14px' },
   actionBtn: {
-    padding: '8px 12px', fontSize: 11, fontWeight: 700, letterSpacing: 1,
-    color: '#fff', border: 'none', borderRadius: 6, fontFamily: 'var(--game-font)',
-    cursor: 'pointer', transition: 'opacity 0.15s', textAlign: 'center',
+    padding: '8px 10px', minHeight: 48, fontSize: 13, borderRadius: 12,
+    textAlign: 'center',
   },
   emptySlot: {
-    border: '2px dashed rgba(255,255,255,0.15)', borderRadius: 12, padding: '24px 16px',
+    ...tile, border: `3px dashed ${C.inkSoft}`, padding: '24px 16px',
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
   },
   modal: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+    position: 'fixed', inset: 0, background: backdrop,
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500,
   },
-  modalBox: {
-    background: 'rgba(8,8,18,0.98)', border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: 16, padding: 24, width: 400, maxWidth: '92vw', maxHeight: '80vh', overflowY: 'auto',
-  },
-  closeBtn: {
-    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: 6, color: '#fff', fontSize: 14, padding: '4px 10px', cursor: 'pointer',
-  },
+  modalBox: { ...panel, padding: 20, width: 400, maxWidth: '92vw', maxHeight: '80vh', overflowY: 'auto', boxSizing: 'border-box' },
+  closeBtn: { ...btn.icon, width: 44, height: 44, fontSize: 18 },
   shopTier: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    border: '1px solid', borderRadius: 8, padding: '12px 16px', marginBottom: 8,
+    ...tile, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
+    border: '3px solid', padding: '12px 14px', marginBottom: 10,
   },
 };
