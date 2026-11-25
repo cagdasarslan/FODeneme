@@ -2,6 +2,7 @@ import { useProgress } from '@react-three/drei';
 import { useEffect, useRef, useState } from 'react';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { C, FONT, titleText } from '@/ui/theme';
 
 export default function LoadingScreen() {
   useLang();
@@ -45,48 +46,31 @@ const S = {
   overlay: {
     position: 'fixed',
     inset: 0,
-    background: '#0a0a14',
+    background: `radial-gradient(circle at 50% 40%, #3a2414, ${C.bgDeep})`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 999,
     transition: 'opacity 0.5s ease',
-    fontFamily: 'var(--game-font)',
+    fontFamily: FONT,
     userSelect: 'none',
   },
-  box: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 18,
-  },
-  horse: {
-    fontSize: 72,
-    animation: 'bounce 0.6s infinite alternate',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 900,
-    letterSpacing: 6,
-    color: '#fff',
-    textShadow: '0 0 20px rgba(255,200,50,0.5)',
-  },
+  box: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 },
+  horse: { fontSize: 72, animation: 'bounce 0.6s infinite alternate' },
+  title: { ...titleText(36), letterSpacing: 3 },
   barTrack: {
     width: 280,
-    height: 8,
-    background: 'rgba(255,255,255,0.12)',
-    borderRadius: 4,
+    height: 16,
+    background: C.edgeDk,
+    border: `3px solid ${C.edge}`,
+    borderRadius: 999,
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
-    background: 'linear-gradient(90deg, #c8881b, #f5d060)',
-    borderRadius: 4,
+    background: `linear-gradient(90deg, ${C.goldHi}, ${C.goldLo})`,
+    borderRadius: 999,
     transition: 'width 0.15s ease',
   },
-  pct: {
-    fontSize: 12,
-    letterSpacing: 3,
-    color: 'rgba(255,255,255,0.5)',
-  },
+  pct: { fontSize: 14, fontWeight: 800, letterSpacing: 2, color: C.gold },
 };

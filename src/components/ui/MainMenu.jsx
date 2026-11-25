@@ -21,6 +21,7 @@ import { GAME_BUILD } from '@/constants/game';
 import { SAFE_TOP, BOTTOM_SPACE, topPlus } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { C, FONT, DISPLAY, btn, panel, tile, pill, titleText, backdrop } from '@/ui/theme';
 
 const isNative = Capacitor.getPlatform() !== 'web';
 
@@ -68,7 +69,7 @@ function StatRow({ label, value, color }) {
   return (
     <div style={styles.statRow}>
       <span style={styles.statLabel}>{label}</span>
-      <span style={{ ...styles.statValue, color: color ?? '#fff' }}>{value}</span>
+      <span style={{ ...styles.statValue, color: color ?? C.ink }}>{value}</span>
     </div>
   );
 }
@@ -236,8 +237,8 @@ export default function MainMenu() {
       <div style={styles.card}>
         {/* Üst köşe ikonları */}
         <div style={styles.topIcons}>
-          <button style={styles.iconBtn} aria-label={t('OYUN REHBERİ')} onClick={() => setShowGuide(true)}>📖</button>
-          <button style={styles.iconBtn} aria-label={t('AYARLAR')} onClick={() => setShowSettings(true)}>⚙️</button>
+          <button className="hr-press" style={styles.iconBtn} aria-label={t('OYUN REHBERİ')} onClick={() => setShowGuide(true)}>📖</button>
+          <button className="hr-press" style={styles.iconBtn} aria-label={t('AYARLAR')} onClick={() => setShowSettings(true)}>⚙️</button>
         </div>
 
         {/* Sabit başlık + OYNA — menü açılınca ilk görünen, kaydırmayla oynamaz */}
@@ -250,7 +251,7 @@ export default function MainMenu() {
             </div>
           )}
           {/* Oyun sonunda logo gizli: buton sağ üst ikonların altında kalsın */}
-          <button style={{ ...styles.btn, ...(isGameOver ? { marginTop: 46 } : {}) }} onClick={startRun}>
+          <button className="hr-press" style={{ ...styles.btn, ...(isGameOver ? { marginTop: 46 } : {}) }} onClick={startRun}>
             {isGameOver ? t('TEKRAR OYNA') : '▶  ' + t('OYNA')}
           </button>
           {/* Harita madalyaları — seçili haritanın kısa vadeli hedefi */}
@@ -270,8 +271,8 @@ export default function MainMenu() {
                 </div>
                 <span style={styles.medalGoal}>
                   {nextTarget
-                    ? <>{t('Sonraki madalya:')} <b style={{ color: '#ffd54a' }}>{nextTarget.toLocaleString()}</b> {t('skor')}</>
-                    : <span style={{ color: '#8ee69a' }}>{t('Tüm madalyalar alındı!')} 🏅</span>}
+                    ? <>{t('Sonraki madalya:')} <b style={{ color: C.gold }}>{nextTarget.toLocaleString()}</b> {t('skor')}</>
+                    : <span style={{ color: C.greenHi }}>{t('Tüm madalyalar alındı!')} 🏅</span>}
                 </span>
               </div>
             );
@@ -288,7 +289,7 @@ export default function MainMenu() {
           )}
 
           {/* Yapı etiketi — hangi sürümün yüklü olduğunu doğrulamak için */}
-          <div style={{ position: 'fixed', top: topPlus(4), right: 8, fontSize: 10, color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--game-font)', zIndex: 5 }}>
+          <div style={{ position: 'fixed', top: topPlus(4), right: 8, fontSize: 10, color: C.cream, fontFamily: FONT, zIndex: 5 }}>
             {GAME_BUILD}
           </div>
 
@@ -299,19 +300,19 @@ export default function MainMenu() {
               <div style={styles.gameOverText}>GAME OVER</div>
               {isNewRecord && <div style={styles.newRecord}>🏆 {t('YENİ REKOR!')}</div>}
               <div style={styles.statsCard}>
-                <div style={{ ...styles.mapBadge, borderColor: mapInfo.color, color: mapInfo.color }}>
+                <div style={{ ...styles.mapBadge, borderColor: mapInfo.color }}>
                   {mapInfo.emoji} {t(mapInfo.name)}
                 </div>
-                <StatRow label={t('SKOR')} value={<AnimatedScore value={score} />} color="#fff" />
-                <StatRow label={t('BU HARİTA REKORU')} value={Math.floor(mapHs).toLocaleString()} color={mapInfo.color} />
-                <StatRow label={t('BU KOŞUDA')} value={`+${(runCarrots ?? 0).toLocaleString()} 🥕`} color="#ffd700" />
-                <StatRow label={t('TOPLAM HAVUÇ')} value={`🥕 ${carrots.toLocaleString()}`} color="rgba(255,215,0,0.7)" />
+                <StatRow label={t('SKOR')} value={<AnimatedScore value={score} />} color={C.ink} />
+                <StatRow label={t('BU HARİTA REKORU')} value={Math.floor(mapHs).toLocaleString()} color={C.inkSoft} />
+                <StatRow label={t('BU KOŞUDA')} value={`+${(runCarrots ?? 0).toLocaleString()} 🥕`} color={C.ink} />
+                <StatRow label={t('TOPLAM HAVUÇ')} value={`🥕 ${carrots.toLocaleString()}`} color={C.inkSoft} />
               </div>
               {/* Arkadaşını geç — liderlikte bir üstteki oyuncu */}
               {rival && (
                 <div style={styles.rivalRow}>
                   🎯 {t('{rank}. sıradaki', { rank: rival.rank })} <b>{rival.name}</b>{t('oyuncusunu geçmek için')}{' '}
-                  <b style={{ color: '#ffd700' }}>{rival.diff.toLocaleString()}</b> {t('puan!')}
+                  <b style={{ color: C.red }}>{rival.diff.toLocaleString()}</b> {t('puan!')}
                 </div>
               )}
               {runCarrots > 0 && !carrotsDoubled && (
@@ -328,12 +329,12 @@ export default function MainMenu() {
               🥕 <span style={styles.carrotNum}>{carrots.toLocaleString()}</span>
               <span style={styles.carrotPlus}>＋</span>
             </div>
-            <button style={styles.dailyIconBtn} aria-label={t('GÜNLÜK ÖDÜL')} onClick={() => setShowDaily(true)}>
+            <button className="hr-press" style={styles.dailyIconBtn} aria-label={t('GÜNLÜK ÖDÜL')} onClick={() => setShowDaily(true)}>
               🎁
               {canClaimStreak && <span style={styles.dailyDot} />}
             </button>
             {/* Liderlik — ana sayfadan hızlı erişim */}
-            <button style={styles.dailyIconBtn} aria-label={t('LİDERLİK')} onClick={() => setShowLeaderboard(true)}>
+            <button className="hr-press" style={styles.dailyIconBtn} aria-label={t('LİDERLİK')} onClick={() => setShowLeaderboard(true)}>
               🏆
             </button>
           </div>
@@ -363,7 +364,7 @@ export default function MainMenu() {
                     <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>
                       {st.claimed ? '✅' : st.icon}
                     </span>
-                    <span style={{ flex: 1, fontSize: 12, color: st.claimed ? '#8ee69a' : '#fff', fontWeight: 600 }}>
+                    <span style={{ flex: 1, fontSize: 12, color: st.claimed ? C.green : C.ink, fontWeight: 800 }}>
                       {t(st.label)}
                     </span>
                     {st.claimed ? null : st.done ? (
@@ -381,28 +382,28 @@ export default function MainMenu() {
           {(
             <div style={{
               ...styles.foalCard, cursor: goal.done && !goal.claimed ? 'pointer' : 'default',
-              borderColor: goal.done && !goal.claimed ? '#ffd54a' : 'rgba(255,255,255,0.1)',
-              background: goal.done && !goal.claimed ? 'rgba(255,213,74,0.12)' : 'rgba(255,255,255,0.04)',
+              borderColor: goal.done && !goal.claimed ? C.goldLo : C.edge,
+              background: goal.done && !goal.claimed ? '#ffe08a' : C.creamDk,
             }} onClick={() => { if (goal.done && !goal.claimed) { const r = openDailyChest(); if (r) setChestReward(r); } }}>
               <span style={{ fontSize: 26 }}>{goal.claimed ? '✅' : goal.done ? '🎁' : '🎯'}</span>
               <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                 <div style={styles.foalName}>{t('Günlük Görev · 50.000 Puan')}</div>
                 {goal.claimed ? (
-                  <div style={{ ...styles.foalStatus, color: '#8ee69a' }}>{t('Bugünkü sandık alındı — yarın tekrar!')} 🎁</div>
+                  <div style={{ ...styles.foalStatus, color: C.green }}>{t('Bugünkü sandık alındı — yarın tekrar!')} 🎁</div>
                 ) : goal.done ? (
-                  <div style={{ ...styles.foalStatus, color: '#ffd54a' }}>{t('Tamamlandı! Sandığı açmak için dokun')} 👉</div>
+                  <div style={{ ...styles.foalStatus, color: C.inkSoft }}>{t('Tamamlandı! Sandığı açmak için dokun')} 👉</div>
                 ) : (
                   <>
-                    <div style={{ height: 6, background: 'rgba(255,255,255,0.12)', borderRadius: 3, overflow: 'hidden', marginTop: 5 }}>
-                      <div style={{ height: '100%', width: `${Math.min(100, goal.score / goal.target * 100)}%`, background: 'linear-gradient(90deg,#ffd54a,#ff9f00)', borderRadius: 3 }} />
+                    <div style={{ height: 10, background: C.edgeDk, border: `2px solid ${C.edge}`, borderRadius: 999, overflow: 'hidden', marginTop: 5 }}>
+                      <div style={{ height: '100%', width: `${Math.min(100, goal.score / goal.target * 100)}%`, background: `linear-gradient(90deg, ${C.goldHi}, ${C.goldLo})`, borderRadius: 999 }} />
                     </div>
-                    <div style={{ ...styles.foalStatus, color: 'rgba(255,255,255,0.55)', marginTop: 3 }}>
+                    <div style={{ ...styles.foalStatus, color: C.inkSoft, marginTop: 3 }}>
                       {goal.score.toLocaleString()} / {goal.target.toLocaleString()} ({t('tüm haritalar')})
                     </div>
                   </>
                 )}
               </div>
-              {goal.done && !goal.claimed && <span style={{ ...styles.foalGo, color: '#ffd54a' }}>{t('AÇ')} →</span>}
+              {goal.done && !goal.claimed && <span style={{ ...styles.foalGo, color: C.ink }}>{t('AÇ')} →</span>}
             </div>
           )}
 
@@ -415,7 +416,7 @@ export default function MainMenu() {
                 <div style={{ width: 34, height: 34, borderRadius: '50%', background: f.genes.bodyColor, border: `3px solid ${f.genes.maneColor}`, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                   <div style={styles.foalName}>🐣 {f.name} <span style={styles.foalStage}>({t(f.stage)})</span></div>
-                  <div style={{ ...styles.foalStatus, color: hungry ? '#ff8866' : '#8ee69a' }}>
+                  <div style={{ ...styles.foalStatus, color: hungry ? C.red : C.green }}>
                     {hungry ? '⚠️ ' + t('Acıktı — hemen besle!') : t('Tokluk %{a} · Mutluluk %{b}', { a: Math.floor(f.tokluk), b: Math.floor(f.mutluluk) })}
                   </div>
                 </div>
@@ -428,7 +429,7 @@ export default function MainMenu() {
               <span style={{ fontSize: 26 }}>🐣</span>
               <div style={{ flex: 1, textAlign: 'left' }}>
                 <div style={styles.foalName}>{t('İlk tayını yetiştir!')}</div>
-                <div style={{ ...styles.foalStatus, color: 'rgba(255,255,255,0.5)' }}>{t('Çiftleştir, besle, büyüt — kendi şampiyonunu yarat')}</div>
+                <div style={{ ...styles.foalStatus, color: C.inkSoft }}>{t('Çiftleştir, besle, büyüt — kendi şampiyonunu yarat')}</div>
               </div>
               <span style={styles.foalGo}>{t('AHIR')} →</span>
             </div>
@@ -457,18 +458,18 @@ export default function MainMenu() {
                   key={m.id}
                   style={{
                     ...styles.mapCard,
-                    borderColor: mapId === m.id ? m.color : 'rgba(255,255,255,0.1)',
-                    background:  mapId === m.id ? `rgba(${m.rgb},0.13)` : 'rgba(255,255,255,0.04)',
-                    boxShadow: mapId === m.id ? `0 0 12px rgba(${m.rgb},0.3)` : 'none',
+                    borderColor: mapId === m.id ? m.color : C.edge,
+                    background:  mapId === m.id ? `rgba(${m.rgb},0.22)` : C.creamDk,
+                    boxShadow: mapId === m.id ? `0 4px 0 ${C.edge}` : `0 3px 0 ${C.woodDk}`,
                     opacity: locked ? 0.45 : 1,
                     cursor: locked ? 'not-allowed' : 'pointer',
                   }}
                   onClick={() => { if (!locked) setMapId(m.id); }}
                 >
                   <span style={styles.mapEmoji}>{locked ? '🔒' : m.emoji}</span>
-                  <span style={{ ...styles.mapName, color: mapId === m.id ? m.color : '#fff' }}>{t(m.name)}</span>
+                  <span style={{ ...styles.mapName, color: C.ink }}>{t(m.name)}</span>
                   <span style={styles.mapSub}>{t(m.sub)}</span>
-                  <span style={{ ...styles.mapHsChip, color: locked ? '#ff8866' : mapId === m.id ? m.color : 'rgba(255,255,255,0.3)' }}>
+                  <span style={{ ...styles.mapHsChip, color: locked ? C.red : C.inkSoft }}>
                     {locked ? `🔒 ${t('{n} skor gerekli', { n: need.toLocaleString() })}` : `⬡ ${Math.floor(m.hs).toLocaleString()}`}
                   </span>
                 </div>
@@ -505,23 +506,23 @@ export default function MainMenu() {
 
         {/* Alt sekme çubuğu */}
         <div style={styles.bottomNav}>
-          <button style={{ ...styles.navBtn, ...styles.navActive }}>
-            <span style={styles.navIcon}>🏠</span><span style={{ ...styles.navLabel, color: '#ffd54a' }}>{t('Ana')}</span>
+          <button className="hr-press" style={{ ...styles.navBtn, ...styles.navActive }}>
+            <span style={styles.navIcon}>🏠</span><span style={{ ...styles.navLabel, color: C.ink }}>{t('Ana')}</span>
           </button>
-          <button style={styles.navBtn} onClick={() => useGameStore.getState().enterPaddock()}>
+          <button className="hr-press" style={styles.navBtn} onClick={() => useGameStore.getState().enterPaddock()}>
             <span style={styles.navIcon}>🐎</span><span style={styles.navLabel}>{t('Çiftlik')}</span>
           </button>
-          <button style={styles.navBtn} onClick={() => openGarage()}>
+          <button className="hr-press" style={styles.navBtn} onClick={() => openGarage()}>
             <span style={styles.navIcon}>🏇</span><span style={styles.navLabel}>{t('Garaj')}</span>
           </button>
-          <button style={styles.navBtn} onClick={() => openGarage('hara')}>
+          <button className="hr-press" style={styles.navBtn} onClick={() => openGarage('hara')}>
             <span style={styles.navIcon}>🐣</span><span style={styles.navLabel}>{t('Ahır')}</span>
           </button>
-          <button style={styles.navBtn} onClick={() => setShowMissions(true)}>
+          <button className="hr-press" style={styles.navBtn} onClick={() => setShowMissions(true)}>
             <span style={styles.navIcon}>🎯</span><span style={styles.navLabel}>{t('Görev')}</span>
             {canClaimStreak && <span style={styles.navDot} />}
           </button>
-          <button style={styles.navBtn} onClick={() => setShowShop(true)}>
+          <button className="hr-press" style={styles.navBtn} onClick={() => setShowShop(true)}>
             <span style={styles.navIcon}>💎</span><span style={styles.navLabel}>{t('Mağaza')}</span>
           </button>
         </div>
@@ -545,6 +546,7 @@ export default function MainMenu() {
             />
             <div style={styles.nameHint}>{nameInput.trim().length < 3 ? t('En az 3 karakter') : `${nameInput.trim().length}/16`}</div>
             <button
+              className="hr-press"
               style={{ ...styles.nameBtn, opacity: nameInput.trim().length < 3 ? 0.4 : 1 }}
               disabled={nameInput.trim().length < 3}
               onClick={saveName}
@@ -555,7 +557,7 @@ export default function MainMenu() {
             {/* Daha önce oynadıysa: kurtarma koduyla ilerlemeyi geri al */}
             {!restoreMode ? (
               <div
-                style={{ marginTop: 12, fontSize: 11, color: '#7fd4ff', textDecoration: 'underline', cursor: 'pointer', fontWeight: 700 }}
+                style={{ marginTop: 12, fontSize: 11, color: C.blueEdge, textDecoration: 'underline', cursor: 'pointer', fontWeight: 800, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 onClick={() => setRestoreMode(true)}
               >
                 ☁️ {t('Daha önce oynadın mı? İlerlemeni geri yükle')}
@@ -571,19 +573,21 @@ export default function MainMenu() {
                   style={{ ...styles.nameInput, letterSpacing: 2 }}
                 />
                 <button
-                  style={{ ...styles.nameBtn, background: 'linear-gradient(135deg,#3a9aff,#1a6ad0)', opacity: restoreCode.trim().length < 6 ? 0.4 : 1 }}
+                  className="hr-press"
+                  style={{ ...styles.nameBtn, ...btn.info, opacity: restoreCode.trim().length < 6 ? 0.4 : 1 }}
                   disabled={restoreCode.trim().length < 6}
                   onClick={doRestore}
                 >
                   ☁️ {t('GERİ YÜKLE')}
                 </button>
                 <button
-                  style={{ ...styles.nameBtn, background: '#fff', color: '#1a1a2a' }}
+                  className="hr-press"
+                  style={{ ...styles.nameBtn, background: '#fff', color: C.ink, '--hr-edge': C.edge }}
                   onClick={() => signInWith('google')}
                 >
                   🇬 {t('Google hesabımla geri yükle')}
                 </button>
-                {restoreMsg && <div style={{ fontSize: 10, fontWeight: 700, color: restoreMsg.startsWith('⚠') ? '#ff8866' : '#33ff99' }}>{restoreMsg}</div>}
+                {restoreMsg && <div style={{ fontSize: 11, fontWeight: 800, color: restoreMsg.startsWith('⚠') ? C.red : C.green }}>{restoreMsg}</div>}
               </div>
             )}
           </div>
@@ -617,7 +621,7 @@ export default function MainMenu() {
               {chestReward.type === 'carrots' ? `+${chestReward.amount.toLocaleString()} 🥕` : t(chestReward.label)}
             </div>
             <div style={styles.chestSub}>{chestReward.type === 'carrots' ? t(chestReward.label) : t('Sonraki koşunda aktif!')}</div>
-            <button style={styles.chestBtn} onClick={() => setChestReward(null)}>{t('HARİKA!')}</button>
+            <button className="hr-press" style={styles.chestBtn} onClick={() => setChestReward(null)}>{t('HARİKA!')}</button>
           </div>
         </div>
       )}
@@ -636,7 +640,7 @@ export default function MainMenu() {
               +{newMedals.reduce((a, m) => a + m.reward, 0).toLocaleString()} 🥕
             </div>
             <div style={styles.chestSub}>{t('Yeni hedef için tekrar koş!')}</div>
-            <button style={styles.chestBtn} onClick={clearNewMedals}>{t('HARİKA!')}</button>
+            <button className="hr-press" style={styles.chestBtn} onClick={clearNewMedals}>{t('HARİKA!')}</button>
           </div>
         </div>
       )}
@@ -651,9 +655,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'rgba(0,0,0,0.72)',
-    backdropFilter: 'blur(3px)',
-    fontFamily: 'var(--game-font)',
+    background: backdrop,
+    fontFamily: FONT,
     userSelect: 'none',
     // Native'de alttaki AdMob banner'ı alt sekme çubuğunu kapatmasın:
     // kartın tamamını banner yüksekliği kadar yukarı kaldır.
@@ -663,19 +666,16 @@ const styles = {
     boxSizing: 'border-box',
   },
   card: {
+    ...panel,
     position: 'relative',
     display: 'flex',
     flexDirection: 'column',
-    background: 'linear-gradient(160deg, rgba(12,12,28,0.96) 0%, rgba(8,8,18,0.98) 100%)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 14,
     padding: 0,
     minWidth: isMobile ? 'auto' : 380,
     width: isMobile ? '96vw' : 420,
     maxWidth: '96vw',
     maxHeight: '92vh',
     overflow: 'hidden',
-    boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 80px rgba(255,215,0,0.04)',
   },
   scrollArea: {
     flex: 1, overflowY: 'auto', minHeight: 0,
@@ -683,173 +683,164 @@ const styles = {
     padding: '14px 18px 14px',
   },
   topIcons: { position: 'absolute', top: 10, right: 12, display: 'flex', gap: 6, zIndex: 2 },
-  iconBtn: { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, width: 34, height: 34, fontSize: 16, cursor: 'pointer' },
+  iconBtn: { ...btn.icon, width: 44, height: 44, fontSize: 18 },
   topRow: { display: 'flex', alignItems: 'center', gap: 8 },
   nameOverlay: {
     position: 'fixed', inset: 0, zIndex: 15000,
-    background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+    background: backdrop,
     display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
   },
   nameBox: {
-    width: '100%', maxWidth: 340, textAlign: 'center',
-    background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))',
-    border: '1px solid rgba(255,215,0,0.35)', borderRadius: 18, padding: '26px 22px',
-    fontFamily: 'var(--game-font)',
+    ...panel,
+    width: '100%', maxWidth: 340, textAlign: 'center', boxSizing: 'border-box',
+    padding: '26px 22px',
   },
-  nameTitle: { fontSize: 17, fontWeight: 800, letterSpacing: 2, color: '#fff' },
-  nameSub: { fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 6, marginBottom: 16 },
+  nameTitle: { ...titleText(22), letterSpacing: 1 },
+  nameSub: { fontSize: 12, fontWeight: 700, color: C.inkSoft, marginTop: 10, marginBottom: 16 },
   nameInput: {
-    width: '100%', boxSizing: 'border-box', padding: '13px 14px', fontSize: 15,
-    fontFamily: 'var(--game-font)', fontWeight: 700, textAlign: 'center',
-    background: 'rgba(0,0,0,0.45)', color: '#ffd700',
-    border: '1px solid rgba(255,215,0,0.4)', borderRadius: 10, outline: 'none',
+    width: '100%', boxSizing: 'border-box', padding: '13px 14px', fontSize: 16, minHeight: 48,
+    fontFamily: FONT, fontWeight: 800, textAlign: 'center',
+    background: '#fffaf0', color: C.ink,
+    border: `3px solid ${C.edge}`, borderRadius: 14, outline: 'none',
+    boxShadow: `inset 0 3px 0 ${C.creamDk}`,
   },
-  nameHint: { fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 6 },
+  nameHint: { fontSize: 11, fontWeight: 700, color: C.inkSoft, marginTop: 6 },
   nameBtn: {
-    marginTop: 14, width: '100%', padding: 14, borderRadius: 12, border: 'none',
-    fontFamily: 'var(--game-font)', fontWeight: 800, letterSpacing: 2, fontSize: 14,
-    color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', cursor: 'pointer',
+    ...btn.primary,
+    marginTop: 14, width: '100%', padding: 14, minHeight: 48,
+    fontSize: 17, textTransform: 'uppercase',
   },
   eventBadge: {
-    fontFamily: 'var(--game-font)', fontSize: 11, fontWeight: 800, letterSpacing: 2,
-    border: '1px solid', borderRadius: 20, padding: '6px 16px',
+    ...pill,
+    fontSize: 12, letterSpacing: 1.5,
+    border: '3px solid',
     animation: 'pulse 1.2s infinite alternate',
   },
   foalCard: {
+    ...tile,
     display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-    background: 'rgba(129,199,132,0.08)', border: '1px solid rgba(129,199,132,0.3)',
-    borderRadius: 10, padding: '10px 12px', cursor: 'pointer', boxSizing: 'border-box',
+    border: `3px solid ${C.edge}`, boxShadow: `0 4px 0 ${C.edge}`,
+    padding: '10px 12px', cursor: 'pointer', boxSizing: 'border-box', minHeight: 56,
   },
-  foalName: { fontFamily: 'var(--game-font)', fontSize: 12, fontWeight: 800, color: '#fff' },
-  foalStage: { fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 400 },
-  foalStatus: { fontFamily: 'var(--game-font)', fontSize: 10, marginTop: 2 },
-  foalGo: { fontFamily: 'var(--game-font)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' },
+  foalName: { fontFamily: FONT, fontSize: 13, fontWeight: 800, color: C.ink },
+  foalStage: { fontSize: 11, color: C.inkSoft, fontWeight: 700 },
+  foalStatus: { fontFamily: FONT, fontSize: 11, fontWeight: 700, marginTop: 2 },
+  foalGo: { fontFamily: DISPLAY, fontSize: 13, letterSpacing: 0.5, color: C.woodDk, whiteSpace: 'nowrap' },
   // ── Hediye sandığı modalı ──
   chestOverlay: {
     position: 'fixed', inset: 0, zIndex: 13000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(5px)', padding: 20,
+    background: backdrop, padding: 20,
   },
   chestBox: {
-    width: '100%', maxWidth: 320, textAlign: 'center', fontFamily: 'var(--game-font)',
-    background: 'linear-gradient(160deg, rgba(28,22,10,0.98), rgba(12,10,6,0.99))',
-    border: '1px solid rgba(255,213,74,0.5)', borderRadius: 18, padding: '28px 24px',
-    boxShadow: '0 0 50px rgba(255,180,0,0.25)',
+    ...panel,
+    width: '100%', maxWidth: 320, textAlign: 'center', boxSizing: 'border-box',
+    padding: '28px 24px',
   },
-  chestTitle: { color: '#ffd54a', fontWeight: 800, fontSize: 20, letterSpacing: 3, textShadow: '0 0 16px rgba(255,180,0,0.5)' },
-  chestReward: { color: '#fff', fontWeight: 800, fontSize: 26, letterSpacing: 1 },
-  chestSub: { color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 6, lineHeight: 1.5 },
+  chestTitle: { ...titleText(26), marginTop: 6 },
+  chestReward: { fontFamily: DISPLAY, color: C.ink, fontSize: 30, letterSpacing: 1 },
+  chestSub: { color: C.inkSoft, fontSize: 13, fontWeight: 700, marginTop: 6, lineHeight: 1.5 },
   chestBtn: {
-    marginTop: 22, padding: '12px 40px', fontSize: 15, fontWeight: 800, letterSpacing: 2, color: '#0a0a14',
-    border: 'none', borderRadius: 12, background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', cursor: 'pointer',
-    fontFamily: 'var(--game-font)', boxShadow: '0 0 24px rgba(255,180,0,0.4)',
+    ...btn.primary,
+    marginTop: 22, padding: '12px 40px', minHeight: 48, fontSize: 18, textTransform: 'uppercase',
   },
   rivalRow: {
-    marginTop: 8, fontFamily: 'var(--game-font)', fontSize: 11, color: 'rgba(255,255,255,0.8)',
-    background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.25)',
-    borderRadius: 8, padding: '8px 12px',
+    ...tile,
+    marginTop: 8, fontFamily: FONT, fontSize: 12, fontWeight: 700,
+    border: `2px solid ${C.woodDk}`, padding: '8px 12px',
   },
-  dailyIconBtn: { position: 'relative', background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.35)', borderRadius: 20, width: 38, height: 32, fontSize: 16, cursor: 'pointer' },
-  sectionTitle: { alignSelf: 'flex-start', fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,0.6)', fontWeight: 700, marginTop: 4 },
+  dailyIconBtn: { ...btn.icon, position: 'relative', width: 44, height: 44, fontSize: 18 },
+  sectionTitle: { alignSelf: 'flex-start', fontFamily: DISPLAY, fontSize: 14, letterSpacing: 1, color: C.ink, marginTop: 4 },
   bottomNav: {
-    display: 'flex', borderTop: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(8,8,16,0.96)', flexShrink: 0,
+    display: 'flex', borderTop: `4px solid ${C.edge}`,
+    background: `linear-gradient(180deg, ${C.wood}, ${C.woodDk})`, flexShrink: 0,
   },
   navBtn: {
     position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-    background: 'transparent', border: 'none', cursor: 'pointer',
-    padding: '8px 2px calc(8px + env(safe-area-inset-bottom, 0px))', fontFamily: 'var(--game-font)',
+    background: 'transparent', border: 'none', cursor: 'pointer', minHeight: 52,
+    padding: '8px 2px calc(8px + env(safe-area-inset-bottom, 0px))', fontFamily: FONT,
   },
-  navActive: { background: 'rgba(255,215,0,0.08)' },
-  navIcon: { fontSize: 18 },
-  navLabel: { fontSize: 11, letterSpacing: 0.5, color: 'rgba(255,255,255,0.85)', fontWeight: 700 },
-  navDot: { position: 'absolute', top: 6, right: '50%', marginRight: -16, width: 8, height: 8, borderRadius: '50%', background: '#ff3b3b', boxShadow: '0 0 6px #ff3b3b' },
+  navActive: { background: `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})`, boxShadow: `inset 0 -4px 0 ${C.edge}` },
+  navIcon: { fontSize: 20 },
+  navLabel: { fontSize: 11, letterSpacing: 0.3, color: C.cream, fontWeight: 800 },
+  navDot: { position: 'absolute', top: 6, right: '50%', marginRight: -16, width: 10, height: 10, borderRadius: '50%', background: C.red, border: `2px solid ${C.cream}` },
   titleWrap: { textAlign: 'center' },
   titleSub: { fontSize: 42, marginBottom: 2, animation: 'bounce 1.2s infinite alternate' },
-  title: {
-    fontSize: 38,
-    letterSpacing: 6,
-    margin: 0,
-    color: '#fff',
-    textShadow: '0 0 20px rgba(255,200,50,0.5)',
-  },
+  title: { ...titleText(40), margin: 0, letterSpacing: 2, fontWeight: 400 },
   titleSubline: {
-    fontSize: 11,
-    letterSpacing: 5,
-    color: 'rgba(255,215,0,0.5)',
-    marginTop: 4,
+    fontSize: 12, fontWeight: 800,
+    letterSpacing: 4,
+    color: C.gold,
+    marginTop: 10,
   },
   carrotPill: {
-    display: 'flex', alignItems: 'center', gap: 6,
-    background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)',
-    borderRadius: 20, padding: '5px 16px', fontSize: 14,
+    ...pill,
+    display: 'flex', alignItems: 'center', gap: 6, minHeight: 44, boxSizing: 'border-box',
+    border: `3px solid ${C.edgeDk}`, padding: '4px 6px 4px 14px', fontSize: 16,
   },
-  carrotNum: { color: '#ffd700', fontWeight: 700, fontSize: 18 },
-  carrotLabel: { color: 'rgba(255,215,0,0.6)', fontSize: 11 },
+  carrotNum: { fontFamily: DISPLAY, color: C.gold, fontSize: 20, letterSpacing: 0.5 },
+  carrotLabel: { color: C.gold, fontSize: 11 },
   carrotPlus: {
-    marginLeft: 8, width: 20, height: 20, borderRadius: '50%',
-    background: '#ffd700', color: '#0a0a14', fontWeight: 900, fontSize: 14,
+    marginLeft: 8, width: 26, height: 26, borderRadius: '50%',
+    background: `linear-gradient(180deg, ${C.greenHi}, ${C.green})`, border: `2px solid ${C.greenEdge}`,
+    color: '#fff', fontWeight: 900, fontSize: 15,
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
   },
-  gameOverText: {
-    fontSize: 24, color: '#ff4444', letterSpacing: 4,
-    fontWeight: 700, textAlign: 'center', textShadow: '0 0 12px #ff2200',
-  },
-  newRecord: {
-    fontSize: 18, color: '#ffd700', letterSpacing: 2, textAlign: 'center',
-  },
+  gameOverText: { ...titleText(34, '#ff8a6a'), textAlign: 'center', letterSpacing: 2 },
+  newRecord: { ...titleText(22, C.goldHi), textAlign: 'center' },
   resultsWrap: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', width: '100%' },
   statsCard: {
-    background: 'rgba(255,255,255,0.06)',
-    borderRadius: 10, padding: '14px 20px', width: '100%',
+    ...tile,
+    border: `3px solid ${C.edge}`, boxShadow: `0 4px 0 ${C.edge}`,
+    padding: '14px 20px', width: '100%', boxSizing: 'border-box',
     display: 'flex', flexDirection: 'column', gap: 8,
   },
   mapBadge: {
-    alignSelf: 'center', padding: '3px 14px', borderRadius: 20,
-    border: '1px solid', fontSize: 11, letterSpacing: 2, fontWeight: 700,
+    ...pill,
+    alignSelf: 'center', padding: '4px 14px', color: C.cream,
+    border: '3px solid', fontSize: 12, letterSpacing: 1.5,
     marginBottom: 4,
   },
-  statRow: { display: 'flex', justifyContent: 'space-between', gap: 24 },
-  statLabel: { color: 'rgba(255,255,255,0.45)', fontSize: 11, letterSpacing: 1 },
-  statValue: { fontSize: 15, fontWeight: 700 },
+  statRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 24 },
+  statLabel: { color: C.inkSoft, fontSize: 12, fontWeight: 800, letterSpacing: 1 },
+  statValue: { fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.5 },
   introWrap: { textAlign: 'center', width: '100%' },
   dailyWidget: {
-    background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.2)',
-    borderRadius: 10, padding: '10px 16px', marginBottom: 10, textAlign: 'left',
+    ...tile, border: `2px solid ${C.woodDk}`,
+    padding: '10px 16px', marginBottom: 10, textAlign: 'left',
   },
   dailyHeader: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 },
   dailyIcon: { fontSize: 14 },
-  dailyLabel: { fontSize: 10, letterSpacing: 2, color: 'rgba(255,215,0,0.7)', fontWeight: 700, flex: 1 },
-  dailyDone: { fontSize: 10, color: '#33ff99', letterSpacing: 1, fontWeight: 700 },
-  dailyChallenge: { fontSize: 13, color: '#fff', fontWeight: 700, letterSpacing: 1, marginBottom: 8 },
-  progressBarBg: { height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 2, transition: 'width 0.5s ease' },
+  dailyLabel: { fontSize: 11, letterSpacing: 1.5, color: C.inkSoft, fontWeight: 800, flex: 1 },
+  dailyDone: { fontSize: 11, color: C.green, letterSpacing: 1, fontWeight: 800 },
+  dailyChallenge: { fontSize: 13, color: C.ink, fontWeight: 800, letterSpacing: 1, marginBottom: 8 },
+  progressBarBg: { height: 10, background: C.edgeDk, border: `2px solid ${C.edge}`, borderRadius: 999, overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${C.goldHi}, ${C.goldLo})`, transition: 'width 0.5s ease' },
   dailyRewardBtn: {
-    position: 'relative', width: '100%', padding: '11px', marginBottom: 10,
-    background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,160,0,0.12))',
-    border: '1px solid rgba(255,215,0,0.4)', borderRadius: 10, color: '#ffd700',
-    fontFamily: 'var(--game-font)', fontWeight: 800, letterSpacing: 2, fontSize: 12, cursor: 'pointer',
+    ...btn.primary,
+    position: 'relative', width: '100%', padding: '11px', marginBottom: 10, minHeight: 44,
+    fontSize: 14, textTransform: 'uppercase',
   },
-  dailyDot: { position: 'absolute', top: 8, right: 12, width: 10, height: 10, borderRadius: '50%', background: '#ff3b3b', boxShadow: '0 0 8px #ff3b3b' },
-  missionRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid rgba(255,255,255,0.06)' },
-  missionLabel: { fontSize: 11, color: '#fff', fontWeight: 700, marginBottom: 4 },
-  missionProg: { fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
-  missionReward: { fontSize: 11, color: 'rgba(255,215,0,0.55)', fontWeight: 700, whiteSpace: 'nowrap' },
-  missionClaim: { fontSize: 11, fontWeight: 800, color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontFamily: 'var(--game-font)', whiteSpace: 'nowrap' },
-  missionDone: { fontSize: 16, color: '#33ff99', fontWeight: 900 },
-  introText: { color: 'rgba(255,255,255,0.65)', fontSize: 13, lineHeight: 1.7, margin: '8px 0 0' },
+  dailyDot: { position: 'absolute', top: -4, right: -4, width: 12, height: 12, borderRadius: '50%', background: C.red, border: `2px solid ${C.cream}` },
+  missionRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: `2px dashed ${C.creamDk}` },
+  missionLabel: { fontSize: 12, color: C.ink, fontWeight: 800, marginBottom: 4 },
+  missionProg: { fontSize: 11, color: C.inkSoft, fontWeight: 700, marginTop: 2 },
+  missionReward: { fontSize: 12, color: C.inkSoft, fontWeight: 800, whiteSpace: 'nowrap' },
+  missionClaim: { ...btn.primary, fontSize: 13, padding: '6px 10px', minHeight: 44, whiteSpace: 'nowrap' },
+  missionDone: { fontSize: 16, color: C.green, fontWeight: 900 },
+  introText: { color: C.inkSoft, fontSize: 13, fontWeight: 700, lineHeight: 1.7, margin: '8px 0 0' },
   controlsHint: { marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' },
   key: {
-    background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-    borderRadius: 4, padding: '2px 8px', fontSize: 14, color: '#fff',
+    background: C.creamDk, border: `2px solid ${C.edge}`, boxShadow: `0 2px 0 ${C.edge}`,
+    borderRadius: 6, padding: '2px 8px', fontSize: 14, color: C.ink,
   },
-  hintText: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
-  warn:       { color: '#ffaa00', fontSize: 12, margin: 0 },
-  connecting: { color: 'rgba(255,255,255,0.6)', fontSize: 12, margin: 0 },
+  hintText: { fontSize: 12, fontWeight: 700, color: C.inkSoft },
+  warn:       { color: C.red, fontSize: 12, fontWeight: 800, margin: 0 },
+  connecting: { color: C.inkSoft, fontSize: 12, fontWeight: 700, margin: 0 },
   mapHsRow: {
     display: 'flex', gap: 12, alignItems: 'center', fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
+    color: C.inkSoft, fontWeight: 700,
   },
-  mapHsVal: { fontWeight: 700, color: '#fff' },
+  mapHsVal: { fontFamily: DISPLAY, color: C.ink },
   mapRow: {
     display: 'flex', gap: 8, width: '100%',
     flexWrap: 'wrap', justifyContent: 'center',
@@ -857,92 +848,65 @@ const styles = {
   mapCard: {
     flex: '1 1 80px', minWidth: 78, maxWidth: 140,
     display: 'flex', flexDirection: 'column',
-    alignItems: 'center', gap: 3, padding: '10px 6px', borderRadius: 10,
-    cursor: 'pointer', border: '2px solid', transition: 'all 0.15s',
-    boxSizing: 'border-box',
+    alignItems: 'center', gap: 3, padding: '10px 6px', borderRadius: 14,
+    cursor: 'pointer', border: '3px solid', transition: 'all 0.15s',
+    boxSizing: 'border-box', marginBottom: 4,
   },
-  mapEmoji: { fontSize: 22 },
-  mapName: { fontSize: 10, fontWeight: 700, letterSpacing: 2 },
-  mapSub:  { color: 'rgba(255,255,255,0.6)', fontSize: 10, letterSpacing: 1 },
-  mapHsChip: { fontSize: 10, fontWeight: 700, letterSpacing: 1, marginTop: 2 },
+  mapEmoji: { fontSize: 24 },
+  mapName: { fontFamily: DISPLAY, fontSize: 12, letterSpacing: 0.5, textAlign: 'center' },
+  mapSub:  { color: C.inkSoft, fontSize: 10, fontWeight: 700, textAlign: 'center' },
+  mapHsChip: { fontFamily: DISPLAY, fontSize: 12, letterSpacing: 0.5, marginTop: 2, textAlign: 'center' },
   nightBtn: {
-    padding: '8px 24px', fontSize: 11, fontFamily: 'var(--game-font)',
-    fontWeight: 700, letterSpacing: 2,
-    border: '1px solid', borderRadius: 6, cursor: 'pointer',
+    ...btn.secondary,
+    padding: '8px 24px', fontSize: 13, minHeight: 44,
     width: '100%', transition: 'all 0.15s',
   },
   activeRow: {
+    ...tile,
     display: 'flex', alignItems: 'center', gap: 10,
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 8, padding: '10px 16px',
+    border: `3px solid ${C.edge}`, boxShadow: `0 4px 0 ${C.edge}`,
+    padding: '10px 16px', minHeight: 52,
     cursor: 'pointer', width: '100%', boxSizing: 'border-box',
   },
   activeItem: { display: 'flex', alignItems: 'center', gap: 7, flex: 1 },
-  activeDivider: { width: 1, height: 20, background: 'rgba(255,255,255,0.15)' },
+  activeDivider: { width: 2, height: 24, background: C.woodDk, opacity: 0.4 },
   activeEmoji: { fontSize: 20 },
-  activeName: { color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 2 },
-  levelPill: {
-    fontSize: 10, color: '#ffd700', fontWeight: 700, letterSpacing: 1,
-    background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)',
-    borderRadius: 10, padding: '2px 7px',
-  },
-  changeHint: { color: 'rgba(255,255,255,0.6)', fontSize: 10 },
+  activeName: { color: C.ink, fontSize: 12, fontWeight: 800, letterSpacing: 1 },
+  levelPill: { ...pill, fontSize: 11, padding: '2px 8px' },
+  changeHint: { fontFamily: DISPLAY, color: C.woodDk, fontSize: 12, letterSpacing: 0.5 },
   fixedHeader: {
     flexShrink: 0,
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-    padding: '18px 18px 12px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
-    background: 'linear-gradient(180deg, rgba(14,14,32,0.6) 0%, rgba(8,8,18,0) 100%)',
+    padding: '18px 18px 14px',
+    borderBottom: `4px solid ${C.edge}`,
+    background: `linear-gradient(180deg, #3a2414 0%, ${C.bgDeep} 100%)`,
   },
   medalStrip: {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
     width: '100%',
   },
   onboardCard: {
+    ...tile,
     width: '100%', boxSizing: 'border-box',
-    background: 'linear-gradient(160deg, rgba(90,140,255,0.14), rgba(60,80,200,0.08))',
-    border: '1px solid rgba(120,160,255,0.35)', borderRadius: 12, padding: '10px 12px',
+    border: `3px solid ${C.blueEdge}`, boxShadow: `0 4px 0 ${C.blueEdge}`,
+    background: '#e6eefa', padding: '10px 12px',
     display: 'flex', flexDirection: 'column', gap: 4,
   },
   onboardHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 },
-  onboardTitle: { flex: 1, fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: '#bcd2ff', fontFamily: 'var(--game-font)' },
-  onboardCount: { fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 700 },
-  onboardRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 4px', borderTop: '1px solid rgba(255,255,255,0.06)' },
-  onboardClaim: { fontSize: 11, fontWeight: 800, color: '#1a0a00', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', padding: '4px 8px', borderRadius: 6, whiteSpace: 'nowrap' },
-  onboardGo: { fontSize: 11, fontWeight: 700, color: '#7fb0ff', whiteSpace: 'nowrap' },
+  onboardTitle: { flex: 1, fontSize: 15, letterSpacing: 1, color: C.blueEdge, fontFamily: DISPLAY },
+  onboardCount: { fontSize: 12, color: C.blueEdge, fontWeight: 800 },
+  onboardRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 4px', minHeight: 44, borderTop: `2px dashed rgba(30,74,122,0.25)` },
+  onboardClaim: { ...btn.success, fontSize: 12, padding: '5px 10px', borderRadius: 10, boxShadow: `0 3px 0 ${C.greenEdge}`, whiteSpace: 'nowrap' },
+  onboardGo: { fontFamily: DISPLAY, fontSize: 13, color: C.blueEdge, whiteSpace: 'nowrap' },
   medalIcons: { display: 'flex', gap: 2 },
-  medalGoal: { fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--game-font)', fontWeight: 600 },
+  medalGoal: { fontSize: 12, color: C.cream, fontFamily: FONT, fontWeight: 700 },
   btn: {
-    padding: '13px 52px',
-    fontSize: 18, fontFamily: 'var(--game-font)', fontWeight: 700, letterSpacing: 3,
-    background: 'linear-gradient(135deg,#e8b84b,#c8881b)',
-    border: 'none', borderRadius: 6, cursor: 'pointer',
-    color: '#1a0a00', boxShadow: '0 4px 16px rgba(232,184,75,0.4)',
-    transition: 'transform 0.1s, box-shadow 0.1s', width: '100%',
+    ...btn.primary,
+    padding: '13px 52px', minHeight: 56,
+    fontSize: 24, textTransform: 'uppercase',
+    width: '100%',
   },
-  leaderboardBtn: {
-    padding: '10px 24px', fontSize: 13, fontFamily: 'var(--game-font)',
-    fontWeight: 700, letterSpacing: 2,
-    background: 'rgba(255,215,0,0.08)',
-    border: '1px solid rgba(255,215,0,0.35)',
-    borderRadius: 6, cursor: 'pointer', color: '#ffd700',
-    width: '100%', transition: 'background 0.15s',
-  },
-  garageBtn: {
-    padding: '10px 24px', fontSize: 13, fontFamily: 'var(--game-font)',
-    fontWeight: 700, letterSpacing: 2,
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid rgba(255,215,0,0.25)',
-    borderRadius: 6, cursor: 'pointer', color: '#ffd700',
-    width: '100%', transition: 'background 0.15s',
-  },
-  guideBtn: {
-    padding: '9px 24px', fontSize: 12, fontFamily: 'var(--game-font)',
-    fontWeight: 700, letterSpacing: 2,
-    background: 'transparent',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 6, cursor: 'pointer', color: 'rgba(255,255,255,0.6)',
-    width: '100%', transition: 'color 0.15s, border-color 0.15s',
-  },
+  leaderboardBtn: { ...btn.secondary, padding: '10px 24px', fontSize: 15, minHeight: 44, width: '100%' },
+  garageBtn: { ...btn.secondary, padding: '10px 24px', fontSize: 15, minHeight: 44, width: '100%' },
+  guideBtn: { ...btn.ghost, padding: '9px 24px', fontSize: 13, width: '100%' },
 };
