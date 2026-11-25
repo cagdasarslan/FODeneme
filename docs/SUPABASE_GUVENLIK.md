@@ -1,90 +1,61 @@
 # Supabase Güvenlik Geçişi
 
-## Sorun
+Oyunun Supabase projesi: `vdyjyuqdzkpsixnopndx`
 
-`profiles`, `scores` ve `totals` tablolarının RLS kuralları koşulsuz
-(`using (true)` / `with check (true)`). Uygulamadaki herkese açık (anon)
-anahtarla:
+## Sorunlar
 
-- `GET /rest/v1/profiles?select=*` tüm oyuncuların kayıtlarını ve **kurtarma
-  kodlarını** (satır `id`'si) döker.
-- Herhangi bir kayıt değiştirilebilir, liderliğe istenen skor yazılabilir.
+1. **Liderlik tabloları kurtarma kodlarını herkese açık gösteriyordu.**
+   `scores` ve `totals` tablolarındaki `player_id` alanı oyuncunun kurtarma
+   kodunun kendisiydi; liderliği çeken herkes tüm kodları görebiliyordu. Bir kodu
+   bilen, o oyuncunun ilerlemesini kendi cihazına çekebilir.
+2. **Profiller koşulsuz kurallarla açıktı** (`using (true)`): anon anahtarla tüm
+   kayıtlar listelenip değiştirilebiliyordu.
+3. **Liderliğe istenen skor yazılabiliyordu.**
 
-## Neden hemen uygulanmadı
+## Uygulamada yapılanlar (1.0.4)
 
-Play'deki 1.0.3 sürümü bu tablolara doğrudan anon anahtarla yazıyor. Kurallar
-bugün sıkılaştırılırsa mevcut oyuncuların bulut yedeği **anında çalışmaz hale
-gelir**. Geçiş iki aşamalı yapılmalı.
+- Liderliğe artık kurtarma kodu değil, kodun **SHA-256 özeti** yazılıyor.
+- Bulut kaydı okuma/yazma/silme sunucu fonksiyonlarıyla (`save_profile`,
+  `restore_profile`, `delete_profile`) yapılıyor. Fonksiyonlar kurulu değilse
+  uygulama eski yönteme düşer — SQL'den önce de sonra da çalışır.
+- "Verilerimi Sil", fonksiyon kuruluysa profil + liderlik kayıtlarını gerçekten
+  siler.
 
-## Aşama 1 — Sunucu fonksiyonları (uygulama güncellemesiyle birlikte)
+## Senin yapacakların
 
-Kayıt okuma/yazma ve geri yükleme, gizli anahtarla çalışan Edge Function'lara
-taşınır. İstemci tabloya doğrudan erişmez.
+### Adım 1 — `docs/supabase/001_guvenlik.sql` (hemen)
 
-```sql
--- Kurtarma koduyla geri yükleme: kodu bilen yalnızca kendi kaydını alır,
--- listeleme yapılamaz.
-create or replace function public.restore_profile(code text)
-returns jsonb
-language sql
-security definer
-set search_path = public
-as $$
-  select data from profiles where id = code limit 1;
-$$;
-revoke all on function public.restore_profile(text) from public;
-grant execute on function public.restore_profile(text) to anon;
+Supabase panosu → **SQL Editor** → dosyanın tamamını yapıştır → **Run**.
 
--- Kayıt yazma: yalnızca kendi kimliğine (istemcide saklanan gizli id) yazar
-create or replace function public.save_profile(code text, p_name text, p_data jsonb)
-returns void
-language sql
-security definer
-set search_path = public
-as $$
-  insert into profiles (id, name, data, updated_at)
-  values (code, p_name, p_data, now())
-  on conflict (id) do update
-    set name = excluded.name, data = excluded.data, updated_at = now();
-$$;
-revoke all on function public.save_profile(text, text, jsonb) from public;
-grant execute on function public.save_profile(text, text, jsonb) to anon;
+- Eski 1.0.3 sürümünü **bozmaz**: mevcut kurallar değişmez.
+- Liderlikteki tüm ham kodları özete çevirir; eski sürümden gelen yeni ham
+  kodları da otomatik özetler.
+- 500.000 üstü sahte skorları reddeder.
+- İki kez çalıştırmak zararsızdır.
 
--- Skor gönderimi: makul üst sınır (tek koşu)
-create or replace function public.submit_score(p_id text, p_name text, p_score int, p_map int)
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if p_score < 0 or p_score > 200000 then return; end if;
-  insert into scores (player_id, player_name, score, map_id) values (p_id, p_name, p_score, p_map);
-end;
-$$;
-grant execute on function public.submit_score(text, text, int, int) to anon;
-```
+Bu dosya yerel bir PostgreSQL 16 üzerinde, Supabase tablolarının aynısıyla test
+edildi: eski sürüm yazmaları özetleniyor, sahte skor reddediliyor, toplamlar
+birleşiyor, fonksiyonlar anon rolüyle çalışıyor, uygulamanın ürettiği özet
+veritabanınınkiyle birebir aynı.
 
-İstemci tarafında `CloudSave.js` ve `SupaLeaderboard.js` bu fonksiyonları
-`/rest/v1/rpc/<ad>` ile çağıracak şekilde güncellenir.
-
-## Aşama 2 — Doğrudan erişimi kapatma (eski sürüm kullanımı azalınca)
-
-Yeni sürüm oyuncuların büyük çoğunluğuna ulaştıktan sonra (Play Console →
-İstatistikler → sürüm dağılımı) doğrudan tablo erişimi kapatılır:
+Doğrulama (SQL Editor, ikisi de 0 dönmeli):
 
 ```sql
-drop policy if exists "anon select" on profiles;
-drop policy if exists "anon upsert" on profiles;
-drop policy if exists "anon update" on profiles;
--- scores / totals için de aynı şekilde anon insert/update/select kuralları
--- kaldırılır; liderlik okuma için yalnızca ad + skor döndüren bir görünüm
--- (view) veya rpc açılır.
+select count(*) from scores where player_id like 'p\_%' or player_id like 'u\_%';
+select count(*) from totals where player_id like 'p\_%' or player_id like 'u\_%';
 ```
 
-## Satın alma doğrulaması (ayrı iş)
+### Adım 2 — `docs/supabase/002_dogrudan_erisimi_kapat.sql` (sonra)
 
-Havuç ve "Reklamları Kaldır" şu an istemcide, makbuz doğrulaması olmadan
-veriliyor. Uzun vadede `store.validator` bir Edge Function'a bağlanmalı; bu
-fonksiyon Google Play Developer API (ve iOS için App Store Server API) ile
-makbuzu doğrulayıp hakları sunucuda tutar.
+1.0.4 oyuncuların büyük çoğunluğuna ulaşınca (Play Console → İstatistikler →
+uygulama sürümleri) çalıştır. Profillere doğrudan erişimi kapatır. Erken
+uygulanırsa 1.0.3'teki oyuncuların bulut yedeği çalışmaz.
+
+## Bilinmesi gerekenler
+
+- Adım 1'den önce sızmış olabilecek kurtarma kodları geçerli kalmaya devam
+  eder (kodları değiştirmek oyuncuların kayıtlı kodlarını bozar). Adım 1'den
+  sonra yeni sızıntı olmaz.
+- Liderlik toplamları (`totals`) hâlâ istemciden güncelleniyor; biri kendi
+  toplamını şişirebilir. Tam çözüm skorun sunucuda hesaplanması — ileride.
+- Satın alma doğrulaması: `docs/SATIN_ALMA_DOGRULAMA.md`.

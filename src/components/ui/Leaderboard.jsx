@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { fetchLeaderboard } from '@/services/LeaderboardService';
-import { fetchPeriodTop, fetchTotalTop, getTotalScore, getPlayerName, isSupaConfigured, getPlayerLocalId } from '@/services/SupaLeaderboard';
+import { fetchPeriodTop, fetchTotalTop, getTotalScore, getPlayerName, isSupaConfigured, getPublicIdSync } from '@/services/SupaLeaderboard';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
 import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
@@ -33,7 +33,7 @@ export default function Leaderboard({ onClose }) {
     const load = tab === 'all'
       ? (isSupaConfigured()
           ? fetchTotalTop(20).then(rows => {
-              const me = getPlayerLocalId();
+              const me = getPublicIdSync();
               let list = rows.map((r, i) => ({
                 key: r.player_id + i,
                 name: r.player_name,
@@ -56,7 +56,7 @@ export default function Leaderboard({ onClose }) {
           key: r.player_id + i,
           name: r.player_name,
           score: r.score,
-          isMe: r.player_id === getPlayerLocalId(),
+          isMe: r.player_id === getPublicIdSync(),
         })));
     load
       .then(list => { if (on) { setEntries(list); setLoading(false); } })

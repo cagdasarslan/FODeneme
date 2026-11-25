@@ -40,6 +40,35 @@ export function getPlayerLocalId() {
   return id;
 }
 
+// ── Liderlik kimliği ────────────────────────────────────────────────────────
+// Liderlik tabloları herkese açık okunuyor. Eskiden player_id olarak kurtarma
+// kodunun KENDİSİ yazılıyordu → liderliği çeken herkes tüm kurtarma kodlarını
+// görebiliyordu. Artık kodun SHA-256 özeti yazılır: geri çevrilemez, ama aynı
+// oyuncu hep aynı özeti üretir (Sen işareti ve toplam skor çalışmaya devam eder).
+// Sunucu tarafındaki tetikleyici eski sürümlerden gelen ham kodları da özetler
+// (docs/supabase/001_guvenlik.sql).
+let _publicId = localStorage.getItem('supaPublicId') || null;
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+export async function getPublicId() {
+  const raw = getPlayerLocalId();
+  // Kimlik değişirse (geri yükleme / hesap) özeti yeniden üret
+  if (!_publicId || localStorage.getItem('supaPublicIdOf') !== raw) {
+    _publicId = await sha256Hex(raw);
+    localStorage.setItem('supaPublicId', _publicId);
+    localStorage.setItem('supaPublicIdOf', raw);
+  }
+  return _publicId;
+}
+// Liderlik ekranında "Sen" işareti için senkron okuma (önbellek)
+export function getPublicIdSync() {
+  return localStorage.getItem('supaPublicIdOf') === getPlayerLocalId() ? _publicId : null;
+}
+// Açılışta özeti hazırla ki liderlik ekranı hemen "Sen"i bulabilsin
+if (typeof window !== 'undefined' && window.crypto?.subtle) getPublicId().catch(() => {});
+
 export async function submitScoreSupa(score, mapId) {
   if (!isSupaConfigured() || !score) return;
   try {
@@ -47,7 +76,7 @@ export async function submitScoreSupa(score, mapId) {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({
-        player_id: getPlayerLocalId(),
+        player_id: await getPublicId(),
         player_name: getPlayerName(),
         score: Math.floor(score),
         map_id: mapId,
@@ -89,7 +118,7 @@ export async function addTotalScore(runScore) {
       method: 'POST',
       headers: { ...headers(), Prefer: 'resolution=merge-duplicates' },
       body: JSON.stringify({
-        player_id: getPlayerLocalId(),
+        player_id: await getPublicId(),
         player_name: getPlayerName(),
         total: newTotal,
         updated_at: new Date().toISOString(),

@@ -94,6 +94,32 @@ function codeToId(code) {
   return 'p_' + c;
 }
 
+// ── Sunucu fonksiyonları (RPC) ───────────────────────────────────────────────
+// Kayıtlar gizli anahtarla çalışan fonksiyonlar üzerinden okunup yazılır
+// (docs/supabase/001_guvenlik.sql). Böylece tablo doğrudan listelenemez.
+// Fonksiyonlar henüz kurulmadıysa (404) eski doğrudan tablo erişimine düşülür —
+// SQL uygulanmadan önce de sonra da uygulama çalışır.
+let _rpcMissing = false;
+async function rpc(name, args) {
+  if (_rpcMissing) return { missing: true };
+  const res = await fetch(`${SUPA_URL}/rest/v1/rpc/${name}`, {
+    method: 'POST', headers: headers(), body: JSON.stringify(args),
+  });
+  if (res.status === 404) { _rpcMissing = true; return { missing: true }; }
+  if (!res.ok) return { ok: false };
+  const text = await res.text();
+  return { ok: true, data: text ? JSON.parse(text) : null };
+}
+
+// Profil verisini kimlikle getir (yoksa null)
+async function fetchProfileData(id) {
+  const r = await rpc('restore_profile', { code: id });
+  if (!r.missing) return r.ok ? r.data : undefined;
+  const res = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&select=data`, { headers: headers() });
+  const rows = await res.json();
+  return Array.isArray(rows) && rows.length ? rows[0].data : null;
+}
+
 // ── Yükleme (push) — debounce'lu, sessizce başarısız olur ────────────────────
 let _pushTimer = null;
 let _lastPushed = '';
@@ -110,17 +136,17 @@ export async function pushCloudSave() {
     const data = collectSave();
     const body = JSON.stringify(data);
     if (body === _lastPushed) return true; // değişiklik yok
-    const res = await fetch(`${SUPA_URL}/rest/v1/profiles`, {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({
-        id: getSaveId(),
-        name: getPlayerName(),
-        data,
-        updated_at: new Date().toISOString(),
-      }),
-    });
-    if (res.ok) { _lastPushed = body; return true; }
+    const r = await rpc('save_profile', { code: getSaveId(), p_name: getPlayerName(), p_data: data });
+    let ok = r.ok;
+    if (r.missing) {
+      const res = await fetch(`${SUPA_URL}/rest/v1/profiles`, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ id: getSaveId(), name: getPlayerName(), data, updated_at: new Date().toISOString() }),
+      });
+      ok = res.ok;
+    }
+    if (ok) { _lastPushed = body; return true; }
     return false;
   } catch (e) { return false; } // çevrimdışı — sonraki denemede
 }
@@ -130,15 +156,11 @@ export async function restoreFromCloud(code) {
   if (!isSupaConfigured()) return { ok: false, reason: 'Bulut kaydı yapılandırılmamış' };
   try {
     const id = codeToId(code);
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&select=data,updated_at`,
-      { headers: headers() }
-    );
-    const rows = await res.json();
-    if (!Array.isArray(rows) || rows.length === 0) {
+    const data = await fetchProfileData(id);
+    if (data === undefined) return { ok: false, reason: 'Bağlantı hatası — internetini kontrol et' };
+    if (!data || Object.keys(data).length === 0) {
       return { ok: false, reason: 'Bu koda ait kayıt bulunamadı' };
     }
-    const data = rows[0].data ?? {};
     backupLocal();
     applySave(data);
     // Kimliği geri yüklenen hesaba bağla (liderlik geçmişi de korunur)
@@ -156,12 +178,7 @@ export async function restoreFromCloud(code) {
 export async function linkCloudToAccount(user) {
   try {
     const id = 'u_' + user.id;
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&select=data`,
-      { headers: headers() }
-    );
-    const rows = await res.json();
-    const remote = Array.isArray(rows) && rows[0]?.data;
+    const remote = await fetchProfileData(id);
     // Eskiden yalnızca 'nameSet' bakılıyordu: yeni cihazda isim girilince yerel
     // her zaman kazanıyor ve buluttaki asıl ilerleme ÜZERİNE yazılıyordu.
     // Artık hangi kayıt daha ilerideyse o kazanır.
@@ -212,12 +229,16 @@ export async function deleteAllData() {
     if (u) ids.push('u_' + u.id);
     for (const id of ids) {
       try {
-        const res = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}`, {
-          method: 'PATCH',
-          headers: headers(),
-          body: JSON.stringify({ name: null, data: {}, updated_at: new Date().toISOString() }),
-        });
-        if (!res.ok) cloudOk = false;
+        // Sunucu fonksiyonu varsa profil + liderlik kayıtları gerçekten silinir
+        const r = await rpc('delete_profile', { code: id });
+        if (r.missing) {
+          const res = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}`, {
+            method: 'PATCH',
+            headers: headers(),
+            body: JSON.stringify({ name: null, data: {}, updated_at: new Date().toISOString() }),
+          });
+          if (!res.ok) cloudOk = false;
+        } else if (!r.ok) cloudOk = false;
       } catch (e) { cloudOk = false; }
     }
   }
