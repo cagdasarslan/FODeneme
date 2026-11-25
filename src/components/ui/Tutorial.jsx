@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { C, FONT, btn, panel, tile, titleText, backdrop } from '@/ui/theme';
 
 // Tek seferlik ilk-oynayış eğitimi. localStorage 'intro_v1' ile bir kez gösterilir.
 // Yeni oyuncuya oyunun amacını ve temel hamleleri adım adım tanıtır.
@@ -87,7 +88,7 @@ export default function Tutorial({ onClose }) {
       <style>{KEYFRAMES}</style>
       <div style={ST.card}>
         {/* Atla */}
-        <button style={ST.skip} onClick={finish}>{t('ATLA')} ✕</button>
+        <button className="hr-press" style={ST.skip} onClick={finish}>{t('ATLA')} ✕</button>
 
         {/* İçerik */}
         <div style={ST.iconWrap}>
@@ -104,19 +105,19 @@ export default function Tutorial({ onClose }) {
         {/* İlerleme noktaları */}
         <div style={ST.dots}>
           {STEPS.map((_, i) => (
-            <span key={i} style={{ ...ST.dot, background: i === step ? '#ffd700' : 'rgba(255,255,255,0.25)', width: i === step ? 22 : 8 }} />
+            <span key={i} style={{ ...ST.dot, background: i === step ? C.goldLo : C.creamDk, width: i === step ? 22 : 8 }} />
           ))}
         </div>
 
         {/* Butonlar */}
         <div style={ST.btnRow}>
           {step > 0 && (
-            <button style={ST.backBtn} onClick={() => setStep(step - 1)}>‹ {t('GERİ')}</button>
+            <button className="hr-press" style={ST.backBtn} onClick={() => setStep(step - 1)}>‹ {t('GERİ')}</button>
           )}
           {isLast ? (
-            <button style={ST.startBtn} onClick={finish}>{t('HADİ BAŞLAYALIM!')} 🏁</button>
+            <button className="hr-press" style={ST.startBtn} onClick={finish}>{t('HADİ BAŞLAYALIM!')} 🏁</button>
           ) : (
-            <button style={ST.nextBtn} onClick={() => setStep(step + 1)}>{t('İLERİ')} ›</button>
+            <button className="hr-press" style={ST.nextBtn} onClick={() => setStep(step + 1)}>{t('İLERİ')} ›</button>
           )}
         </div>
       </div>
@@ -143,62 +144,42 @@ const KEYFRAMES = `
 const ST = {
   overlay: {
     position: 'fixed', inset: 0, zIndex: 20000,
-    background: 'radial-gradient(ellipse at center, rgba(18,18,40,0.97), rgba(6,6,14,0.99))',
-    backdropFilter: 'blur(6px)',
+    background: backdrop,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontFamily: 'var(--game-font)', padding: 16, boxSizing: 'border-box',
+    fontFamily: FONT, padding: 16, boxSizing: 'border-box',
   },
   card: {
+    ...panel,
     position: 'relative',
     width: '100%', maxWidth: 400,
-    background: 'linear-gradient(165deg, rgba(20,20,44,0.96), rgba(10,10,22,0.98))',
-    border: '1px solid rgba(255,215,0,0.28)', borderRadius: 18,
-    padding: '34px 22px 22px', textAlign: 'center',
-    boxShadow: '0 12px 60px rgba(0,0,0,0.7), 0 0 90px rgba(255,215,0,0.05)',
+    padding: '38px 22px 24px', textAlign: 'center',
     display: 'flex', flexDirection: 'column', alignItems: 'center',
   },
   skip: {
-    position: 'absolute', top: 12, right: 12,
-    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)',
-    color: 'rgba(255,255,255,0.55)', borderRadius: 8, padding: '6px 12px',
-    fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--game-font)', letterSpacing: 1,
+    ...btn.secondary,
+    position: 'absolute', top: 10, right: 10,
+    minHeight: 44, borderRadius: 12, padding: '6px 12px',
+    fontSize: 13,
   },
   iconWrap: {
     height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center',
     marginBottom: 8,
   },
   icon: { fontSize: 62, display: 'inline-block', lineHeight: 1 },
-  title: {
-    fontSize: 22, fontWeight: 800, letterSpacing: 3, color: '#ffd700',
-    marginBottom: 14,
-  },
+  title: { ...titleText(30), textTransform: 'uppercase', marginBottom: 16 },
   lines: { marginBottom: 6 },
   line: {
-    color: 'rgba(255,255,255,0.82)', fontSize: 14.5, lineHeight: 1.55,
+    color: C.ink, fontSize: 15, fontWeight: 700, lineHeight: 1.5,
     margin: '0 0 8px',
   },
-  hint: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2, marginBottom: 4 },
+  hint: { ...tile, color: C.inkSoft, fontSize: 12, fontWeight: 800, padding: '4px 12px', marginTop: 2, marginBottom: 4 },
   dots: {
     display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center',
     margin: '18px 0 16px',
   },
-  dot: { height: 8, borderRadius: 4, transition: 'all 0.2s' },
+  dot: { height: 10, borderRadius: 5, border: `2px solid ${C.edge}`, transition: 'all 0.2s' },
   btnRow: { display: 'flex', gap: 10, width: '100%', justifyContent: 'center' },
-  backBtn: {
-    padding: '13px 18px', fontSize: 14, fontFamily: 'var(--game-font)', fontWeight: 700, letterSpacing: 1,
-    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: 10, cursor: 'pointer', color: 'rgba(255,255,255,0.7)',
-  },
-  nextBtn: {
-    flex: 1, padding: '13px 20px', fontSize: 15, fontFamily: 'var(--game-font)', fontWeight: 800, letterSpacing: 2,
-    background: 'linear-gradient(135deg,#e8b84b,#c8881b)', border: 'none',
-    borderRadius: 10, cursor: 'pointer', color: '#1a0a00',
-    boxShadow: '0 4px 16px rgba(232,184,75,0.35)',
-  },
-  startBtn: {
-    flex: 1, padding: '14px 20px', fontSize: 15, fontFamily: 'var(--game-font)', fontWeight: 800, letterSpacing: 1.5,
-    background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', border: 'none',
-    borderRadius: 10, cursor: 'pointer', color: '#1a0a00',
-    boxShadow: '0 4px 20px rgba(255,159,0,0.45)',
-  },
+  backBtn: { ...btn.secondary, padding: '12px 18px', fontSize: 16, minHeight: 52, textTransform: 'uppercase' },
+  nextBtn: { ...btn.primary, flex: 1, padding: '12px 20px', fontSize: 18, minHeight: 52, textTransform: 'uppercase' },
+  startBtn: { ...btn.primary, flex: 1, padding: '12px 20px', fontSize: 18, minHeight: 52, textTransform: 'uppercase' },
 };

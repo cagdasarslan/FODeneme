@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { showRewardedAds, REWARDED_AVAILABLE } from '@/services/AdService';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { C, FONT, DISPLAY, btn, titleText, backdrop } from '@/ui/theme';
 
 // Ödüllü reklam butonu — N reklamı SIRAYLA gösterir, HEPSİ bitmeden ödül vermez.
 // İzleme sırasında tam ekran "Reklam X/N" katmanı kalır (erken kapanmaz).
@@ -30,7 +31,8 @@ export default function AdButton({
       <button
         onClick={handle}
         disabled={busy || disabled}
-        style={{ ...S.btn, ...(compact ? S.compact : {}), borderColor: color, color, opacity: disabled ? 0.4 : 1 }}
+        className="hr-press"
+        style={{ ...S.btn, ...(compact ? S.compact : {}), opacity: disabled ? 0.5 : 1 }}
       >
         <span style={S.main}>📺 {label}{ads > 1 ? ` (${t('{n} reklam', { n: ads })})` : ''}</span>
         {sub && <span style={S.sub}>{sub}</span>}
@@ -48,25 +50,26 @@ export default function AdButton({
   );
 }
 
+// Not: `color` prop'u geriye dönük uyumluluk için kabul edilir; tema yeşil "ödül" butonu kullanır.
 const S = {
   btn: {
+    ...btn.success,
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-    width: '100%', minHeight: 44, padding: '8px 12px',
-    background: 'rgba(60,180,90,0.12)', border: '2px solid', borderRadius: 10,
-    cursor: 'pointer', fontFamily: 'var(--game-font)', transition: 'all 0.15s',
+    width: '100%', minHeight: 48, padding: '8px 12px',
+    textShadow: `0 2px 0 ${C.greenEdge}`,
     WebkitTapHighlightColor: 'transparent',
   },
-  compact: { minHeight: 38, padding: '6px 10px', borderWidth: 1, borderRadius: 8 },
-  main: { fontSize: 13, fontWeight: 700, letterSpacing: 0.5, textAlign: 'center' },
-  sub: { fontSize: 10, opacity: 0.75, letterSpacing: 1 },
+  compact: { minHeight: 44, padding: '6px 10px', borderRadius: 12, boxShadow: `0 4px 0 ${C.greenEdge}` },
+  main: { fontFamily: DISPLAY, fontSize: 15, letterSpacing: 0.8, textAlign: 'center', textTransform: 'uppercase' },
+  sub: { fontFamily: FONT, fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textShadow: 'none' },
   overlay: {
     position: 'fixed', inset: 0, zIndex: 9000,
-    background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(4px)',
+    background: backdrop,
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-    fontFamily: 'var(--game-font)', gap: 8,
+    fontFamily: FONT, gap: 8,
   },
   spinner: { fontSize: 56, animation: 'pulse 0.8s infinite alternate' },
-  ovTitle: { fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: 2 },
-  ovCount: { fontSize: 40, fontWeight: 900, color: '#ffd54a', textShadow: '0 0 20px rgba(255,200,50,0.6)' },
-  ovNote: { fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 6, letterSpacing: 1 },
+  ovTitle: { ...titleText(24), textTransform: 'uppercase' },
+  ovCount: { ...titleText(44, C.goldHi) },
+  ovNote: { fontSize: 13, fontWeight: 800, color: C.cream, marginTop: 6, letterSpacing: 0.5, textAlign: 'center', padding: '0 16px' },
 };

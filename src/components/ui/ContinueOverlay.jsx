@@ -3,6 +3,7 @@ import useGameStore from '@/store/useGameStore';
 import { showRewardedAds, REWARDED_AVAILABLE } from '@/services/AdService';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { C, FONT, DISPLAY, btn, panel, titleText, backdrop } from '@/ui/theme';
 
 // Çarpışma sonrası "devam et" ekranı:
 //  - Havuçla devam et (maliyet her seferinde 3 kat artar)
@@ -90,6 +91,7 @@ export default function ContinueOverlay() {
         <div style={S.sub}>{t('Devam etmek ister misin?')}</div>
 
         <button
+          className="hr-press"
           style={{ ...S.btn, ...S.carrotBtn, ...(canAfford ? {} : S.disabled) }}
           onClick={() => { if (canAfford) startCountdown(() => continueWithCarrots()); }}
         >
@@ -101,6 +103,7 @@ export default function ContinueOverlay() {
 
         {adOffered && (
           <button
+            className="hr-press"
             style={{ ...S.btn, ...S.adBtn, ...(watching ? S.disabled : {}) }}
             onClick={handleAd}
           >
@@ -109,7 +112,7 @@ export default function ContinueOverlay() {
           </button>
         )}
 
-        <button style={S.giveUp} onClick={() => giveUp()} disabled={watching}>
+        <button className="hr-press" style={S.giveUp} onClick={() => giveUp()} disabled={watching}>
           {t('VAZGEÇ')}
         </button>
 
@@ -125,40 +128,30 @@ const S = {
   backdrop: {
     position: 'fixed', inset: 0, zIndex: 6000,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(3px)',
+    background: backdrop,
     padding: 16,
   },
-  countWrap: { textAlign: 'center', fontFamily: 'var(--game-font)' },
-  countNum: { fontSize: 96, fontWeight: 900, color: '#ffd54a', textShadow: '0 0 30px rgba(255,200,50,0.7)', lineHeight: 1 },
-  countText: { fontSize: 14, letterSpacing: 3, color: 'rgba(255,255,255,0.7)', marginTop: 8 },
+  countWrap: { textAlign: 'center', fontFamily: FONT },
+  countNum: { ...titleText(96, C.goldHi) },
+  countText: { fontSize: 16, fontWeight: 800, letterSpacing: 1.5, color: C.cream, marginTop: 14, textTransform: 'uppercase' },
   panel: {
+    ...panel,
     width: '100%', maxWidth: 360,
-    background: 'linear-gradient(160deg, rgba(18,18,34,0.97), rgba(10,10,20,0.98))',
-    border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16,
     padding: '22px 20px', textAlign: 'center',
     display: 'flex', flexDirection: 'column', gap: 12,
-    boxShadow: '0 10px 50px rgba(0,0,0,0.7)',
   },
-  title: {
-    fontFamily: 'var(--game-font)', fontSize: 28, fontWeight: 900, letterSpacing: 3,
-    color: '#ff4422', textShadow: '0 0 18px rgba(255,68,34,0.6)',
-  },
-  sub: { fontFamily: 'var(--game-font)', fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 4 },
+  title: { ...titleText(38, C.red), textTransform: 'uppercase', marginBottom: 2 },
+  sub: { fontFamily: FONT, fontSize: 14, fontWeight: 800, color: C.inkSoft, marginBottom: 4 },
   btn: {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-    border: '2px solid', borderRadius: 10, padding: '12px 14px',
-    cursor: 'pointer', width: '100%', transition: 'all 0.15s',
-    fontFamily: 'var(--game-font)',
+    padding: '10px 14px', minHeight: 56,
+    width: '100%',
   },
-  carrotBtn: { background: 'rgba(255,165,0,0.14)', borderColor: 'rgba(255,165,0,0.5)', color: '#ffcf66' },
-  adBtn:     { background: 'rgba(60,180,90,0.14)', borderColor: 'rgba(80,200,110,0.5)', color: '#7ce29a' },
-  disabled:  { opacity: 0.4, cursor: 'not-allowed' },
-  btnMain:    { fontSize: 15, fontWeight: 700, letterSpacing: 1 },
-  btnSubText: { fontSize: 10, opacity: 0.75, letterSpacing: 1 },
-  giveUp: {
-    marginTop: 4, background: 'transparent', border: 'none',
-    color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--game-font)', fontSize: 12,
-    letterSpacing: 2, cursor: 'pointer', padding: 8,
-  },
-  note: { fontFamily: 'var(--game-font)', fontSize: 10, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 },
+  carrotBtn: { ...btn.primary },
+  adBtn:     { ...btn.success, textShadow: `0 2px 0 ${C.greenEdge}` },
+  disabled:  { opacity: 0.5, cursor: 'not-allowed', filter: 'grayscale(0.4)' },
+  btnMain:    { fontFamily: DISPLAY, fontSize: 17, letterSpacing: 0.8, textTransform: 'uppercase' },
+  btnSubText: { fontFamily: FONT, fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textShadow: 'none' },
+  giveUp: { ...btn.ghost, marginTop: 2, fontSize: 14, letterSpacing: 1, padding: 8, color: C.inkSoft },
+  note: { fontFamily: FONT, fontSize: 11, fontWeight: 700, color: C.inkSoft, letterSpacing: 0.3 },
 };

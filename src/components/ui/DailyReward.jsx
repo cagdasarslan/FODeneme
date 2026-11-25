@@ -4,6 +4,7 @@ import { STREAK_REWARDS, STREAK_MAX_REWARD } from '@/constants/daily';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
 import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
+import { C, FONT, DISPLAY, btn, panel, tile, titleText, backdrop } from '@/ui/theme';
 
 // Günlük giriş ödülü — 7 günlük takvim, her gün artan ödül.
 export default function DailyReward({ onClose }) {
@@ -23,7 +24,7 @@ export default function DailyReward({ onClose }) {
       <div style={S.box}>
         <div style={S.header}>
           <span style={S.title}>🎁 {t('GÜNLÜK ÖDÜL')}</span>
-          <button aria-label={t('Kapat')} style={S.close} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} className="hr-press" style={S.close} onClick={onClose}>✕</button>
         </div>
 
         <div style={S.sub}>
@@ -55,7 +56,7 @@ export default function DailyReward({ onClose }) {
         {flash && <div style={S.flash}>{flash}</div>}
 
         {canClaim ? (
-          <button style={S.claimBtn} onClick={handleClaim}>
+          <button className="hr-press" style={S.claimBtn} onClick={handleClaim}>
             {t('{n}. GÜN ÖDÜLÜNÜ AL', { n: streakDay }) + ` (🥕 ${streakDay <= 7 ? STREAK_REWARDS[streakDay - 1] : STREAK_MAX_REWARD})`}
           </button>
         ) : (
@@ -67,22 +68,22 @@ export default function DailyReward({ onClose }) {
 }
 
 const S = {
-  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 680, padding: 14, paddingTop: `calc(14px + ${SAFE_TOP})`, paddingBottom: `calc(14px + ${BOTTOM_SPACE})`, boxSizing: 'border-box' },
-  box: { width: '100%', maxWidth: 380, background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))', border: '1px solid rgba(255,215,0,0.3)', borderRadius: 16, padding: '18px 16px', fontFamily: 'var(--game-font)' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#ffd700' },
-  close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 40, height: 40, fontSize: 14, cursor: 'pointer' },
-  sub: { fontSize: 11, color: 'rgba(255,255,255,0.55)', textAlign: 'center', marginBottom: 14 },
+  modal: { position: 'fixed', inset: 0, background: backdrop, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 680, padding: 14, paddingTop: `calc(14px + ${SAFE_TOP})`, paddingBottom: `calc(14px + ${BOTTOM_SPACE})`, boxSizing: 'border-box' },
+  box: { ...panel, width: '100%', maxWidth: 380, padding: '18px 16px 20px' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 },
+  title: { ...titleText(24), textTransform: 'uppercase' },
+  close: { ...btn.icon, width: 44, height: 44, fontSize: 16, flexShrink: 0 },
+  sub: { fontSize: 13, fontWeight: 800, color: C.inkSoft, textAlign: 'center', marginBottom: 14 },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 },
-  day: { position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 4px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' },
-  dayBig: { gridColumn: 'span 1', border: '1px solid rgba(255,215,0,0.5)', background: 'rgba(255,215,0,0.1)' },
-  dayToday: { border: '2px solid #ffd700', background: 'rgba(255,215,0,0.15)', boxShadow: '0 0 14px rgba(255,215,0,0.3)' },
-  dayClaimed: { opacity: 0.45 },
-  dayNum: { fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.6)' },
-  dayCarrot: { fontSize: 16 },
-  dayAmt: { fontSize: 11, fontWeight: 800, color: '#ffd700' },
-  tick: { position: 'absolute', top: 2, right: 4, color: '#33ff99', fontWeight: 900, fontSize: 12 },
-  flash: { textAlign: 'center', color: '#33ff99', fontWeight: 700, fontSize: 13, marginTop: 12 },
-  claimBtn: { marginTop: 14, width: '100%', padding: '13px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'var(--game-font)', fontWeight: 800, letterSpacing: 1, fontSize: 13, color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)' },
-  done: { marginTop: 14, textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, padding: '10px' },
+  day: { ...tile, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 4px', border: `2px solid ${C.edge}`, boxShadow: `0 3px 0 ${C.edge}` },
+  dayBig: { gridColumn: 'span 1', background: `linear-gradient(180deg, ${C.goldHi}, ${C.gold})` },
+  dayToday: { border: `3px solid ${C.edge}`, background: `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})`, transform: 'translateY(-2px)', boxShadow: `0 5px 0 ${C.edge}` },
+  dayClaimed: { opacity: 0.55 },
+  dayNum: { fontSize: 12, fontWeight: 800, color: C.inkSoft, fontFamily: FONT },
+  dayCarrot: { fontSize: 18 },
+  dayAmt: { fontSize: 15, color: C.ink, fontFamily: DISPLAY },
+  tick: { position: 'absolute', top: 2, right: 4, color: C.greenEdge, fontWeight: 900, fontSize: 14 },
+  flash: { textAlign: 'center', color: C.greenEdge, fontWeight: 800, fontSize: 14, marginTop: 12 },
+  claimBtn: { ...btn.primary, marginTop: 16, width: '100%', minHeight: 52, padding: '12px', fontSize: 16, textTransform: 'uppercase' },
+  done: { ...tile, marginTop: 16, textAlign: 'center', color: C.inkSoft, fontWeight: 800, fontSize: 13, padding: '12px' },
 };

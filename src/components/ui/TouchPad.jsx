@@ -3,6 +3,7 @@ import { controlsState } from '@/hooks/useHorseControls';
 import useGameStore from '@/store/useGameStore';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { C, pill } from '@/ui/theme';
 
 // Swipe kontrolü — her "swipe segmenti" kendi baskın eksenini seçer:
 //  • Parmak eşiği geçince o anki baskın yön uygulanır (yatay→şerit, dikey→zıpla)
@@ -83,11 +84,12 @@ const hint = {
   whiteSpace: 'nowrap',
   left: '50%',
   transform: 'translateX(-50%)',
-  color: 'rgba(255,255,255,0.7)',
-  textShadow: '0 1px 3px #000',
-  fontFamily: 'var(--game-font)',
+  ...pill,
+  color: C.cream,
   fontSize: 12,
-  letterSpacing: 1,
+  padding: '4px 12px',
+  letterSpacing: 0.5,
+  opacity: 0.9,
   pointerEvents: 'none',
   userSelect: 'none',
   zIndex: 5000,

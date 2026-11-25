@@ -10,6 +10,7 @@ import { POWERUP_IDS, POWERUP_BY_ID } from '@/constants/powerups';
 import { SAFE_TOP, topPlus } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
+import { C, FONT, DISPLAY, btn, panel, pill, titleText, backdrop } from '@/ui/theme';
 
 const isMobile = 'ontouchstart' in window;
 
@@ -91,11 +92,12 @@ export default function HUD() {
 
   const TUT_MSGS = [t('👆 ← → kaydırarak şerit değiştir'), t('👆 ↑ yukarı kaydır = ZIPLA'), t('👆 ↓ aşağı kaydır = EĞİL')];
 
-  const adrColor = adrenaline > 75 ? '#ff3333' : adrenaline > 40 ? '#ff9900' : '#33aaff';
+  const adrColor = adrenaline > 75 ? C.red : adrenaline > 40 ? C.goldLo : C.edge;
+  const adrFillBg = adrenaline > 75 ? `linear-gradient(180deg, #ff6a3a, ${C.red})` : `linear-gradient(90deg, ${C.goldHi}, ${C.carrot})`;
   const isMaxAdr = adrenaline > 90;
 
   const spct = Math.min(1, Math.max(0, (speed - INITIAL_SPEED) / (TOP_SPEED - INITIAL_SPEED)));
-  const speedColor = spct < 0.4 ? '#33ff99' : spct < 0.75 ? '#ffcc00' : '#ff4422';
+  const speedColor = spct < 0.4 ? '#9ee08a' : spct < 0.75 ? C.gold : '#ff8a6a';
 
   return (
     <>
@@ -104,10 +106,10 @@ export default function HUD() {
         <div style={styles.pauseOverlay}>
           <div style={styles.pauseTitle}>⏸ {t('DURAKLATILDI')}</div>
           <div style={styles.pauseScore}>{t('SKOR')}: {Math.floor(score).toLocaleString()}</div>
-          <button style={styles.pauseResume} onClick={() => useGameStore.getState().resumeRun()}>
+          <button className="hr-press" style={styles.pauseResume} onClick={() => useGameStore.getState().resumeRun()}>
             ▶ {t('DEVAM ET')}
           </button>
-          <button style={styles.pauseQuit} onClick={() => useGameStore.getState().endRun()}>
+          <button className="hr-press" style={styles.pauseQuit} onClick={() => useGameStore.getState().endRun()}>
             🏁 {t('KOŞUYU BİTİR')}
           </button>
         </div>
@@ -116,6 +118,7 @@ export default function HUD() {
       {/* Duraklat düğmesi */}
       {phase === 'playing' && (
         <button
+          className="hr-press"
           style={styles.pauseBtn}
           onClick={() => useGameStore.getState().pauseRun()}
           onTouchStart={(e) => e.stopPropagation()}
@@ -136,20 +139,20 @@ export default function HUD() {
         </div>
         <div style={styles.statBlock}>
           <span style={styles.label}>{t('EN YÜKSEK')}</span>
-          <span style={{ ...styles.value, color: '#f5d060' }}>
+          <span style={styles.value}>
             {Math.floor(highScore).toLocaleString()}
           </span>
         </div>
         <div style={styles.statBlock}>
           <span style={styles.label}>🥕 {t('HAVUÇ')}</span>
-          <span style={{ ...styles.value, color: '#ffd700' }}>{carrots}</span>
+          <span style={{ ...styles.value, color: C.ink }}>{carrots}</span>
         </div>
       </div>
 
       {powerupLine && (
         <div style={{ position:'fixed', top: topPlus(70), left:'50%', transform:'translateX(-50%)',
-          fontFamily:'var(--game-font)', fontSize:18, fontWeight:900, color:'#00e5ff',
-          textShadow:'0 0 15px #00aaff', letterSpacing:2, pointerEvents:'none',
+          ...pill, fontSize:16, color:C.cream, border:`2px solid ${C.edgeDk}`, boxShadow:`0 3px 0 ${C.edgeDk}`,
+          letterSpacing:2, pointerEvents:'none',
           whiteSpace:'nowrap' }}>
           {powerupLine}
         </div>
@@ -158,8 +161,7 @@ export default function HUD() {
       {adrenalinBoosting && (
         <div style={CENTER_ROW(topPlus(58))}>
         <div style={{ textAlign:'center', maxWidth:'92vw',
-          fontFamily:'var(--game-font)', fontSize:20, fontWeight:900, color:'#ff4400',
-          textShadow:'0 0 20px #ff6600, 0 0 40px #ff2200', letterSpacing:2, pointerEvents:'none',
+          ...titleText(20, C.goldHi), letterSpacing:2, pointerEvents:'none',
           animation:'pulse 0.3s infinite alternate' }}>
           ⚡ {t('ADRENALİN PATLAMASI — 2X SKOR!')}
         </div>
@@ -169,8 +171,7 @@ export default function HUD() {
       {/* Combo çarpanı — art arda riskli hamleler skoru katlar */}
       {comboMult > 1 && (
         <div style={CENTER_ROW(topPlus(90))}>
-        <div style={{ fontFamily:'var(--game-font)', fontSize:18, fontWeight:900, color:'#ffd54a',
-          textShadow:'0 0 14px #ffb300', letterSpacing:3, pointerEvents:'none',
+        <div style={{ ...titleText(20, C.carrot), letterSpacing:3, pointerEvents:'none',
           animation:'pulse 0.4s infinite alternate' }}>
           🔥 COMBO x{comboMult}
         </div>
@@ -183,15 +184,14 @@ export default function HUD() {
         // (scale) yazdığı için translateX(-50%)'i eziyor, uyarı sağa kayıp taşıyordu
         <div style={{ position:'fixed', top: topPlus(118), left:0, right:0, display:'flex', justifyContent:'center', pointerEvents:'none' }}>
         <div style={{ textAlign:'center', maxWidth:'88vw',
-          fontFamily:'var(--game-font)', fontSize:13, fontWeight:900, color:'#ff5544',
-          textShadow:'0 0 12px #ff2200', letterSpacing:1, pointerEvents:'none',
-          background:'rgba(0,0,0,0.55)', padding:'6px 14px', borderRadius:8,
-          border:'1px solid rgba(255,60,40,0.5)',
+          fontFamily:FONT, fontSize:13, fontWeight:900, color:'#fff', letterSpacing:0.5, pointerEvents:'none',
+          background:C.red, padding:'6px 14px', borderRadius:12,
+          border:`3px solid ${C.cream}`, boxShadow:`0 4px 0 ${C.redEdge}`,
           animation:'pulse 0.6s infinite alternate' }}>
           ⚠️ {t('TÖKEZLEDİN — bir daha çarparsan düşersin!')}
           {/* Kalan tehlike süresi — oyuncu ikinci çarpmanın neden öldürdüğünü görsün */}
-          <div style={{ marginTop:5, height:4, background:'rgba(255,255,255,0.15)', borderRadius:2, overflow:'hidden' }}>
-            <div style={{ height:'100%', background:'#ff5544',
+          <div style={{ marginTop:5, height:5, background:C.redEdge, borderRadius:3, overflow:'hidden' }}>
+            <div style={{ height:'100%', background:C.cream,
               width: `${Math.max(0, Math.min(100, (useGameStore.getState().stumbleUntil - Date.now()) / STUMBLE_WINDOW_MS * 100))}%` }} />
           </div>
         </div>
@@ -201,10 +201,9 @@ export default function HUD() {
       {/* İlk oyun eğitimi */}
       {tutStep < 3 && (
         <div style={{ position:'fixed', top:'46%', left:'50%', transform:'translateX(-50%)',
-          fontFamily:'var(--game-font)', fontSize:17, fontWeight:800, color:'#fff',
-          textShadow:'0 2px 6px #000', letterSpacing:1, pointerEvents:'none',
-          background:'rgba(0,0,0,0.55)', padding:'12px 20px', borderRadius:12,
-          border:'1px solid rgba(255,215,0,0.4)', whiteSpace:'nowrap' }}>
+          ...panel, fontSize:17, fontWeight:800, letterSpacing:0.5, pointerEvents:'none',
+          padding:'12px 20px', borderRadius:16, borderWidth:3,
+          boxShadow:`0 5px 0 ${C.edge}`, whiteSpace:'nowrap' }}>
           {TUT_MSGS[tutStep]}
         </div>
       )}
@@ -222,10 +221,10 @@ export default function HUD() {
           {isMaxAdr ? '⚡ ' + t('MAX ADRENALİN') : `${t('ADRENALİN')} ${Math.floor(adrenaline)}%`}
         </div>
         <div style={styles.adrTrack}>
-          <div style={{ ...styles.adrFill, width: `${adrenaline}%`, background: adrColor }} />
+          <div style={{ ...styles.adrFill, width: `${adrenaline}%`, background: adrFillBg }} />
           {/* Parıltı efekti */}
           {adrenaline > 5 && (
-            <div style={{ ...styles.adrGlow, width: `${adrenaline}%`, background: adrColor }} />
+            <div style={{ ...styles.adrGlow, width: `${adrenaline}%` }} />
           )}
         </div>
       </div>
@@ -258,29 +257,24 @@ export default function HUD() {
 const styles = {
   pauseOverlay: {
     position: 'fixed', inset: 0, zIndex: 300,
-    background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)',
+    background: backdrop,
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-    gap: 18, fontFamily: 'var(--game-font)', userSelect: 'none',
+    gap: 18, fontFamily: FONT, userSelect: 'none',
   },
-  pauseTitle: { fontSize: 30, fontWeight: 700, letterSpacing: 3, color: '#fff', textShadow:'0 2px 8px rgba(0,0,0,0.6)' },
-  pauseScore: { fontSize: 15, fontWeight: 700, letterSpacing: 2, color: '#f5d060' },
+  pauseTitle: { ...titleText(40), textTransform: 'uppercase' },
+  pauseScore: { ...pill, fontSize: 15, letterSpacing: 1 },
   pauseResume: {
-    padding: '14px 52px', fontSize: 18, fontWeight: 900, letterSpacing: 3,
-    fontFamily: 'var(--game-font)', color: '#fff', border: 'none', borderRadius: 12,
-    background: 'linear-gradient(135deg,#2a8a4a,#1a6a30)', cursor: 'pointer',
-    boxShadow: '0 4px 20px rgba(42,138,74,0.5)',
+    ...btn.primary, padding: '14px 52px', fontSize: 22, minHeight: 56,
+    textTransform: 'uppercase',
   },
   pauseQuit: {
-    padding: '10px 36px', fontSize: 12, fontWeight: 700, letterSpacing: 2,
-    fontFamily: 'var(--game-font)', color: 'rgba(255,255,255,0.7)', borderRadius: 10,
-    border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)',
-    cursor: 'pointer',
+    ...btn.secondary, padding: '10px 32px', fontSize: 15, minHeight: 48,
+    textTransform: 'uppercase',
   },
   pauseBtn: {
+    ...btn.icon,
     position: 'fixed', top: topPlus(8), right: 10, zIndex: 60,
-    width: 40, height: 40, borderRadius: 10, fontSize: 18, lineHeight: 1,
-    background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.25)',
-    color: '#fff', cursor: 'pointer', fontFamily: 'var(--game-font)',
+    width: 44, height: 44, fontSize: 18, lineHeight: 1,
   },
   topBar: {
     position: 'fixed',
@@ -289,7 +283,7 @@ const styles = {
     left: '50%',
     transform: 'translateX(-50%)',
     display: 'flex',
-    gap: 2,
+    gap: 6,
     userSelect: 'none',
     pointerEvents: 'none',
   },
@@ -297,35 +291,35 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    background: 'rgba(0,0,0,0.55)',
-    backdropFilter: 'blur(4px)',
-    padding: '6px 18px',
-    borderBottom: '2px solid rgba(255,255,255,0.1)',
-    minWidth: 100,
+    background: C.cream,
+    border: `3px solid ${C.edge}`,
+    boxShadow: `0 4px 0 ${C.edge}`,
+    borderRadius: 14,
+    padding: '4px 14px 6px',
+    minWidth: 92,
   },
   label: {
-    color: 'rgba(255,255,255,0.5)',
-    fontFamily: 'var(--game-font)',
+    color: C.inkSoft,
+    fontFamily: FONT,
     fontSize: 10,
-    letterSpacing: 1.5,
-    marginBottom: 2,
-    fontWeight: 600,
+    letterSpacing: 1.2,
+    marginBottom: 1,
+    fontWeight: 800,
   },
   value: {
-    color: '#fff',
-    fontFamily: 'var(--game-font)',
-    fontSize: 19,
-    fontWeight: 700,
+    color: C.ink,
+    fontFamily: DISPLAY,
+    fontSize: 22,
+    lineHeight: 1.05,
     letterSpacing: 0.5,
-    textShadow: '0 1px 3px rgba(0,0,0,0.7)',
   },
   speedLine: {
-    fontFamily: 'var(--game-font)',
-    fontSize: 13,
-    fontWeight: 700,
-    letterSpacing: 1,
-    marginTop: 3,
-    textShadow: '0 0 8px currentColor',
+    ...pill,
+    fontSize: 12,
+    padding: '2px 10px',
+    letterSpacing: 0.5,
+    marginTop: 4,
+    whiteSpace: 'nowrap',
   },
   adrWrap: {
     position: 'fixed',
@@ -337,59 +331,57 @@ const styles = {
     pointerEvents: 'none',
   },
   adrLabel: {
-    fontFamily: 'var(--game-font)',
+    ...pill,
+    display: 'table',
+    margin: '0 auto 5px',
+    padding: '2px 12px',
     fontSize: 11,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
     textAlign: 'center',
-    marginBottom: 5,
-    textShadow: '0 0 10px currentColor',
-    fontWeight: 700,
+    border: `2px solid ${C.edgeDk}`,
   },
   adrTrack: {
-    height: 10,
-    background: 'rgba(255,255,255,0.12)',
-    borderRadius: 5,
+    height: 14,
+    background: C.edgeDk,
+    border: `2px solid ${C.edge}`,
+    boxShadow: `0 3px 0 ${C.edge}`,
+    borderRadius: 8,
     overflow: 'hidden',
     position: 'relative',
   },
   adrFill: {
     height: '100%',
-    borderRadius: 5,
+    borderRadius: 6,
     transition: 'width 0.08s, background 0.25s',
     position: 'absolute',
   },
   adrGlow: {
-    height: '100%',
-    borderRadius: 5,
-    filter: 'blur(6px)',
-    opacity: 0.5,
+    height: '40%',
+    top: 2,
+    borderRadius: 6,
+    background: 'rgba(255,241,208,0.45)',
     position: 'absolute',
     transition: 'width 0.08s',
   },
   hints: {
+    ...pill,
     position: 'fixed',
     bottom: 16,
     left: 16,
-    color: 'rgba(255,255,255,0.45)',
-    fontFamily: 'var(--game-font)',
+    color: C.cream,
     fontSize: 12,
     userSelect: 'none',
     pointerEvents: 'none',
-    textShadow: '0 1px 4px rgba(0,0,0,0.8)',
   },
   flash: {
     position: 'fixed',
     top: '38%',
     left: '50%',
     transform: 'translateX(-50%)',
-    fontFamily: 'var(--game-font)',
-    fontSize: 27,
-    fontWeight: 700,
-    color: '#ff7a2a',
-    textShadow: '0 2px 6px rgba(0,0,0,0.9), 0 0 14px #ff5500',
-    letterSpacing: 2,
+    ...titleText(32, C.carrot),
     pointerEvents: 'none',
     userSelect: 'none',
+    whiteSpace: 'nowrap',
     animation: 'flashIn 0.15s ease-out',
   },
 };
