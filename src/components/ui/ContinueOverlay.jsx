@@ -160,5 +160,5 @@ const S = {
     color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--game-font)', fontSize: 12,
     letterSpacing: 2, cursor: 'pointer', padding: 8,
   },
-  note: { fontFamily: 'var(--game-font)', fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: 1 },
+  note: { fontFamily: 'var(--game-font)', fontSize: 10, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 },
 };

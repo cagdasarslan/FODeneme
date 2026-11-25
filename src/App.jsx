@@ -34,6 +34,8 @@ import { horseRef } from '@/utils/horseRef';
 import { controlsState } from '@/hooks/useHorseControls';
 import { getKind, getHitbox } from '@/components/obstacles/ObstacleSpawner';
 import { initAds } from '@/services/AdService';
+import { t } from '@/i18n';
+import { topPlus } from '@/utils/safeArea';
 
 // Test köprüsü — yalnız localStorage.dbg === '1' iken (bot/QA); oyuncuda kapalı
 if (typeof window !== 'undefined' && localStorage.getItem('dbg') === '1') {
@@ -227,10 +229,10 @@ export default function App() {
       {isPaddock && <PaddockUI />}
       {/* Otomatik kalite bildirimi */}
       {autoLowMsg && (
-        <div style={{ position:'fixed', top:14, left:'50%', transform:'translateX(-50%)', zIndex:9500,
+        <div style={{ position:'fixed', top: topPlus(96), left:'50%', transform:'translateX(-50%)', zIndex:9500, textAlign:'center', maxWidth:'86vw',
           background:'rgba(0,0,0,0.85)', border:'1px solid rgba(255,215,0,0.5)', color:'#ffd700',
           fontFamily:'var(--game-font)', fontSize:12, fontWeight:700, padding:'10px 16px', borderRadius:10 }}>
-          ⚡ Akıcılık için grafik kalitesi düşürüldü (Ayarlar'dan değiştirebilirsin)
+          ⚡ {t('Akıcılık için grafik kalitesi düşürüldü (Ayarlar\'dan değiştirebilirsin)')}
         </div>
       )}
     </>

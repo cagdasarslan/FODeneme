@@ -23,7 +23,7 @@ export default function DailyReward({ onClose }) {
       <div style={S.box}>
         <div style={S.header}>
           <span style={S.title}>🎁 {t('GÜNLÜK ÖDÜL')}</span>
-          <button style={S.close} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} style={S.close} onClick={onClose}>✕</button>
         </div>
 
         <div style={S.sub}>
@@ -71,7 +71,7 @@ const S = {
   box: { width: '100%', maxWidth: 380, background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))', border: '1px solid rgba(255,215,0,0.3)', borderRadius: 16, padding: '18px 16px', fontFamily: 'var(--game-font)' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#ffd700' },
-  close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 30, height: 30, fontSize: 14, cursor: 'pointer' },
+  close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 40, height: 40, fontSize: 14, cursor: 'pointer' },
   sub: { fontSize: 11, color: 'rgba(255,255,255,0.55)', textAlign: 'center', marginBottom: 14 },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 },
   day: { position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 4px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' },

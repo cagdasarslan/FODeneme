@@ -47,7 +47,7 @@ export default function CarrotShop({ onClose }) {
       <div style={S.box}>
         <div style={S.header}>
           <span style={S.title}>💎 {t('HAVUÇ MAĞAZASI')}</span>
-          <button style={S.close} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} style={S.close} onClick={onClose}>✕</button>
         </div>
 
         <div style={S.balance}>🥕 {carrots.toLocaleString()} {t('havuç')}</div>
@@ -66,7 +66,7 @@ export default function CarrotShop({ onClose }) {
             <span style={{ fontSize: 18 }}>🚫</span>
             <span style={{ flex: 1, textAlign: 'left' }}>
               <b>{t('REKLAMLARI KALDIR')}</b>
-              <div style={{ fontSize: 9, opacity: 0.75, marginTop: 2 }}>{t('Banner tamamen kapanır · ödüllü reklamlar isteğe bağlı kalır')}</div>
+              <div style={{ fontSize: 10, opacity: 0.75, marginTop: 2 }}>{t('Banner tamamen kapanır · ödüllü reklamlar isteğe bağlı kalır')}</div>
             </span>
             <span style={S.priceBtn}>{busy === REMOVE_ADS_ID ? '...' : getRemoveAdsPrice()}</span>
           </button>
@@ -125,7 +125,7 @@ const S = {
   title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#ffd700', fontFamily: 'var(--game-font)' },
   close: {
     background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6,
-    width: 30, height: 30, fontSize: 14, cursor: 'pointer',
+    width: 40, height: 40, fontSize: 14, cursor: 'pointer',
   },
   balance: { textAlign: 'center', color: '#ffd700', fontWeight: 700, fontFamily: 'var(--game-font)', fontSize: 13, marginBottom: 10 },
   flash: {
@@ -154,7 +154,7 @@ const S = {
   pkgHot: { border: '1px solid rgba(255,215,0,0.55)', background: 'rgba(255,215,0,0.08)' },
   badge: {
     position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)',
-    background: '#ffb300', color: '#000', fontSize: 8, fontWeight: 800, letterSpacing: 1,
+    background: '#ffb300', color: '#000', fontSize: 10, fontWeight: 800, letterSpacing: 1,
     padding: '2px 8px', borderRadius: 8, whiteSpace: 'nowrap',
   },
   carrotIcon: { fontSize: 22 },
@@ -169,5 +169,5 @@ const S = {
     fontFamily: 'var(--game-font)', borderRadius: 10, cursor: 'pointer',
     background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.18)',
   },
-  note: { marginTop: 14, fontSize: 9, color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: 1.5 },
+  note: { marginTop: 14, fontSize: 10, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 1.5 },
 };

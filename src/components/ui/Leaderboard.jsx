@@ -72,7 +72,7 @@ export default function Leaderboard({ onClose }) {
         <div style={S.header}>
           <span>🏆</span>
           <h2 style={S.title}>{t('LİDERLİK')}</h2>
-          <button style={S.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} style={S.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         {/* Dönem sekmeleri */}
@@ -164,7 +164,7 @@ const S = {
     padding: '8px 12px', borderRadius: 8, border: '1px solid',
     transition: 'background 0.15s',
   },
-  rank:  { width: 28, fontWeight: 700, fontSize: 14, color: 'rgba(255,255,255,0.6)', flexShrink: 0 },
+  rank:  { minWidth: 38, fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 14, color: 'rgba(255,255,255,0.6)', flexShrink: 0 },
   name:  { flex: 1, fontSize: 13, letterSpacing: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   score: { fontWeight: 700, fontSize: 15, color: '#33ff99', letterSpacing: 1, flexShrink: 0 },
   status: { textAlign: 'center', color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--game-font)', padding: 24, lineHeight: 1.7 },

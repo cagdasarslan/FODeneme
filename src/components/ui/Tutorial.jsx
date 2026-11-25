@@ -177,7 +177,7 @@ const ST = {
     color: 'rgba(255,255,255,0.82)', fontSize: 14.5, lineHeight: 1.55,
     margin: '0 0 8px',
   },
-  hint: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2, marginBottom: 4 },
+  hint: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2, marginBottom: 4 },
   dots: {
     display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center',
     margin: '18px 0 16px',

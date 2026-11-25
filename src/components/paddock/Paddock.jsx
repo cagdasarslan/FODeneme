@@ -596,7 +596,7 @@ const S = {
   lv: { color: '#ffd700', fontSize: 11 },
   xpBarBg: { height: 6, background: 'rgba(0,0,0,0.4)', borderRadius: 3, overflow: 'hidden', marginTop: 4, maxWidth: 220 },
   xpBarFill: { height: '100%', background: 'linear-gradient(90deg,#33ff99,#ffd700)', borderRadius: 3, transition: 'width 0.3s' },
-  xpText: { color: 'rgba(255,255,255,0.75)', fontSize: 9, marginTop: 2, textShadow: '0 1px 2px #000' },
+  xpText: { color: 'rgba(255,255,255,0.75)', fontSize: 10, marginTop: 2, textShadow: '0 1px 2px #000' },
   carrots: { color: '#ffd700', fontWeight: 800, fontSize: 13, textShadow: '0 1px 3px #000' },
   placingHint: {
     position: 'fixed', top: topPlus(74), left: '50%', transform: 'translateX(-50%)', zIndex: 5001,
@@ -644,7 +644,7 @@ const S = {
   },
   shopHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   shopTitle: { color: '#ffd700', fontWeight: 800, fontSize: 15, letterSpacing: 1 },
-  close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 30, height: 30, cursor: 'pointer' },
+  close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 40, height: 40, cursor: 'pointer' },
   shopNote: { color: 'rgba(255,255,255,0.55)', fontSize: 10, lineHeight: 1.5, marginBottom: 12 },
   shopItem: {
     display: 'flex', alignItems: 'center', gap: 10, width: '100%', marginBottom: 8,

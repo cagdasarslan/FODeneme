@@ -71,15 +71,20 @@ export default function TouchPad() {
   }, [phase]);
 
   if (phase !== 'playing') return null;
+  // İpucu yalnızca ilk birkaç koşuda: öğrenen oyuncunun ekranını kalabalıklaştırmasın
+  if ((useGameStore.getState().lifeStats?.runs ?? 0) >= 3) return null;
   return <div style={hint}>{t('kaydır: ← → şerit · ↑ zıpla · ↓ eğil')}</div>;
 }
 
 const hint = {
   position: 'fixed',
-  bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+  // Adrenalin barının (alt 28-56px) ÜSTÜNDE — eskiden barın üzerine biniyordu
+  bottom: 'calc(66px + env(safe-area-inset-bottom, 0px))',
+  whiteSpace: 'nowrap',
   left: '50%',
   transform: 'translateX(-50%)',
-  color: 'rgba(255,255,255,0.5)',
+  color: 'rgba(255,255,255,0.7)',
+  textShadow: '0 1px 3px #000',
   fontFamily: 'var(--game-font)',
   fontSize: 12,
   letterSpacing: 1,

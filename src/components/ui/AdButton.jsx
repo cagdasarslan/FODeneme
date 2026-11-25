@@ -58,7 +58,7 @@ const S = {
   },
   compact: { minHeight: 38, padding: '6px 10px', borderWidth: 1, borderRadius: 8 },
   main: { fontSize: 13, fontWeight: 700, letterSpacing: 0.5, textAlign: 'center' },
-  sub: { fontSize: 9, opacity: 0.75, letterSpacing: 1 },
+  sub: { fontSize: 10, opacity: 0.75, letterSpacing: 1 },
   overlay: {
     position: 'fixed', inset: 0, zIndex: 9000,
     background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(4px)',

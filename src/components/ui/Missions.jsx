@@ -28,7 +28,7 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
       <div style={S.box}>
         <div style={S.header}>
           <span style={S.title}>🎯 {t('GÖREVLER')}</span>
-          <button style={S.close} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} style={S.close} onClick={onClose}>✕</button>
         </div>
 
         <button style={{ ...S.bigBtn, ...S.dailyBtn }} onClick={onDaily}>
@@ -112,7 +112,7 @@ const S = {
   box: { width: '100%', maxWidth: 400, maxHeight: '88vh', overflowY: 'auto', background: 'linear-gradient(160deg, rgba(18,18,34,0.98), rgba(10,10,20,0.99))', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 16, padding: '18px 16px', fontFamily: 'var(--game-font)' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#fff' },
-  close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 30, height: 30, fontSize: 14, cursor: 'pointer' },
+  close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 40, height: 40, fontSize: 14, cursor: 'pointer' },
   bigBtn: { position: 'relative', width: '100%', padding: '12px', borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--game-font)', fontWeight: 800, letterSpacing: 2, fontSize: 12 },
   dailyBtn: { background: 'linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,160,0,0.12))', border: '1px solid rgba(255,215,0,0.4)', color: '#ffd700', marginBottom: 14 },
   dot: { position: 'absolute', top: 9, right: 12, width: 10, height: 10, borderRadius: '50%', background: '#ff3b3b', boxShadow: '0 0 8px #ff3b3b' },
@@ -121,7 +121,7 @@ const S = {
   label: { fontSize: 12, color: '#fff', fontWeight: 700, marginBottom: 5 },
   barBg: { height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 2, transition: 'width 0.4s' },
-  prog: { fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 3 },
+  prog: { fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 3 },
   reward: { fontSize: 11, color: 'rgba(255,215,0,0.55)', fontWeight: 700, whiteSpace: 'nowrap' },
   claim: { fontSize: 11, fontWeight: 800, color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', border: 'none', borderRadius: 7, padding: '7px 11px', cursor: 'pointer', fontFamily: 'var(--game-font)', whiteSpace: 'nowrap' },
   doneTick: { fontSize: 16, color: '#33ff99', fontWeight: 900 },

@@ -22,7 +22,7 @@ export default function Settings({ onClose }) {
       <div style={S.box}>
         <div style={S.header}>
           <span style={S.title}>⚙️ {t('AYARLAR')}</span>
-          <button style={S.close} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} style={S.close} onClick={onClose}>✕</button>
         </div>
 
         {/* Oyun sesleri (SFX + nal) */}
@@ -228,7 +228,7 @@ const S = {
   },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   title: { fontSize: 16, fontWeight: 800, letterSpacing: 1, color: '#fff' },
-  close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 30, height: 30, fontSize: 14, cursor: 'pointer' },
+  close: { background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', borderRadius: 6, width: 40, height: 40, fontSize: 14, cursor: 'pointer' },
   row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   label: { fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 700 },
   seg: { display: 'flex', gap: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 4 },
@@ -243,5 +243,5 @@ const S = {
     fontWeight: 700, background: 'rgba(0,0,0,0.4)', color: '#ffd700',
     border: '1px solid rgba(255,215,0,0.35)', borderRadius: 8, outline: 'none',
   },
-  note: { fontSize: 9, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 6, lineHeight: 1.5 },
+  note: { fontSize: 10, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: 6, lineHeight: 1.5 },
 };

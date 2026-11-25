@@ -225,7 +225,7 @@ export default function Garage() {
         <div style={S.header}>
           <span style={S.title}>🏇 {t('MAĞAZA')}</span>
           <span style={S.gold}>🥕 {carrots}</span>
-          <button style={S.closeBtn} onClick={closeGarage}>✕</button>
+          <button aria-label={t('Kapat')} style={S.closeBtn} onClick={closeGarage}>✕</button>
         </div>
 
         {/* Tabs */}
@@ -367,7 +367,7 @@ export default function Garage() {
                             <span style={{ fontSize: 18 }}>{icon}</span>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color }}>{t(label)}</div>
-                              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{t(sub)}</div>
+                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{t(sub)}</div>
                               {/* Progress bar */}
                               <div style={{ display: 'flex', gap: 3, marginTop: 5 }}>
                                 {Array.from({ length: 5 }, (_, i) => (
@@ -378,7 +378,7 @@ export default function Garage() {
                                   }} />
                                 ))}
                               </div>
-                              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>
                                 {t('SEVİYE')} {lvl}/5
                               </div>
                             </div>
@@ -457,7 +457,7 @@ export default function Garage() {
                     <span style={{ fontSize: 24 }}>{p.emoji}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: p.color }}>{t(p.name)}</div>
-                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{t(p.desc)}</div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{t(p.desc)}</div>
                       <div style={{ display: 'flex', gap: 3, marginTop: 5 }}>
                         {Array.from({ length: POWERUP_MAX_LEVEL }, (_, i) => (
                           <div key={i} style={{
@@ -467,7 +467,7 @@ export default function Garage() {
                           }} />
                         ))}
                       </div>
-                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>
                         {t('SEVİYE')} {lvl}/{POWERUP_MAX_LEVEL} — {t('Süre:')} {curDur.toFixed(1)}s{!maxed && ` → ${nextDur.toFixed(1)}s`}
                       </div>
                     </div>
@@ -570,8 +570,8 @@ const S = {
     borderRadius: 10, cursor: 'pointer', transition: 'all 0.15s',
   },
   cardEmoji: { fontSize: 28 },
-  cardName: { fontSize: 9, letterSpacing: 1, color: '#fff', textAlign: 'center', fontWeight: 700 },
-  badge: { fontSize: 9, color: '#4aaa66', letterSpacing: 1 },
+  cardName: { fontSize: 10, letterSpacing: 1, color: '#fff', textAlign: 'center', fontWeight: 700 },
+  badge: { fontSize: 10, color: '#4aaa66', letterSpacing: 1 },
   cardPrice: { fontSize: 10, fontWeight: 700, letterSpacing: 1 },
   preview: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -581,7 +581,7 @@ const S = {
   previewName: { fontSize: 20, fontWeight: 700, letterSpacing: 3 },
   previewDesc: { fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 },
   priceRow: { display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 },
-  priceSub: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
+  priceSub: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
   actionBtn: {
     marginTop: 6, padding: '11px 44px', fontSize: 14,
     fontWeight: 700, letterSpacing: 3, color: '#fff',
@@ -613,7 +613,7 @@ const S = {
     borderRadius: 8, padding: '10px 12px',
   },
   maxBadge: {
-    fontSize: 9, fontWeight: 700, letterSpacing: 1, color: '#ffd700',
+    fontSize: 10, fontWeight: 700, letterSpacing: 1, color: '#ffd700',
     background: 'rgba(255,215,0,0.15)', border: '1px solid rgba(255,215,0,0.3)',
     borderRadius: 4, padding: '4px 8px', whiteSpace: 'nowrap',
   },

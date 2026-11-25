@@ -691,4 +691,26 @@ export const EN = {
     'Enter the code on a new device to restore everything',
   'Havuçlar, atlar, madalyalar, tayların — hepsi güvende':
     'Carrots, horses, medals, foals — all of it is safe',
+
+  // ── Düzeltme turu (Kasım 2026) ──────────────────────────────────────────────
+  "Akıcılık için grafik kalitesi düşürüldü (Ayarlar'dan değiştirebilirsin)": "Graphics quality was lowered for smoother play (change it in Settings)",
+  "BU KOŞUDA": "THIS RUN",
+  "TOPLAM HAVUÇ": "TOTAL CARROTS",
+  "Bu cihazdaki ilerlemen bu kodun kaydıyla değiştirilecek. Devam edilsin mi?": "Your progress on this device will be replaced by the save for this code. Continue?",
+  "Bu koşuda {n}. devam — havuç maliyeti her seferinde 3 katına çıkar": "Continue #{n} this run — the carrot cost triples each time",
+  "Devam etmek ister misin?": "Do you want to continue?",
+  "Geri yüklenecek satın alım bulunamadı": "No purchases to restore",
+  "Kapat": "Close",
+  "Kurtarma kodu": "Recovery code",
+  "Reklam izleyerek devam et": "Watch an ad to continue",
+  "Satın Alımları Geri Yükle": "Restore Purchases",
+  "Satın alımların geri yüklendi": "Your purchases have been restored",
+  "TÖKEZLEDİN — bir daha çarparsan düşersin!": "YOU STUMBLED — one more hit and you fall!",
+  "Tüm ilerlemen (havuç, atlar, madalyalar, taylar) bu cihazdan ve buluttan kalıcı olarak silinecek. Bu geri alınamaz. Emin misin?": "All your progress (carrots, horses, medals, foals) will be permanently deleted from this device and the cloud. This cannot be undone. Are you sure?",
+  "VAZGEÇ": "GIVE UP",
+  "VERİLERİMİ SİL": "DELETE MY DATA",
+  "{name} ETKİNLİĞİ!": "{name} EVENT!",
+  "Mağaza hazır değil, biraz sonra tekrar dene": "The store isn't ready yet, try again shortly",
+  "Geri yükleme başarısız": "Restore failed",
+  "Satın alma iptal edildi": "Purchase cancelled",
 };

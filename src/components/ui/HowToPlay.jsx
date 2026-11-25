@@ -458,7 +458,7 @@ export default function HowToPlay({ onClose }) {
         {/* Header */}
         <div style={s.header}>
           <div style={s.headerTitle}>📖 {t('OYUN REHBERİ')}</div>
-          <button style={s.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} style={s.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         {/* Mobilde: üstte yatay kaydırmalı sekme şeridi (tam genişlik içerik) */}
@@ -559,7 +559,7 @@ const s = {
     border: '1px solid', borderRadius: 10, cursor: 'pointer',
     fontFamily: 'var(--game-font)', fontWeight: 700,
   },
-  tabText: { fontSize: 8.5, letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.2, whiteSpace: 'nowrap' },
+  tabText: { fontSize: 10, letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.2, whiteSpace: 'nowrap' },
   // ── Masaüstü kenar çubuğu ──
   body: { display: 'flex', flex: 1, overflow: 'hidden' },
   sidebar: {

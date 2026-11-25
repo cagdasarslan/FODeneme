@@ -236,17 +236,19 @@ export default function MainMenu() {
       <div style={styles.card}>
         {/* Üst köşe ikonları */}
         <div style={styles.topIcons}>
-          <button style={styles.iconBtn} onClick={() => setShowGuide(true)}>📖</button>
-          <button style={styles.iconBtn} onClick={() => setShowSettings(true)}>⚙️</button>
+          <button style={styles.iconBtn} aria-label={t('OYUN REHBERİ')} onClick={() => setShowGuide(true)}>📖</button>
+          <button style={styles.iconBtn} aria-label={t('AYARLAR')} onClick={() => setShowSettings(true)}>⚙️</button>
         </div>
 
         {/* Sabit başlık + OYNA — menü açılınca ilk görünen, kaydırmayla oynamaz */}
         <div style={styles.fixedHeader}>
-          <div style={styles.titleWrap}>
-            <div style={styles.titleSub}>🐴</div>
-            <h1 style={styles.title}>HORSE RUNNER</h1>
-            <div style={styles.titleSubline}>{t('KOŞ · YETİŞTİR · YARIŞ')}</div>
-          </div>
+          {!isGameOver && (
+            <div style={styles.titleWrap}>
+              <div style={styles.titleSub}>🐴</div>
+              <h1 style={styles.title}>HORSE RUNNER</h1>
+              <div style={styles.titleSubline}>{t('KOŞ · YETİŞTİR · YARIŞ')}</div>
+            </div>
+          )}
           <button style={styles.btn} onClick={startRun}>
             {isGameOver ? t('TEKRAR OYNA') : '▶  ' + t('OYNA')}
           </button>
@@ -280,29 +282,13 @@ export default function MainMenu() {
           {/* Mevsimsel etkinlik rozeti */}
           {activeEvent && (
             <div style={{ ...styles.eventBadge, borderColor: activeEvent.color, color: activeEvent.color }}>
-              {activeEvent.emoji} {activeEvent.name} {t('ETKİNLİĞİ!')}
+              {activeEvent.emoji} {t('{name} ETKİNLİĞİ!', { name: t(activeEvent.name) })}
             </div>
           )}
 
           {/* Yapı etiketi — hangi sürümün yüklü olduğunu doğrulamak için */}
-          <div style={{ position: 'fixed', top: topPlus(4), right: 8, fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--game-font)', zIndex: 5 }}>
+          <div style={{ position: 'fixed', top: topPlus(4), right: 8, fontSize: 10, color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--game-font)', zIndex: 5 }}>
             {GAME_BUILD}
-          </div>
-
-          {/* Havuç + günlük ödül */}
-          <div style={styles.topRow}>
-            <div style={{ ...styles.carrotPill, cursor: 'pointer' }} onClick={() => setShowShop(true)}>
-              🥕 <span style={styles.carrotNum}>{carrots.toLocaleString()}</span>
-              <span style={styles.carrotPlus}>＋</span>
-            </div>
-            <button style={styles.dailyIconBtn} onClick={() => setShowDaily(true)}>
-              🎁
-              {canClaimStreak && <span style={styles.dailyDot} />}
-            </button>
-            {/* Liderlik — ana sayfadan hızlı erişim */}
-            <button style={styles.dailyIconBtn} onClick={() => setShowLeaderboard(true)}>
-              🏆
-            </button>
           </div>
 
           {/* Oyun sonu skor paneli — en üstte, en görünür yerde */}
@@ -313,11 +299,12 @@ export default function MainMenu() {
               {isNewRecord && <div style={styles.newRecord}>🏆 {t('YENİ REKOR!')}</div>}
               <div style={styles.statsCard}>
                 <div style={{ ...styles.mapBadge, borderColor: mapInfo.color, color: mapInfo.color }}>
-                  {mapInfo.emoji} {mapInfo.name}
+                  {mapInfo.emoji} {t(mapInfo.name)}
                 </div>
                 <StatRow label={t('SKOR')} value={<AnimatedScore value={score} />} color="#fff" />
                 <StatRow label={t('BU HARİTA REKORU')} value={Math.floor(mapHs).toLocaleString()} color={mapInfo.color} />
-                <StatRow label={t('HAVUÇ')} value={`🥕 ${carrots}`} color="#ffd700" />
+                <StatRow label={t('BU KOŞUDA')} value={`+${(runCarrots ?? 0).toLocaleString()} 🥕`} color="#ffd700" />
+                <StatRow label={t('TOPLAM HAVUÇ')} value={`🥕 ${carrots.toLocaleString()}`} color="rgba(255,215,0,0.7)" />
               </div>
               {/* Arkadaşını geç — liderlikte bir üstteki oyuncu */}
               {rival && (
@@ -334,6 +321,22 @@ export default function MainMenu() {
             </div>
           )}
 
+          {/* Havuç + günlük ödül */}
+          <div style={styles.topRow}>
+            <div style={{ ...styles.carrotPill, cursor: 'pointer' }} onClick={() => setShowShop(true)}>
+              🥕 <span style={styles.carrotNum}>{carrots.toLocaleString()}</span>
+              <span style={styles.carrotPlus}>＋</span>
+            </div>
+            <button style={styles.dailyIconBtn} aria-label={t('GÜNLÜK ÖDÜL')} onClick={() => setShowDaily(true)}>
+              🎁
+              {canClaimStreak && <span style={styles.dailyDot} />}
+            </button>
+            {/* Liderlik — ana sayfadan hızlı erişim */}
+            <button style={styles.dailyIconBtn} aria-label={t('LİDERLİK')} onClick={() => setShowLeaderboard(true)}>
+              🏆
+            </button>
+          </div>
+
           {/* İLK ADIMLAR — yeni oyuncuya meta sistemleri tanıtan rehber (ölünce de görünür) */}
           {onboardOpen && (
             <div style={styles.onboardCard}>
@@ -344,7 +347,8 @@ export default function MainMenu() {
                   {onboarding.filter(s => s.claimed).length}/{onboarding.length}
                 </span>
               </div>
-              {onboarding.map(st => {
+              {/* Menü kalabalığını azaltmak için yalnızca SIRADAKİ adım gösterilir */}
+              {[onboarding.find(x => x.done && !x.claimed) ?? onboarding.find(x => !x.done)].filter(Boolean).map(st => {
                 const nav = () => {
                   if (st.done) return;
                   if (st.id === 'play')  startRun();
@@ -417,7 +421,8 @@ export default function MainMenu() {
                 <span style={styles.foalGo}>{t('BAK')} →</span>
               </div>
             );
-          })() : (
+          })() : !onboardOpen && (
+            // İlk Adımlar kartı zaten "tay büyüt" adımını içerir — tekrar gösterme
             <div style={styles.foalCard} onClick={() => openGarage('hara')}>
               <span style={{ fontSize: 26 }}>🐣</span>
               <div style={{ flex: 1, textAlign: 'left' }}>
@@ -500,7 +505,7 @@ export default function MainMenu() {
         {/* Alt sekme çubuğu */}
         <div style={styles.bottomNav}>
           <button style={{ ...styles.navBtn, ...styles.navActive }}>
-            <span style={styles.navIcon}>🏠</span><span style={styles.navLabel}>{t('Ana')}</span>
+            <span style={styles.navIcon}>🏠</span><span style={{ ...styles.navLabel, color: '#ffd54a' }}>{t('Ana')}</span>
           </button>
           <button style={styles.navBtn} onClick={() => useGameStore.getState().enterPaddock()}>
             <span style={styles.navIcon}>🐎</span><span style={styles.navLabel}>{t('Çiftlik')}</span>
@@ -559,7 +564,7 @@ export default function MainMenu() {
                 <input
                   value={restoreCode}
                   maxLength={12}
-                  placeholder={t('Kurtarma kodun (Ayarlar\'daydı)')}
+                  placeholder={t('Kurtarma kodu')}
                   onChange={e => setRestoreCode(e.target.value.toUpperCase())}
                   onKeyDown={e => { if (e.key === 'Enter') doRestore(); }}
                   style={{ ...styles.nameInput, letterSpacing: 2 }}
@@ -698,7 +703,7 @@ const styles = {
     background: 'rgba(0,0,0,0.45)', color: '#ffd700',
     border: '1px solid rgba(255,215,0,0.4)', borderRadius: 10, outline: 'none',
   },
-  nameHint: { fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 6 },
+  nameHint: { fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 6 },
   nameBtn: {
     marginTop: 14, width: '100%', padding: 14, borderRadius: 12, border: 'none',
     fontFamily: 'var(--game-font)', fontWeight: 800, letterSpacing: 2, fontSize: 14,
@@ -715,7 +720,7 @@ const styles = {
     borderRadius: 10, padding: '10px 12px', cursor: 'pointer', boxSizing: 'border-box',
   },
   foalName: { fontFamily: 'var(--game-font)', fontSize: 12, fontWeight: 800, color: '#fff' },
-  foalStage: { fontSize: 9, color: 'rgba(255,255,255,0.45)', fontWeight: 400 },
+  foalStage: { fontSize: 10, color: 'rgba(255,255,255,0.45)', fontWeight: 400 },
   foalStatus: { fontFamily: 'var(--game-font)', fontSize: 10, marginTop: 2 },
   foalGo: { fontFamily: 'var(--game-font)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' },
   // ── Hediye sandığı modalı ──
@@ -743,7 +748,7 @@ const styles = {
     borderRadius: 8, padding: '8px 12px',
   },
   dailyIconBtn: { position: 'relative', background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.35)', borderRadius: 20, width: 38, height: 32, fontSize: 16, cursor: 'pointer' },
-  sectionTitle: { alignSelf: 'flex-start', fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginTop: 4 },
+  sectionTitle: { alignSelf: 'flex-start', fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,0.6)', fontWeight: 700, marginTop: 4 },
   bottomNav: {
     display: 'flex', borderTop: '1px solid rgba(255,255,255,0.1)',
     background: 'rgba(8,8,16,0.96)', flexShrink: 0,
@@ -755,7 +760,7 @@ const styles = {
   },
   navActive: { background: 'rgba(255,215,0,0.08)' },
   navIcon: { fontSize: 18 },
-  navLabel: { fontSize: 9, letterSpacing: 1, color: 'rgba(255,255,255,0.6)', fontWeight: 700 },
+  navLabel: { fontSize: 11, letterSpacing: 0.5, color: 'rgba(255,255,255,0.85)', fontWeight: 700 },
   navDot: { position: 'absolute', top: 6, right: '50%', marginRight: -16, width: 8, height: 8, borderRadius: '50%', background: '#ff3b3b', boxShadow: '0 0 6px #ff3b3b' },
   titleWrap: { textAlign: 'center' },
   titleSub: { fontSize: 42, marginBottom: 2, animation: 'bounce 1.2s infinite alternate' },
@@ -813,7 +818,7 @@ const styles = {
   dailyHeader: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 },
   dailyIcon: { fontSize: 14 },
   dailyLabel: { fontSize: 10, letterSpacing: 2, color: 'rgba(255,215,0,0.7)', fontWeight: 700, flex: 1 },
-  dailyDone: { fontSize: 9, color: '#33ff99', letterSpacing: 1, fontWeight: 700 },
+  dailyDone: { fontSize: 10, color: '#33ff99', letterSpacing: 1, fontWeight: 700 },
   dailyChallenge: { fontSize: 13, color: '#fff', fontWeight: 700, letterSpacing: 1, marginBottom: 8 },
   progressBarBg: { height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' },
   progressBarFill: { height: '100%', borderRadius: 2, transition: 'width 0.5s ease' },
@@ -826,7 +831,7 @@ const styles = {
   dailyDot: { position: 'absolute', top: 8, right: 12, width: 10, height: 10, borderRadius: '50%', background: '#ff3b3b', boxShadow: '0 0 8px #ff3b3b' },
   missionRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid rgba(255,255,255,0.06)' },
   missionLabel: { fontSize: 11, color: '#fff', fontWeight: 700, marginBottom: 4 },
-  missionProg: { fontSize: 9, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
+  missionProg: { fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
   missionReward: { fontSize: 11, color: 'rgba(255,215,0,0.55)', fontWeight: 700, whiteSpace: 'nowrap' },
   missionClaim: { fontSize: 11, fontWeight: 800, color: '#0a0a14', background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', fontFamily: 'var(--game-font)', whiteSpace: 'nowrap' },
   missionDone: { fontSize: 16, color: '#33ff99', fontWeight: 900 },
@@ -836,9 +841,9 @@ const styles = {
     background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
     borderRadius: 4, padding: '2px 8px', fontSize: 14, color: '#fff',
   },
-  hintText: { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
+  hintText: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
   warn:       { color: '#ffaa00', fontSize: 12, margin: 0 },
-  connecting: { color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0 },
+  connecting: { color: 'rgba(255,255,255,0.6)', fontSize: 12, margin: 0 },
   mapHsRow: {
     display: 'flex', gap: 12, alignItems: 'center', fontSize: 12,
     color: 'rgba(255,255,255,0.5)',
@@ -857,7 +862,7 @@ const styles = {
   },
   mapEmoji: { fontSize: 22 },
   mapName: { fontSize: 10, fontWeight: 700, letterSpacing: 2 },
-  mapSub:  { color: 'rgba(255,255,255,0.35)', fontSize: 9, letterSpacing: 1 },
+  mapSub:  { color: 'rgba(255,255,255,0.6)', fontSize: 10, letterSpacing: 1 },
   mapHsChip: { fontSize: 10, fontWeight: 700, letterSpacing: 1, marginTop: 2 },
   nightBtn: {
     padding: '8px 24px', fontSize: 11, fontFamily: 'var(--game-font)',
@@ -877,11 +882,11 @@ const styles = {
   activeEmoji: { fontSize: 20 },
   activeName: { color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 2 },
   levelPill: {
-    fontSize: 9, color: '#ffd700', fontWeight: 700, letterSpacing: 1,
+    fontSize: 10, color: '#ffd700', fontWeight: 700, letterSpacing: 1,
     background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)',
     borderRadius: 10, padding: '2px 7px',
   },
-  changeHint: { color: 'rgba(255,255,255,0.3)', fontSize: 10 },
+  changeHint: { color: 'rgba(255,255,255,0.6)', fontSize: 10 },
   fixedHeader: {
     flexShrink: 0,
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
@@ -936,7 +941,7 @@ const styles = {
     fontWeight: 700, letterSpacing: 2,
     background: 'transparent',
     border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 6, cursor: 'pointer', color: 'rgba(255,255,255,0.4)',
+    borderRadius: 6, cursor: 'pointer', color: 'rgba(255,255,255,0.6)',
     width: '100%', transition: 'color 0.15s, border-color 0.15s',
   },
 };

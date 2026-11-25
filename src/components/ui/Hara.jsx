@@ -18,7 +18,7 @@ const nameBtn = {
 function MeterBar({ label, value, color }) {
   return (
     <div style={{ marginBottom: 6 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>
         <span>{label}</span><span>{Math.floor(value)}%</span>
       </div>
       <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3 }}>
@@ -31,7 +31,7 @@ function MeterBar({ label, value, color }) {
 function BondDots({ value }) {
   return (
     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>{t('BAĞ')}</span>
+      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>{t('BAĞ')}</span>
       {Array.from({ length: 5 }, (_, i) => (
         <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: i < value ? '#ffd700' : 'rgba(255,255,255,0.15)' }} />
       ))}
@@ -49,7 +49,7 @@ function StageTimeline({ stage }) {
           <div style={{
             width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: i <= idx ? STAGE_COLORS[s] : 'rgba(255,255,255,0.1)',
-            fontSize: 8, fontWeight: 700, color: i <= idx ? '#000' : 'rgba(255,255,255,0.3)',
+            fontSize: 10, fontWeight: 700, color: i <= idx ? '#000' : 'rgba(255,255,255,0.3)',
             border: i === idx ? `2px solid ${STAGE_COLORS[s]}` : '2px solid transparent',
             flexShrink: 0,
           }}>
@@ -70,7 +70,7 @@ function Countdown({ stageStartedAt, stage }) {
   if (remaining === 0) return <div style={{ fontSize: 10, color: '#4caf50' }}>⏰ {t('Süre tamamlandı!')}</div>;
   const h = Math.floor(remaining / 3600_000);
   const m = Math.floor((remaining % 3600_000) / 60_000);
-  return <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>⏱ {t('{h}s {m}dk kaldı', { h, m })}</div>;
+  return <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>⏱ {t('{h}s {m}dk kaldı', { h, m })}</div>;
 }
 
 function BPProgress({ bp, stage }) {
@@ -79,7 +79,7 @@ function BPProgress({ bp, stage }) {
   const pct = Math.min(100, (bp / cfg.bp) * 100);
   return (
     <div style={{ marginBottom: 6 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 2 }}>
         <span>{t('BÜYÜME PUANI')}</span><span>{bp}/{cfg.bp}</span>
       </div>
       <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3 }}>
@@ -163,7 +163,7 @@ function FoalCard({ foal, onFlash }) {
               >✏️</button>
             </div>
           )}
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)' }}>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>
             {foal.source === 'breed' ? '🧬 ' + t('Çiftleştirme') : '🏪 ' + t('Mağaza')}
             {foal.genes.trait && <span style={{ marginLeft: 6, color: '#ffd700' }}>{t(TRAITS[foal.genes.trait]?.label ?? '')}</span>}
           </div>
@@ -182,7 +182,7 @@ function FoalCard({ foal, onFlash }) {
             <MeterBar label={t('MUTLULUK')} value={foal.mutluluk} color="#42a5f5" />
             <BondDots value={foal.bag} />
           </div>
-          {foal.tokluk < 20 && <div style={{ fontSize: 9, color: '#ef5350', marginTop: 4 }}>⚠️ {t('Tokluk düşük – büyüme durdu!')}</div>}
+          {foal.tokluk < 20 && <div style={{ fontSize: 10, color: '#ef5350', marginTop: 4 }}>⚠️ {t('Tokluk düşük – büyüme durdu!')}</div>}
         </>
       )}
 
@@ -208,7 +208,7 @@ function FoalCard({ foal, onFlash }) {
                 onFlash(ok ? '🥕 ' + t('Beslendi! ({a}/{b})', { a: feedsToday+1, b: FEED_MAX_DAY }) : '❌ ' + t('Beslenemedi'));
               }}
             >
-              🥕 {t('BESLE')}<br /><span style={{ fontSize: 8 }}>{t('15 havuç')}</span>
+              🥕 {t('BESLE')}<br /><span style={{ fontSize: 10 }}>{t('15 havuç')}</span>
             </button>
             <button
               style={{ ...SC.actionBtn, background: groomReady ? '#1565c0' : '#2a2a2a', opacity: groomReady ? 1 : 0.5 }}
@@ -217,7 +217,7 @@ function FoalCard({ foal, onFlash }) {
                 const ok = groomFoal(foal.id); onFlash(ok ? '✨ ' + t('Tımarlandı! +1 BAĞ') : t('Bekleme süresi devam ediyor'));
               }}
             >
-              ✨ {t('TIMARLA')}<br /><span style={{ fontSize: 8 }}>{t('Ücretsiz')}</span>
+              ✨ {t('TIMARLA')}<br /><span style={{ fontSize: 10 }}>{t('Ücretsiz')}</span>
             </button>
             <button
               style={{ ...SC.actionBtn, background: trainReady ? '#6a1b9a' : '#2a2a2a', opacity: trainReady ? 1 : 0.5 }}
@@ -226,7 +226,7 @@ function FoalCard({ foal, onFlash }) {
                 const ok = trainFoal(foal.id); onFlash(ok ? '🏃 ' + t('Antrenman yapıldı! +20 BP +1 BAĞ') : t('Bekleme süresi devam ediyor'));
               }}
             >
-              🏃 {t('ANTRENMAN')}<br /><span style={{ fontSize: 8 }}>{t('Günde 1')}</span>
+              🏃 {t('ANTRENMAN')}<br /><span style={{ fontSize: 10 }}>{t('Günde 1')}</span>
             </button>
           </>
         )}
@@ -256,7 +256,7 @@ function FoalCard({ foal, onFlash }) {
             disabled={carrots < rushCost(foal.id)}
             onClick={() => { if (rushFoalStage(foal.id, false)) onFlash('⏩ ' + t('Süre atlandı!')); }}
           >
-            ⏩ {t('HIZLANDIR')}<br /><span style={{ fontSize: 9 }}>{rushCost(foal.id)} 🥕</span>
+            ⏩ {t('HIZLANDIR')}<br /><span style={{ fontSize: 10 }}>{rushCost(foal.id)} 🥕</span>
           </button>
           <div style={{ flex: 1 }}>
             <AdButton
@@ -322,7 +322,7 @@ function BreedModal({ onClose, onDone }) {
       <div style={{ ...SC.modalBox }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🧬 {t('ÇİFTLEŞTİRME')}</span>
-          <button style={SC.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} style={SC.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
@@ -396,7 +396,7 @@ function ShopModal({ onClose, onDone }) {
       <div style={SC.modalBox}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>🏪 {t('YAVRU SATIN AL')}</span>
-          <button style={SC.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label={t('Kapat')} style={SC.closeBtn} onClick={onClose}>✕</button>
         </div>
         {err && <div style={{ color: '#ef5350', fontSize: 11, marginBottom: 8 }}>{err}</div>}
         {[
