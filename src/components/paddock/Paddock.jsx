@@ -21,6 +21,14 @@ const RUN_SPEED   = 9;
 const JUMP_V      = 8.5;
 const GRAVITY     = -22;
 const XP_PER_JUMP = 20;
+// Engel ayak izi (yerel, engel x eksenine paralel): yarı-genişlik (x) ve
+// görsel üst yükseklik. XP yalnız at bu genişlik içinde engelin z çizgisini
+// toynakları üst seviyenin üstündeyken geçerse verilir.
+const PADDOCK_OBS_DIMS = {
+  hay:  { halfW: 0.7, top: 1.2 },
+  wall: { halfW: 1.0, top: 0.9 },
+  bar:  { halfW: 1.1, top: 0.81 },
+};
 
 // Sahne ↔ UI arası hafif giriş kanalı (re-render tetiklemez)
 export const paddockInput = { dx: 0, dz: 0, mag: 0, jump: false };
@@ -155,6 +163,7 @@ export default function PaddockScene() {
   useFrame(({ camera }, rawDelta) => {
     const delta = Math.min(rawDelta, 1 / 30);
     const p = posRef.current;
+    const prevX = p.x, prevZ = p.z;
 
     // Hareket
     const mag = paddockInput.mag;
@@ -199,12 +208,22 @@ export default function PaddockScene() {
       if (yRef.current === 0) { vyRef.current = 0; clearedRef.current.clear(); }
     }
 
-    // Havadayken engel üstünden geçiş → XP
-    if (yRef.current > 0.3) {
+    // Havadayken engel üstünden geçiş → XP: at engelin genişliği içinde
+    // engelin z çizgisini bu karede geçmeli ve toynakları engelin üstünde olmalı
+    // (yanından / uzağından zıplamak XP vermez).
+    if (yRef.current > 0) {
       const st = useGameStore.getState();
       for (const o of st.paddockObstacles) {
         if (clearedRef.current.has(o.id)) continue;
-        if (Math.hypot(p.x - o.x, p.z - o.z) < 1.4) {
+        const dim = PADDOCK_OBS_DIMS[o.type] ?? PADDOCK_OBS_DIMS.bar;
+        if (yRef.current <= dim.top) continue;
+        const s0 = prevZ - o.z, s1 = p.z - o.z;
+        const crossed = s0 !== s1 && ((s0 <= 0 && s1 >= 0) || (s0 >= 0 && s1 <= 0));
+        if (!crossed) continue; // z çizgisi bu karede geçilmedi
+        const tc = s0 / (s0 - s1);
+        const xc = prevX + (p.x - prevX) * tc;
+        if (Math.abs(xc - o.x) > dim.halfW) continue;
+        {
           clearedRef.current.add(o.id);
           const leveled = st.addTrainingXP(st.selectedHorseId, XP_PER_JUMP);
           sfx.collect();

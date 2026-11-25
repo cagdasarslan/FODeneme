@@ -6,44 +6,19 @@ import * as THREE from 'three';
 import { useHorseControls } from '@/hooks/useHorseControls';
 import useGameStore from '@/store/useGameStore';
 import ProcHorse from './ProcHorse';
+import PegasusWings from './PegasusWings';
 import { obstacleRegistry } from '@/utils/obstacleRegistry';
 import { horseRef } from '@/utils/horseRef';
 import { HALF_TRACK, HORSE_LATERAL_SPEED, LANES, COLLISION_DX, COLLISION_DZ, CLOSE_CALL_RADIUS, SLIDE_DURATION_MS, SPACE_GRAVITY_MULT, SPACE_JUMP_MULT } from '@/constants/game';
-import { getHitbox, getKind } from '@/components/obstacles/ObstacleSpawner';
+import { getHitbox, getKind, OVERHEAD_TOP } from '@/components/obstacles/ObstacleSpawner';
 import { getTimeScale } from '@/utils/slowmo';
 import { haptic } from '@/utils/haptics';
 import { HORSES } from '@/constants/horses';
 
 // ── Pegasus Kanatları (uçuş yeteneği görseli) ────────────────────────────────
-const wingMat = new THREE.MeshStandardMaterial({
-  color: '#ffffff', emissive: '#cfe8ff', emissiveIntensity: 0.5,
-  roughness: 0.35, side: THREE.DoubleSide, transparent: true, opacity: 0.95,
-});
-const wingGeo2 = new THREE.BoxGeometry(1.15, 0.06, 0.5);
-
-function PegasusWings() {
-  const visible = useGameStore((s) => s.wingsActive);
-  const lRef = useRef();
-  const rRef = useRef();
-  useFrame(() => {
-    if (!visible) return;
-    const a = Math.sin(performance.now() / 90) * 0.55; // kanat çırpma
-    if (lRef.current) lRef.current.rotation.z =  0.35 + a;
-    if (rRef.current) rRef.current.rotation.z = -0.35 - a;
-  });
-  if (!visible) return null;
-  return (
-    <group position={[0, 0.45, 0.1]}>
-      <group ref={lRef} position={[-0.2, 0, 0]}>
-        <mesh geometry={wingGeo2} material={wingMat} position={[-0.62, 0, 0]} castShadow />
-      </group>
-      <group ref={rRef} position={[0.2, 0, 0]}>
-        <mesh geometry={wingGeo2} material={wingMat} position={[0.62, 0, 0]} castShadow />
-      </group>
-    </group>
-  );
-}
-
+// Kanat kökü (cidago) gövde-lokal konumu
+const WING_Y = 0.66;
+const WING_Z = -0.55;
 const FLY_Y = 4.2;            // uçuş yüksekliği (RigidBody y)
 const _horseT = { x: 0, y: 0, z: 0 }; // her kare setTranslation için paylaşılan obje (allocation yok)
 // Çarpışma toleransı: hitbox'ın kenarına sürtmek öldürmesin — yalnızca
@@ -319,7 +294,10 @@ export default function Horse({ modelPath, scale } = {}) {
     // Test kancası (yalnızca window.__dbg tanımlıysa): otomatik test botu için at durumu
     if (window.__dbg) window.__dbg.horseState = { x: pos.x, y: pos.y, z: pos.z, sliding, onGround: onGroundRef.current };
 
-    // ── ÜST ENGELLER: zıplayarak geçilmez — eğilerek geçilir (ödüllü) ──────
+    // ── ÜST ENGELLER: eğilerek geçilir (ödüllü). Zıplayarak geçmek yalnız at
+    // kirişin/afişin içine girerse çarpmadır: toynaklar kiriş üstünün
+    // (OVERHEAD_TOP, yol yüzeyinden; toynak yüksekliği = y − GROUND_Y) üzerindeyse
+    // temiz aşma sayılır (yükseltilmiş zıplama).
     // Kapı düzlemi incedir: yalnız gerçekten kapı hizasından geçerken sayılır
     // (derin hitbox yüzünden kapıya varmadan "çarptın" olmaz).
     const OVERHEAD_DZ = 0.55;
@@ -340,6 +318,13 @@ export default function Horse({ modelPath, scale } = {}) {
               slidUnderRef.current.add(id);
               useGameStore.getState().registerSlideUnder();
             }
+          } else if (!onGroundRef.current && Math.min(pos.y, newY) - GROUND_Y > OVERHEAD_TOP) {
+            if (!slidUnderRef.current.has(id)) {
+              slidUnderRef.current.add(id);
+              registerJumpOver();
+            }
+          } else if (slidUnderRef.current.has(id)) {
+            // bu kapı zaten temiz geçildi (kayarak/üstünden) — kuyruk karesi çarpma sayılmaz
           } else {
             // Nal Zırhı: ilk çarpmayı emer
             if (useGameStore.getState().consumeShield()) {
@@ -430,7 +415,7 @@ export default function Horse({ modelPath, scale } = {}) {
             <ProcHorse variant={horseVariant} characterId={selectedCharacterId} driveRef={driveRef} scale={VIS_SCALE} />
           </group>
         </group>
-        <PegasusWings />
+        <PegasusWings position={[0, WING_Y, WING_Z]} />
       </group>
     </group>
   );

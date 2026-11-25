@@ -463,6 +463,12 @@ const BANNER_CELLS = [];
 for (let r = 0; r < 2; r++) for (let c = 0; c < BANNER_COLS; c++) {
   BANNER_CELLS.push({ x: (c - (BANNER_COLS - 1) / 2) * CELL_W, y: 2.45 - CELL_H / 2 - r * CELL_H, red: (r + c) % 2 === 0 });
 }
+// Kapının gerçek görsel üst sınırları (yol yüzeyinden, yani yerel y=0'dan
+// yükseklik): kiriş üstü 2.6 + 0.15 = 2.75 m (afiş kirişin altında), direk
+// tepesi 2.84, flama çubuğu/flama ≈3.28 (direklerde, şerit dışında). At
+// kiriş/afiş hizasından geçtiği için "temiz aşma" eşiği kirişin üstüdür.
+export const OVERHEAD_TOP     = 2.75;
+export const OVERHEAD_VIS_TOP = 3.28;
 function OverheadGate({ post, beam, glow = null }) {
   const pm = mat(post, { e: 0.18 });
   const bm = glow ? mat(beam, { e: 1.0, emissive: glow, rough: 0.4 }) : mat(beam, { e: 0.25 });
