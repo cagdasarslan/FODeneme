@@ -32,6 +32,36 @@ const SAVE_KEYS = [
   'mapId', 'soundOn', 'musicOn', 'lang',
 ];
 
+const SAVE_KEY_SET = new Set(SAVE_KEYS);
+const BACKUP_KEY = 'save_backup_v1';
+
+// Geri yüklemeden önce mevcut yerel kaydı yedekle — yanlış kod girilirse ya da
+// buluttaki kayıt daha geriyse ilerleme kalıcı olarak kaybolmasın.
+function backupLocal() {
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify({ at: Date.now(), data: collectSave() })); } catch (e) {}
+}
+
+// Buluttan gelen veriyi yalnızca bilinen kayıt anahtarlarıyla ve string olarak yaz
+function applySave(data) {
+  for (const [k, v] of Object.entries(data || {})) {
+    if (SAVE_KEY_SET.has(k) && typeof v === 'string') localStorage.setItem(k, v);
+  }
+}
+
+// İlerleme ölçüsü: hangi kaydın "daha ileride" olduğunu kabaca karşılaştırmak için
+export function progressScore(data) {
+  const n = (k) => Number((data || {})[k]) || 0;
+  let owned = 0;
+  try { owned = JSON.parse(data?.ownedHorseIds || '[]').length + JSON.parse(data?.ownedCharIds || '[]').length; } catch (e) {}
+  return n('totalScore') + n('carrots') * 0.5 + owned * 2000
+    + ['hs_map1','hs_map2','hs_map3','hs_map4','hs_map5','hs_map6'].reduce((a, k) => a + n(k), 0);
+}
+
+// Yerelde anlamlı ilerleme var mı (sıfırdan kurulum değil mi)?
+export function hasLocalProgress() {
+  return progressScore(collectSave()) > 0;
+}
+
 const headers = () => ({
   apikey: SUPA_KEY,
   Authorization: `Bearer ${SUPA_KEY}`,
@@ -109,9 +139,8 @@ export async function restoreFromCloud(code) {
       return { ok: false, reason: 'Bu koda ait kayıt bulunamadı' };
     }
     const data = rows[0].data ?? {};
-    for (const [k, v] of Object.entries(data)) {
-      if (typeof v === 'string') localStorage.setItem(k, v);
-    }
+    backupLocal();
+    applySave(data);
     // Kimliği geri yüklenen hesaba bağla (liderlik geçmişi de korunur)
     localStorage.setItem('supaPlayerId', id);
     localStorage.setItem('nameSet', '1');
@@ -133,18 +162,17 @@ export async function linkCloudToAccount(user) {
     );
     const rows = await res.json();
     const remote = Array.isArray(rows) && rows[0]?.data;
-    const localHasProgress = !!localStorage.getItem('nameSet');
-    if (remote && Object.keys(remote).length > 0 && !localHasProgress) {
-      // Temiz kurulum + hesapta yedek var → indir
-      for (const [k, v] of Object.entries(remote)) {
-        if (typeof v === 'string') localStorage.setItem(k, v);
-      }
+    // Eskiden yalnızca 'nameSet' bakılıyordu: yeni cihazda isim girilince yerel
+    // her zaman kazanıyor ve buluttaki asıl ilerleme ÜZERİNE yazılıyordu.
+    // Artık hangi kayıt daha ilerideyse o kazanır.
+    if (remote && Object.keys(remote).length > 0 && progressScore(remote) > progressScore(collectSave())) {
+      backupLocal();
+      applySave(remote);
       localStorage.setItem('nameSet', '1');
       window.location.reload();
       return 'restored';
     }
-    // Mevcut ilerlemeyi hesaba yaz (hesapta yedek yoksa ya da yerel daha güncelse
-    // yerel kazanır — oyuncu aktif cihazında oynuyordur)
+    // Yerel daha ileride (ya da hesapta yedek yok) → yereli hesaba yaz
     _lastPushed = '';
     await pushCloudSave();
     return 'linked';
@@ -165,4 +193,30 @@ export function initCloudSave() {
   window.addEventListener('pagehide', () => pushCloudSave());
   // Açılışta ilk yedek (kayıt yoksa oluşur)
   scheduleCloudSave(6000);
+}
+
+// ── Verileri sil (Google Play / Apple hesap silme şartı) ─────────────────────
+// Buluttaki profil kaydının içeriği boşaltılır, oturum kapatılır ve cihazdaki
+// tüm oyun verisi silinir. (Sunucu tarafında satır silme yetkisi olmadığından
+// kayıt içeriği temizlenir; tam silme talebi gizlilik politikasındaki e-posta
+// ile de yapılabilir.)
+export async function deleteAllData() {
+  let cloudOk = true;
+  if (isSupaConfigured()) {
+    const ids = [getPlayerLocalId()];
+    const u = getAuthUser();
+    if (u) ids.push('u_' + u.id);
+    for (const id of ids) {
+      try {
+        const res = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          headers: headers(),
+          body: JSON.stringify({ name: null, data: {}, updated_at: new Date().toISOString() }),
+        });
+        if (!res.ok) cloudOk = false;
+      } catch (e) { cloudOk = false; }
+    }
+  }
+  try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+  return cloudOk;
 }

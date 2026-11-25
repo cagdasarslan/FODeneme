@@ -10,6 +10,16 @@ const headers = () => ({
   'Content-Type': 'application/json',
 });
 
+// Kriptografik rastgele kısa kod (kurtarma kodu için)
+function randomCode(len) {
+  const abc = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const buf = new Uint8Array(len);
+  (globalThis.crypto || window.crypto).getRandomValues(buf);
+  let out = '';
+  for (let i = 0; i < len; i++) out += abc[buf[i] % abc.length];
+  return out;
+}
+
 // Oyuncu adı: kalıcı, düzenlenebilir basit takma ad
 export function getPlayerName() {
   let n = localStorage.getItem('playerName');
@@ -22,7 +32,9 @@ export function getPlayerName() {
 export function getPlayerLocalId() {
   let id = localStorage.getItem('supaPlayerId');
   if (!id) {
-    id = 'p_' + Math.random().toString(36).slice(2, 10);
+    // Kurtarma kodu = bu kimlik. Tahmin edilemesin diye kriptografik rastgele,
+    // 12 karakter (~62 bit). Eski 8 karakterli kodlar çalışmaya devam eder.
+    id = 'p_' + randomCode(12);
     localStorage.setItem('supaPlayerId', id);
   }
   return id;

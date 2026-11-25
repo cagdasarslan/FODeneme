@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { sfx } from '@/utils/audio';
-import { getRecoveryCode, restoreFromCloud, pushCloudSave } from '@/services/CloudSave';
+import { getRecoveryCode, restoreFromCloud, pushCloudSave, deleteAllData, hasLocalProgress } from '@/services/CloudSave';
 import { getAuthUser, signInWith, signOut } from '@/services/AuthService';
 import { t, getLang, setLang } from '@/i18n';
 import useLang from '@/i18n/useLang';
@@ -107,6 +107,8 @@ function CloudSection() {
 
   const doRestore = async () => {
     if (busy || code.trim().length < 6) return;
+    // Mevcut ilerleme koddaki kayıtla değiştirilecek — oyuncuya sor
+    if (hasLocalProgress() && !window.confirm(t('Bu cihazdaki ilerlemen bu kodun kaydıyla değiştirilecek. Devam edilsin mi?'))) return;
     setBusy(true);
     setMsg(t('Yükleniyor…'));
     const r = await restoreFromCloud(code);
@@ -194,7 +196,20 @@ function CloudSection() {
           onClick={doRestore}
         >{t('GERİ YÜKLE')}</button>
       </div>
-      {msg && <div style={{ fontSize: 10, marginTop: 6, color: msg.startsWith('⚠') ? '#ff8866' : '#33ff99', fontWeight: 700 }}>{msg}</div>}
+      {msg && <div style={{ fontSize: 11, marginTop: 6, color: msg.startsWith('⚠') ? '#ff8866' : '#33ff99', fontWeight: 700 }}>{msg}</div>}
+
+      {/* Hesap / veri silme — Google Play ve App Store şartı */}
+      <button
+        style={{ marginTop: 14, width: '100%', padding: '10px', fontSize: 11, fontWeight: 700, letterSpacing: 1,
+          fontFamily: 'var(--game-font)', borderRadius: 8, cursor: 'pointer',
+          background: 'transparent', color: '#ff8866', border: '1px solid rgba(255,136,102,0.45)' }}
+        onClick={async () => {
+          if (!window.confirm(t('Tüm ilerlemen (havuç, atlar, madalyalar, taylar) bu cihazdan ve buluttan kalıcı olarak silinecek. Bu geri alınamaz. Emin misin?'))) return;
+          try { signOut(); } catch (e) {}
+          await deleteAllData();
+          window.location.reload();
+        }}
+      >🗑 {t('VERİLERİMİ SİL')}</button>
     </div>
   );
 }

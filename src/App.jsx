@@ -88,6 +88,7 @@ export default function App() {
         // OYUN ARKA PLANDA KOŞMASIN: telefon alta indirilince otomatik duraklat
         // (aksi halde skor akmaya, müzik çalmaya devam ediyordu).
         if (useGameStore.getState().phase === 'playing') useGameStore.getState().pauseRun();
+        useGameStore.getState().flushSaves();
         const hasFoals = (useGameStore.getState().foals?.length ?? 0) > 0;
         scheduleReminders({ hasFoals });
       }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { CARROT_PACKAGES, REMOVE_ADS_ID } from '@/constants/iap';
-import { initBilling, purchase, setGrantHandler, setRemoveAdsHandler, setPricesUpdatedHandler, getDisplayPrice, getRemoveAdsPrice } from '@/services/BillingService';
+import { initBilling, purchase, restorePurchases, setGrantHandler, setRemoveAdsHandler, setPricesUpdatedHandler, getDisplayPrice, getRemoveAdsPrice } from '@/services/BillingService';
 import { hideBanner } from '@/services/AdService';
 import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import { t } from '@/i18n';
@@ -90,6 +90,18 @@ export default function CarrotShop({ onClose }) {
           ))}
         </div>
 
+        <button
+          style={S.restoreBtn}
+          disabled={!!busy}
+          onClick={async () => {
+            setBusy('restore');
+            const r = await restorePurchases();
+            setBusy(null);
+            setFlash(!r.ok ? `❌ ${t(r.reason)}` : r.restored ? '✓ ' + t('Satın alımların geri yüklendi') : t('Geri yüklenecek satın alım bulunamadı'));
+            setTimeout(() => setFlash(''), 2800);
+          }}
+        >{busy === 'restore' ? '...' : '↺ ' + t('Satın Alımları Geri Yükle')}</button>
+
         <div style={S.note}>
           {t('Ödemeler Google Play üzerinden güvenle alınır. Havuçlar anında hesabınıza eklenir.')}
         </div>
@@ -151,6 +163,11 @@ const S = {
     marginTop: 4, fontSize: 13, fontWeight: 700, color: '#0a0a14',
     background: 'linear-gradient(135deg,#ffd54a,#ff9f00)', borderRadius: 8,
     padding: '6px 14px', minWidth: 70, textAlign: 'center',
+  },
+  restoreBtn: {
+    marginTop: 14, width: '100%', padding: '11px', fontSize: 12, fontWeight: 700, letterSpacing: 1,
+    fontFamily: 'var(--game-font)', borderRadius: 10, cursor: 'pointer',
+    background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.18)',
   },
   note: { marginTop: 14, fontSize: 9, color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: 1.5 },
 };

@@ -35,6 +35,23 @@ import {
 import { ACHIEVEMENTS } from '@/constants/achievements';
 import { POWERUP_IDS, powerupDuration, powerupUpgradeCost, POWERUP_MAX_LEVEL } from '@/constants/powerups';
 import { haptic } from '@/utils/haptics';
+
+// Bozuk ya da yarım yazılmış tek bir kayıt anahtarı uygulamayı açılışta
+// çökertmesin: ayrıştırılamazsa veya beklenen türde değilse varsayılana dön.
+function safeParse(key, defJson) {
+  const def = JSON.parse(defJson);
+  const raw = localStorage.getItem(key);
+  if (raw == null) return def;
+  try {
+    const v = JSON.parse(raw);
+    if (Array.isArray(def) !== Array.isArray(v)) return def;
+    if (typeof def === 'object' && (v === null || typeof v !== 'object')) return def;
+    return v;
+  } catch (e) {
+    console.warn('[GameStore] bozuk kayıt sıfırlandı:', key);
+    return def;
+  }
+}
 import {
   startGuestSession,
   fetchMyHighScore,
@@ -75,7 +92,7 @@ const todayStr = () => new Date().toDateString();
 const yesterdayStr = () => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toDateString(); };
 function loadDaily() {
   let d = {};
-  try { d = JSON.parse(localStorage.getItem('daily_v1') ?? '{}'); } catch (e) { d = {}; }
+  try { d = safeParse('daily_v1', '{}'); } catch (e) { d = {}; }
   return {
     streakDay: d.streakDay ?? 1,
     lastClaimDate: d.lastClaimDate ?? '',
@@ -131,8 +148,8 @@ const useGameStore = create(
     ...loadDaily(),
 
     // ── Ömür-boyu istatistikler + başarımlar ──────────────────────────────────
-    lifeStats: JSON.parse(localStorage.getItem('life_v1') ?? '{"distance":0,"jumps":0,"jumpover":0,"runs":0,"closecall":0}'),
-    achClaimed: JSON.parse(localStorage.getItem('achClaimed') ?? '[]'),
+    lifeStats: safeParse('life_v1', '{"distance":0,"jumps":0,"jumpover":0,"runs":0,"closecall":0}'),
+    achClaimed: safeParse('achClaimed', '[]'),
 
     // ── Reklamsız (tek seferlik IAP) ──────────────────────────────────────────
     adsRemoved: localStorage.getItem('adsRemoved') === '1',
@@ -179,19 +196,19 @@ const useGameStore = create(
     goldenActive: false, goldenTimer: 0,
     speedBase: INITIAL_SPEED, // gerçek hız ilerlemesi (slowmo/turbo geçici bindirme yapar)
     // Yetenek seviyeleri (kalıcı): süre = baseDur × (1 + 0.2 × seviye)
-    powerupLevels: JSON.parse(localStorage.getItem('powerupLevels') ?? '{}'),
+    powerupLevels: safeParse('powerupLevels', '{}'),
     adrenalinBoosting: false,
     adrenalinBoostTimer: 0,
 
     // ── Horse config ──────────────────────────────────────────────────────────
     selectedHorseId: localStorage.getItem('selectedHorseId') ?? 'chestnut',
-    ownedHorseIds: JSON.parse(localStorage.getItem('ownedHorseIds') ?? '["chestnut"]'),
+    ownedHorseIds: safeParse('ownedHorseIds', '["chestnut"]'),
 
     // ── Horse levels (legacy, kept for compat) ────────────────────────────────
-    horseLevels: JSON.parse(localStorage.getItem('horseLevels') ?? '{"chestnut":1,"black":1,"white":1}'),
+    horseLevels: safeParse('horseLevels', '{"chestnut":1,"black":1,"white":1}'),
 
     // ── Horse upgrades: {[horseId]: {speedLevel, maneuvLevel, jumpLevel}} ─────
-    horseUpgrades: JSON.parse(localStorage.getItem('horseUpgrades') ?? JSON.stringify({
+    horseUpgrades: safeParse('horseUpgrades', JSON.stringify({
       chestnut: { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 },
       black:    { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 },
       white:    { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 },
@@ -207,16 +224,16 @@ const useGameStore = create(
 
     // ── Harita madalyaları ────────────────────────────────────────────────────
     // { [mapId]: kazanılan en yüksek kademe 0-3 }
-    medals: JSON.parse(localStorage.getItem('medals_v1') ?? '{}'),
+    medals: safeParse('medals_v1', '{}'),
     // Koşu sonunda bu koşuda yeni kazanılan madalyalar (toast için); [{map,tier,reward}]
     newMedals: [],
 
     // İlk Adımlar (onboarding) — ödülü alınan adımların id listesi
-    onboardClaimed: JSON.parse(localStorage.getItem('onboard_v1') ?? '[]'),
+    onboardClaimed: safeParse('onboard_v1', '[]'),
 
     // ── Character (jockey) config ─────────────────────────────────────────────
     selectedCharacterId: localStorage.getItem('selectedCharId') ?? 'cowboy',
-    ownedCharacterIds: JSON.parse(localStorage.getItem('ownedCharIds') ?? '["cowboy"]'),
+    ownedCharacterIds: safeParse('ownedCharIds', '["cowboy"]'),
 
     // ── Map selection ─────────────────────────────────────────────────────────
     mapId: parseInt(localStorage.getItem('mapId') ?? '1', 10), // 1=Farm/Race, 2=City
@@ -233,10 +250,10 @@ const useGameStore = create(
     garageOpenTab: null,
 
     // ── Hara (foal system) ────────────────────────────────────────────────────
-    foals: JSON.parse(localStorage.getItem('foals') ?? '[]'),
+    foals: safeParse('foals', '[]'),
     stableSlots: parseInt(localStorage.getItem('stableSlots') ?? '1', 10),
     lastBreedAt: parseInt(localStorage.getItem('lastBreedAt') ?? '0', 10),
-    customHorses: JSON.parse(localStorage.getItem('customHorses') ?? '[]'),
+    customHorses: safeParse('customHorses', '[]'),
 
     // =========================================================================
     // Session actions
@@ -291,6 +308,10 @@ const useGameStore = create(
         stumbleUntil: 0, stumbleActive: false, stumbleRecover: 0, dying: false, invulnUntil: 0, pausedAt: 0,
       }));
     },
+
+    // Uygulama arka plana alınınca bekleyen havuç yazımını hemen diske al
+    // (iOS/Android uygulamayı arka planda öldürürse koşuda toplananlar kaybolmasın)
+    flushSaves: () => flushCarrotSave(get),
 
     pauseRun: () => {
       const s = get();
@@ -709,8 +730,8 @@ const useGameStore = create(
     // =========================================================================
     // Çiftlik (paddock) — serbest antrenman alanı
     // =========================================================================
-    paddockObstacles: JSON.parse(localStorage.getItem('paddockObstacles') ?? '[]'),
-    trainingXP: JSON.parse(localStorage.getItem('trainingXP') ?? '{}'),
+    paddockObstacles: safeParse('paddockObstacles', '[]'),
+    trainingXP: safeParse('trainingXP', '{}'),
     paddockPlacing: null,   // satın alınan, yerleştirme bekleyen engel tipi
     paddockToast: '',
     paddockToastId: 0,
@@ -1469,7 +1490,7 @@ const useGameStore = create(
         fromHara: true,
       };
 
-      const customHorses = JSON.parse(localStorage.getItem('customHorses') ?? '[]');
+      const customHorses = safeParse('customHorses', '[]');
       customHorses.push(newHorse);
       localStorage.setItem('customHorses', JSON.stringify(customHorses));
 

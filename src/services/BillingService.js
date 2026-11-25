@@ -12,7 +12,15 @@ let onGrant = null;            // (productId, carrots) => void  — havuç eklem
 let onRemoveAds = null;        // () => void — reklamsız satın alımı işlendiğinde
 let onPricesUpdated = null;    // () => void — Play'den fiyatlar gelince UI'yi tazele
 const livePrices = {};         // productId -> Play'in gerçek fiyatı
-const processed = new Set();   // işlenen işlem kimlikleri (çift ödül vermemek için)
+// İşlenen işlem kimlikleri KALICI tutulur: finish() tamamlanmadan uygulama
+// kapanırsa aynı satın alma bir sonraki açılışta tekrar 'approved' gelir —
+// bellekte tutulan küme sıfırlandığı için havuç iki kez veriliyordu.
+const PROCESSED_KEY = 'iap_processed_v1';
+const processed = new Set((() => { try { return JSON.parse(localStorage.getItem(PROCESSED_KEY) || '[]'); } catch (e) { return []; } })());
+function markProcessed(key) {
+  processed.add(key);
+  try { localStorage.setItem(PROCESSED_KEY, JSON.stringify([...processed].slice(-300))); } catch (e) {}
+}
 
 function CDV() { return (typeof window !== 'undefined') ? window.CdvPurchase : undefined; }
 
@@ -52,7 +60,7 @@ export async function initBilling() {
     store.when().approved(tx => {
       const key = tx.transactionId || tx.purchaseId;
       if (key && processed.has(key)) { tx.finish(); return; }
-      if (key) processed.add(key);
+      if (key) markProcessed(key);
 
       (tx.products || []).forEach(item => {
         if (item.id === REMOVE_ADS_ID) { onRemoveAds && onRemoveAds(); return; }
@@ -117,5 +125,23 @@ export async function purchase(productId) {
   } catch (e) {
     console.warn('[Billing] purchase failed:', e);
     return { ok: false, reason: 'Satın alma iptal edildi' };
+  }
+}
+
+// "Satın Alımları Geri Yükle" — kalıcı ürünleri (Reklamları Kaldır) mağazadan
+// yeniden sorgular. Apple bunu görünür bir buton olarak ister; Android'de de
+// cihaz değişiminde işe yarar.
+export async function restorePurchases() {
+  if (!isNative || !CDV()) return { ok: false, reason: 'Mağaza hazır değil, biraz sonra tekrar dene' };
+  try {
+    await initBilling();
+    const { store, Platform } = CDV();
+    await store.restorePurchases();
+    const ra = store.get(REMOVE_ADS_ID, Platform.GOOGLE_PLAY);
+    if (ra && ra.owned) { onRemoveAds && onRemoveAds(); return { ok: true, restored: true }; }
+    return { ok: true, restored: false };
+  } catch (e) {
+    console.warn('[Billing] restore failed:', e);
+    return { ok: false, reason: 'Geri yükleme başarısız' };
   }
 }

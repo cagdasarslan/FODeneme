@@ -15,7 +15,7 @@ import { AD_DAILY_CARROTS, AD_DAILY_MAX, MAP_UNLOCKS, MAP_MEDALS, MEDAL_ICONS } 
 import { getActiveEvent } from '@/constants/events';
 import { fetchLeaderboard } from '@/services/LeaderboardService';
 import { Capacitor } from '@capacitor/core';
-import { restoreFromCloud } from '@/services/CloudSave';
+import { restoreFromCloud, hasLocalProgress } from '@/services/CloudSave';
 import { signInWith } from '@/services/AuthService';
 import { GAME_BUILD } from '@/constants/game';
 import { SAFE_TOP, BOTTOM_SPACE, topPlus } from '@/utils/safeArea';
@@ -111,6 +111,7 @@ export default function MainMenu() {
   const [restoreMsg, setRestoreMsg]   = useState('');
   const doRestore = async () => {
     if (restoreCode.trim().length < 6) return;
+    if (hasLocalProgress() && !window.confirm(t('Bu cihazdaki ilerlemen bu kodun kaydıyla değiştirilecek. Devam edilsin mi?'))) return;
     setRestoreMsg(t('Yükleniyor…'));
     const r = await restoreFromCloud(restoreCode);
     if (r.ok) {
