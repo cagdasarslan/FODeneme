@@ -1,9 +1,8 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
-import { IS_MOBILE } from '@/utils/device';
-import { G, makeMats, makeP, makeCheckerTex } from '@/utils/procKit';
+import { makeBatch, bakeGeo, Baked, Anim, mulberry, BATCH_MAT } from '@/utils/procKit';
 
 const SEG_LEN       = 120;
 const SEG_COUNT     = 6;
@@ -41,372 +40,292 @@ M.skyHorizonN = new THREE.MeshBasicMaterial({ color: '#141a38', side: THREE.Back
 M.moon        = new THREE.MeshStandardMaterial({ color: '#e8ecf4', emissive: '#c8d4f0', emissiveIntensity: 0.9 });
 M.cloudN      = new THREE.MeshStandardMaterial({ color: '#2a3048', transparent: true, opacity: 0.7, roughness: 1 });
 
-// ── Kodla üretilen dekor ──────────────────────────────────────────────────────
-// Eskiden 35 GLB (racing/citykit/retro kitleri) kullanılıyordu. Her öğe artık
-// paylaşılan geometri + malzemeden birkaç gövde. Ölçüler GLB'lerin sınır
-// kutularından (model birimi) alındı ve aynı ölçekle çağrılır; Kenney racing
-// parçalarının orijin kayması da korunur (C = sınır kutusu merkezi).
-const FM = makeMats({
-  white: '#eeeeea', grey: '#9a9c9e', greyDk: '#5c6064', concrete: '#b8b4aa', metal: '#7c8288',
-  fenceMesh: { color: '#c8ccd0', transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide },
-  seatBlue: '#2f5fa8', seatRed: '#b83232', seatYel: '#e0b030',
-  tentRed: '#d04848', tentWht: '#f2ece0', wood: '#7a5230', woodDk: '#553820', crateW: '#a87c48',
-  leaf: '#3f7a34', leaf2: '#4f9040', leafDk: '#2f6028', trunk: '#5a3d24',
-  adOrange: '#e8742c', adBlue: '#2c6ee8', flagGreen: '#22a040',
-  lamp: { color: '#fff4c0', emissive: '#ffe080', emissiveIntensity: 0.8 },
-  roof: '#5a5650', glass: '#3b4a5c',
-});
-FM.checker = new THREE.MeshStandardMaterial({ map: makeCheckerTex(4), roughness: 0.8, side: THREE.DoubleSide });
-const P = makeP(FM);
-const C = ({ c, children }) => <group position={[c[0], 0, c[1]]}>{children}</group>;
-
-// fenceStraight: 1.0 × 0.49, ince — beyaz direkler + tel örgü
-function RFence() {
-  return (<C c={[0.15, -0.665]}>
-    <P g="box" m="white" p={[-0.485, 0, 0]} s={[0.03, 0.49, 0.03]} />
-    <P g="box" m="white" p={[0.485, 0, 0]} s={[0.03, 0.49, 0.03]} />
-    <P g="box" m="white" p={[0, 0.46, 0]} s={[1, 0.025, 0.025]} />
-    <P g="box" m="white" p={[0, 0.02, 0]} s={[1, 0.02, 0.02]} />
-    <P g="box" m="fenceMesh" p={[0, 0.04, 0]} s={[0.96, 0.42, 0.006]} />
-  </C>);
-}
-// lightPostLarge: 0.38 × 0.79 — çift lambalı direk
-function RLightPost() {
-  return (<C c={[-0.35, -0.62]}>
-    <P g="box" m="greyDk" p={[0, 0, 0]} s={[0.07, 0.04, 0.07]} />
-    <P g="cyl8" m="greyDk" p={[0, 0, 0]} s={[0.016, 0.74, 0.016]} />
-    <P g="box" m="greyDk" p={[0, 0.72, 0]} s={[0.34, 0.02, 0.02]} />
-    {[-0.15, 0.15].map((x) => (<group key={x}>
-      <P g="box" m="greyDk" p={[x, 0.735, 0]} s={[0.08, 0.05, 0.09]} />
-      <P g="box" m="lamp" p={[x, 0.728, 0]} s={[0.07, 0.01, 0.08]} />
-    </group>))}
-  </C>);
-}
-// grandStand(Covered): 1×1, H 0.89 / 1.18 — ön (-z) alçak, basamaklar arkaya yükselir
-const SEATS = ['seatBlue', 'seatRed', 'seatBlue', 'seatYel', 'seatBlue'];
-function RGrandStand({ covered }) {
-  return (<C c={[0.15, -1.15]}>
-    {SEATS.map((seat, i) => {
-      const top = 0.15 + i * 0.14, z = -0.4 + i * 0.2;
-      return (<group key={i}>
-        <P g="box" m="concrete" p={[0, 0, z]} s={[1, top, 0.2]} />
-        <P g="box" m={seat} p={[0, top, z + 0.02]} s={[0.96, 0.035, 0.09]} />
-      </group>);
-    })}
-    <P g="box" m="grey" p={[0, 0, 0.49]} s={[1, 0.89, 0.03]} />
-    <P g="box" m="grey" p={[-0.49, 0, 0.1]} s={[0.025, 0.8, 0.8]} />
-    <P g="box" m="grey" p={[0.49, 0, 0.1]} s={[0.025, 0.8, 0.8]} />
-    {covered && (<>
-      <P g="box" m="metal" p={[-0.46, 0, -0.46]} s={[0.03, 1.12, 0.03]} />
-      <P g="box" m="metal" p={[0.46, 0, -0.46]} s={[0.03, 1.12, 0.03]} />
-      <P g="box" m="white" p={[0, 1.12, -0.02]} s={[1.04, 0.05, 1.1]} r={[-0.06, 0, 0]} />
-    </>)}
-  </C>);
-}
-// tent / tentLong: 1×1 veya 2×1, H 0.69 — ayaklar, çizgili saçak, piramit çatı
-function RTent({ long }) {
-  const w = long ? 2 : 1;
-  return (<C c={[long ? 0.65 : 0.15, -1.15]}>
-    {[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, z], i) => (
-      <P key={i} g="box" m="white" p={[x * (w / 2 - 0.04), 0, z * 0.46]} s={[0.025, 0.42, 0.025]} />
-    ))}
-    <P g="box" m="tentWht" p={[0, 0.36, 0]} s={[w, 0.07, 1]} />
-    <P g="cone4" m="tentRed" p={[0, 0.42, 0]} s={[w * 1.04, 0.27, 1.04]} />
-    <P g="box" m="wood" p={[0, 0.17, -0.2]} s={[w * 0.7, 0.03, 0.25]} />
-    <P g="box" m="woodDk" p={[0, 0, -0.2]} s={[w * 0.66, 0.17, 0.2]} />
-  </C>);
-}
-// billboard / billboardLow: 1.0 genişlik, H 0.99 / 0.68
-function RBillboard({ low }) {
-  const h = low ? 0.68 : 0.99, y0 = h - 0.48;
-  return (<C c={[0.09, -0.85]}>
-    <P g="box" m="greyDk" p={[-0.33, 0, 0]} s={[0.04, y0 + 0.05, 0.04]} />
-    <P g="box" m="greyDk" p={[0.33, 0, 0]} s={[0.04, y0 + 0.05, 0.04]} />
-    <P g="box" m="greyDk" p={[-0.33, 0, 0.12]} s={[0.025, y0 + 0.2, 0.025]} r={[-0.45, 0, 0]} />
-    <P g="box" m="greyDk" p={[0.33, 0, 0.12]} s={[0.025, y0 + 0.2, 0.025]} r={[-0.45, 0, 0]} />
-    <P g="box" m="white" p={[0, y0, 0]} s={[1, 0.48, 0.05]} />
-    <P g="box" m={low ? 'adBlue' : 'adOrange'} p={[0, y0 + 0.04, 0]} s={[0.92, 0.4, 0.06]} />
-    <P g="box" m="white" p={[-0.12, y0 + 0.2, 0]} s={[0.55, 0.07, 0.065]} />
-    <P g="box" m="white" p={[-0.2, y0 + 0.1, 0]} s={[0.38, 0.04, 0.065]} />
-  </C>);
-}
-// flagCheckers / flagGreen: H 1.24
-function RFlag({ green }) {
-  return (<C c={[-0.25, -0.67]}>
-    <P g="box" m="greyDk" p={[-0.08, 0, 0]} s={[0.05, 0.03, 0.05]} />
-    <P g="cyl8" m="white" p={[-0.08, 0, 0]} s={[0.012, 1.24, 0.012]} />
-    <P g="box" m={green ? 'flagGreen' : 'checker'} p={[0.015, 0.96, 0]} s={[0.18, 0.24, 0.008]} />
-  </C>);
-}
-// treeLarge (H 1.5) / treeSmall (H 1.06): katmanlı çam
-function RTree({ small }) {
-  return (<C c={[-0.35, -0.65]}>
-    <group scale={small ? 0.71 : 1}>
-      <P g="cyl6" m="trunk" p={[0, 0, 0]} s={[0.03, 0.4, 0.03]} />
-      <P g="cone8" m="leafDk" p={[0, 0.3, 0]} s={[0.18, 0.6, 0.18]} />
-      <P g="cone8" m="leaf" p={[0, 0.65, 0]} s={[0.14, 0.5, 0.14]} />
-      <P g="cone8" m="leaf2" p={[0, 0.98, 0]} s={[0.095, 0.52, 0.095]} />
-    </group>
-  </C>);
-}
-// retro tree-large: r 0.46, H 1.7 — yuvarlak taçlı
-function RetroTreeM() {
-  return (<>
-    <P g="cyl6" m="trunk" p={[0, 0, 0]} s={[0.07, 0.75, 0.07]} />
-    <P g="blob" m="leaf" p={[0, 1.0, 0]} s={[0.44, 0.36, 0.44]} r={[0, 0.4, 0]} />
-    <P g="blob" m="leaf2" p={[0.08, 1.38, -0.05]} s={[0.3, 0.3, 0.3]} />
-    <P g="blob" m="leafDk" p={[-0.22, 0.85, 0.15]} s={[0.24, 0.22, 0.24]} />
-  </>);
-}
-// detail-barrel (r 0.12, H 0.3) / barrels (0.6 × 0.3, H 0.49)
-function BarrelM({ x = 0, y = 0, h = 0.3 }) {
-  return (<>
-    <P g="cyl8" m="wood" p={[x, y, 0]} s={[0.115, h, 0.115]} />
-    <P g="cyl8" m="greyDk" p={[x, y + h * 0.18, 0]} s={[0.12, 0.02, 0.12]} />
-    <P g="cyl8" m="greyDk" p={[x, y + h * 0.78, 0]} s={[0.12, 0.02, 0.12]} />
-  </>);
-}
-const BarrelGroupM = () => (<>
-  <BarrelM x={-0.17} h={0.25} /><BarrelM x={0.17} h={0.25} /><BarrelM y={0.25} h={0.24} />
-</>);
-// detail-crate (0.3³) / detail-crate-small (0.2³)
-function CrateM({ k = 1 }) {
-  return (<group scale={k}>
-    <P g="box" m="crateW" p={[0, 0, 0]} s={[0.3, 0.3, 0.3]} />
-    <P g="box" m="woodDk" p={[0, 0.005, 0]} s={[0.31, 0.04, 0.31]} />
-    <P g="box" m="woodDk" p={[0, 0.255, 0]} s={[0.31, 0.04, 0.31]} />
-    <P g="box" m="woodDk" p={[0, 0, 0]} s={[0.04, 0.3, 0.31]} />
-  </group>);
-}
-// overhead: 1.26 genişlik, H 0.66 — başlangıç kapısı
-function ROverhead() {
-  return (<C c={[0.15, -0.555]}>
-    <P g="box" m="grey" p={[-0.6, 0, 0]} s={[0.06, 0.6, 0.14]} />
-    <P g="box" m="grey" p={[0.6, 0, 0]} s={[0.06, 0.6, 0.14]} />
-    <P g="box" m="white" p={[0, 0.54, 0]} s={[1.26, 0.12, 0.16]} />
-    <P g="box" m="checker" p={[0, 0.555, 0]} s={[1.0, 0.09, 0.17]} />
-    {[-0.3, 0, 0.3].map((x) => <P key={x} g="box" m="seatRed" p={[x, 0.5, 0.03]} s={[0.08, 0.04, 0.06]} />)}
-  </C>);
-}
-
-// citykit binaları: [genişlik, derinlik, yükseklik, renk] (model birimi)
-const CB = {
-  bld: [[0.88, 0.94, 1.29, '#c9b79c'], [0.98, 0.94, 1.29, '#a8584a'], [0.88, 1.1, 0.89, '#8fa3b5'],
-    [0.84, 0.9, 1.29, '#d8cfc0'], [1.64, 1.0, 0.89, '#b9926a']],
-  sky: [[1.36, 1.36, 2.88, '#8aa0b4'], [1.36, 1.36, 4.48, '#9fb2c0'], [1.28, 1.38, 4.08, '#7c8ea0']],
-  low: [[0.5, 0.5, 2.0, '#b8b0a0'], [0.5, 0.5, 2.23, '#9aa8b0'], [0.5, 0.5, 2.25, '#c0a080'], [0.5, 0.5, 1.75, '#a09080']],
+// ── Canlı hipodrom (toplu geometri) ─────────────────────────────────────────
+// Eskiden her bariyer bloğu/çit/bayrak ayrı mesh'ti (~2.000 çizim çağrısı).
+// Şimdi segment başına birkaç birleşik geometri + InstancedMesh seyirciler.
+// Segment içeriği yerel z ∈ [-120, 0]; yol yarı genişliği 9 (bariyer ±11).
+const COL = {
+  barR: '#cc2222', barW: '#eeeeee', white: '#eeeeea', grey: '#9a9c9e', greyDk: '#5c6064', concrete: '#b8b4aa',
+  metal: '#7c8288', seatBlue: '#2f5fa8', seatRed: '#b83232', seatYel: '#e0b030', seatGrn: '#2f8a4a',
+  tentRed: '#d04848', tentWht: '#f2ece0', tentBlue: '#3a6ec8', wood: '#7a5230', woodDk: '#553820',
+  leaf: '#3f7a34', leaf2: '#4f9040', leafDk: '#2f6028', trunk: '#5a3d24', hedge: '#2f6a2c', hedge2: '#3a7a34',
+  soil: '#6a4a2a', grass: '#4e8040', grass2: '#58904a', grass3: '#44743a', hill: '#5a9048', hill2: '#4a8040', hill3: '#6a9a50',
+  ads: ['#e8742c', '#2c6ee8', '#22a040', '#d0302c', '#f0c020', '#7a3ac8'],
+  flowers: ['#ff5a7a', '#ffd040', '#ffffff', '#c060ff', '#ff8030'],
+  bunt: ['#d02c2c', '#f0c020', '#2c6ee8', '#ffffff', '#22a040'],
+  lamp: '#fff4c0', window: '#ffe8a0', glass: '#3b4a5c', roof: '#5a5650', roofRed: '#8a2a20', brick: '#b06a50',
+  cream: '#efe4cc', barn: '#8b1a1a', barnRoof: '#3a0808', silo: '#c8bea0', hay: '#d4a828', trailer: '#d8d8d4', trailer2: '#5a7fa8',
 };
-function makeFacadeTex() {
-  if (typeof document === 'undefined') return null;
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = 32;
-  const g = cv.getContext('2d');
-  g.fillStyle = '#ffffff'; g.fillRect(0, 0, 32, 32);
-  g.fillStyle = '#3b4a5c'; g.fillRect(6, 7, 20, 16);
-  g.fillStyle = 'rgba(0,0,0,0.15)'; g.fillRect(0, 28, 32, 4);
-  const t = new THREE.CanvasTexture(cv);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-const _facade = makeFacadeTex();
-const _cbMats = new Map();
-function cbMat(color, cols, rows) {
-  const key = `${color}|${cols}|${rows}`;
-  let m = _cbMats.get(key);
-  if (!m) {
-    const t = _facade.clone(); t.repeat.set(cols, rows); t.needsUpdate = true;
-    m = new THREE.MeshStandardMaterial({ color, map: t, roughness: 0.85, flatShading: true });
-    _cbMats.set(key, m);
+
+function bTree(b, x, z, k, rng) {
+  b.push([x, 0, z], rng() * 6, k);
+  if (rng() > 0.4) {
+    b.add('cyl6', COL.trunk, [0, 0, 0], [0.22, 2.2, 0.22]);
+    b.add('blob', rng() > 0.5 ? COL.leaf : COL.leaf2, [0, 3.0, 0], [1.6, 1.4, 1.6]);
+    b.add('blob', COL.leafDk, [0.5, 3.9, -0.3], [1.0, 0.9, 1.0]);
+  } else {
+    b.add('cyl6', COL.trunk, [0, 0, 0], [0.18, 1.2, 0.18]);
+    b.add('cone8', COL.leafDk, [0, 1.0, 0], [1.3, 2.4, 1.3]);
+    b.add('cone8', COL.leaf, [0, 2.5, 0], [0.95, 2.0, 0.95]);
   }
+  b.pop();
+}
+// Tribün: z boyunca L uzunluğunda, ön (yola bakan) yüz -fx yönünde
+function bStand(b, x, z, L, fx, covered, seatRng, crowd) {
+  const rows = 5;
+  const seats = [COL.seatBlue, COL.seatRed, COL.seatYel, COL.seatGrn];
+  const sc = seats[Math.floor(seatRng() * seats.length)];
+  for (let i = 0; i < rows; i++) {
+    const top = 0.6 + i * 0.75, px = x + fx * (i * 1.1), dens = 0.5 - i * 0.04;
+    b.add('box', COL.concrete, [px, 0, z], [1.1, top, L]);
+    b.add('box', sc, [px - fx * 0.15, top, z], [0.5, 0.18, L - 0.2]);
+    for (let j = 0; j < Math.floor(L / 1.25); j++) {
+      if (seatRng() < dens) crowd.push([px - fx * 0.12, top + 0.18, z - L / 2 + 0.7 + j * 1.25 + (seatRng() - 0.5) * 0.3, seatRng()]);
+    }
+  }
+  const backX = x + fx * (rows * 1.1 - 0.4);
+  b.add('box', COL.grey, [backX, 0, z], [0.3, 0.6 + rows * 0.75 + 1.2, L]);
+  b.add('box', COL.grey, [x + fx * 2.2, 0, z - L / 2], [rows * 1.1 + 0.4, 4.6, 0.3]);
+  b.add('box', COL.grey, [x + fx * 2.2, 0, z + L / 2], [rows * 1.1 + 0.4, 4.6, 0.3]);
+  if (covered) {
+    for (let j = 0; j <= 4; j++) b.add('box', COL.metal, [backX, 0, z - L / 2 + j * L / 4], [0.2, 8.2, 0.2]);
+    b.add('box', COL.white, [x + fx * 2.2, 8.0, z], [rows * 1.1 + 2.0, 0.25, L + 1], [0, 0, fx * 0.12]);
+    b.add('box', COL.seatRed, [x - fx * 0.6, 7.7, z], [0.15, 0.5, L + 1]);
+  }
+  // ön duvar + reklam bandı
+  b.add('box', COL.white, [x - fx * 0.7, 0, z], [0.2, 1.1, L]);
+  b.add('box', COL.ads[Math.floor(seatRng() * 6)], [x - fx * 0.81, 0.3, z], [0.02, 0.6, L * 0.9]);
+}
+function bClubhouse(b, x, z, fx, rng) {
+  b.push([x, 0, z]);
+  b.add('box', COL.cream, [0, 0, 0], [9, 5.6, 16]);
+  b.add('prism', COL.roofRed, [0, 5.6, 0], [9.8, 2.6, 16.8]);
+  b.add('box', COL.cream, [0, 0, 0], [4, 10, 4]);
+  b.add('cone4', COL.roofRed, [0, 10, 0], [5, 3.5, 5]);
+  b.add('box', COL.white, [-fx * 2.02, 7.6, 0], [0.05, 1.6, 1.6]);
+  b.add('box', COL.greyDk, [-fx * 2.05, 7.6, 0], [0.04, 0.9, 0.12]);
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) b.add('quad', COL.window, [-fx * 4.53, 1.2 + r * 2.3, -6 + c * 3], [1.4, 1.2, 1], -fx * Math.PI / 2, 'glow');
+  b.add('box', COL.white, [-fx * 5.4, 2.6, 0], [1.8, 0.2, 14]);
+  for (let c = 0; c < 5; c++) b.add('cyl6', COL.white, [-fx * 6.1, 0, -6 + c * 3], [0.12, 2.6, 0.12]);
+  b.add('box', COL.tentRed, [-fx * 6.0, 2.8, 0], [0.3, 0.4, 14.4]);
+  b.pop();
+}
+function bTent(b, x, z, long, c) {
+  const w = long ? 10 : 5;
+  b.push([x, 0, z]);
+  for (const [px, pz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.add('box', COL.white, [px * 2.2, 0, pz * (w / 2 - 0.2)], [0.12, 2.4, 0.12]);
+  b.add('box', COL.tentWht, [0, 2.2, 0], [5, 0.4, w]);
+  b.add('prism', c, [0, 2.6, 0], [5.2, 1.6, w + 0.2]);
+  b.add('box', COL.wood, [0, 0, 0], [1.4, 1.0, w * 0.7]);
+  b.pop();
+}
+function bTrailer(b, x, z, ry, rng) {
+  b.push([x, 0, z], ry);
+  const c = rng() > 0.5 ? COL.trailer : COL.trailer2;
+  b.add('box', c, [0, 0.6, 0], [2.2, 2.4, 5]);
+  b.add('box', COL.greyDk, [0, 0.4, 0], [2.3, 0.25, 5.1]);
+  b.add('box', COL.glass, [1.11, 2.1, 0.8], [0.04, 0.5, 2.4]);
+  b.add('box', COL.seatRed, [1.12, 1.2, 0], [0.04, 0.2, 4.6]);
+  b.add('wheel', COL.greyDk, [0, 0.4, 0.6], [2.4, 0.45, 0.45]);
+  b.add('box', COL.greyDk, [0, 0.4, 3.0], [0.2, 0.2, 1.4]);
+  b.pop();
+}
+function bLightTower(b, x, z, fx) {
+  b.push([x, 0, z]);
+  b.add('box', COL.concrete, [0, 0, 0], [1.4, 0.4, 1.4]);
+  for (const [px, pz] of [[-0.35, -0.35], [0.35, -0.35], [-0.35, 0.35], [0.35, 0.35]]) b.add('box', COL.metal, [px, 0.4, pz], [0.1, 15, 0.1]);
+  for (let y = 2; y < 15; y += 2.4) b.add('box', COL.metal, [0, y, 0], [0.8, 0.08, 0.8]);
+  b.add('box', COL.greyDk, [0, 15.2, 0], [0.5, 2.0, 3.6]);
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) b.add('quad', COL.lamp, [-fx * 0.26, 15.6 + r * 0.9, -1.1 + c * 1.1], [0.8, 0.7, 1], -fx * Math.PI / 2, 'glow');
+  b.pop();
+}
+function bBillboard(b, x, z, fx, c) {
+  b.push([x, 0, z]);
+  b.add('box', COL.greyDk, [0, 0, -2], [0.25, 3, 0.25]);
+  b.add('box', COL.greyDk, [0, 0, 2], [0.25, 3, 0.25]);
+  b.add('box', COL.white, [0, 3, 0], [0.3, 2.6, 6]);
+  b.add('box', c, [-fx * 0.16, 3.15, 0], [0.04, 2.3, 5.7]);
+  b.add('box', COL.white, [-fx * 0.19, 4.1, -0.6], [0.04, 0.4, 3.4]);
+  b.add('box', COL.white, [-fx * 0.19, 3.5, -1.0], [0.04, 0.25, 2.4]);
+  b.pop();
+}
+function bBarn(b, x, z, ry) {
+  b.push([x, 0, z], ry);
+  b.add('box', COL.barn, [0, 0, 0], [7, 5.2, 9]);
+  b.add('prism', COL.barnRoof, [0, 5.2, 0], [7.6, 3.0, 9.4]);
+  b.add('box', '#1a0202', [0, 0, 4.52], [2.2, 3.1, 0.1]);
+  b.add('box', COL.white, [0, 3.2, 4.53], [2.4, 0.15, 0.1]);
+  b.add('cyl12', COL.silo, [5, 0, -1.5], [1.3, 8.5, 1.3]);
+  b.add('dome', '#9a9282', [5, 8.5, -1.5], [1.32, 1.1, 1.32]);
+  b.pop();
+}
+function bHay(b, x, z) {
+  for (const [bx, by] of [[-0.9, 0.45], [0, 0.45], [0.9, 0.45], [-0.45, 1.33], [0.45, 1.33]]) b.add('wheel', COL.hay, [x, by, z + bx], [0.88, 0.44, 0.44], [0, Math.PI / 2, 0]);
+}
+function bFlowerBed(b, x, z, len, rng) {
+  b.add('box', COL.woodDk, [x, 0, z], [1.8, 0.3, len]);
+  b.add('box', COL.soil, [x, 0.3, z], [1.6, 0.04, len - 0.2]);
+  const n = Math.floor(len / 0.9);
+  for (let i = 0; i < n; i++) for (const dx of [i % 2 ? -0.35 : 0.35]) {
+    b.add('box', COL.flowers[Math.floor(rng() * 5)], [x + dx + (rng() - 0.5) * 0.2, 0.34, z - len / 2 + 0.5 + i * 0.9], [0.32, 0.26 + rng() * 0.12, 0.32], rng());
+  }
+}
+function bHedge(b, x, z, len) {
+  b.add('box', COL.hedge, [x, 0, z], [1.2, 1.2, len]);
+  b.add('box', COL.hedge2, [x, 1.2, z], [1.0, 0.25, len - 0.2]);
+}
+
+function buildSegment(bS, bD, seg, anim) {
+  const theme = seg % 4;
+  for (const side of [-1, 1]) {
+    const rng = mulberry(seg * 4373 + (side + 2) * 59);
+    const X = (d) => side * (ROAD_HALF + d);
+    const fx = side; // dışa doğru
+    let b = bD;
+    // bariyer (kırmızı/beyaz bloklar) — sürekli
+    for (let i = 0; i < 30; i++) b.add('box', i % 2 ? COL.barW : COL.barR, [X(2), 0, -118 + i * 4], [0.4, 0.9, 4.0]);
+    // beyaz çit: direkler + 3 ray
+    for (let i = 0; i < 15; i++) b.add('box', COL.white, [X(3.5), 0, -119 + i * 8], [0.12, 1.5, 0.12]);
+    for (const y of [0.5, 1.0, 1.42]) b.add('box', COL.white, [X(3.5), y, -60], [0.06, 0.08, 120.4]);
+    // sponsor panoları (kesintisiz)
+    for (let i = 0; i < 20; i++) {
+      const z = -117 + i * 6;
+      b.add('box', COL.ads[(i + seg + (side > 0 ? 3 : 0)) % 6], [X(4.3), 0, z], [0.15, 1.0, 5.9]);
+      b.add('quad', COL.white, [X(4.3) - side * 0.08, 0.5, z], [3.2 - (i % 3) * 0.6, 0.24, 1], -side * Math.PI / 2);
+    }
+    // bayrak süsü: direkler + üçgen flamalar
+    for (let p = 0; p < 10; p++) {
+      const z0 = -118 + p * 12;
+      b.add('cyl6', COL.white, [X(5), 0, z0], [0.07, 4.2, 0.07]);
+      for (let k = 1; k < 8; k++) {
+        const t = k / 8, sag = Math.sin(t * Math.PI) * 0.7;
+        b.add('cone4', COL.bunt[(k + p) % 5], [X(5), 3.95 - sag - 0.5, z0 + t * 12], [0.05, 0.5, 0.45], [Math.PI, 0, 0]);
+      }
+    }
+    // biçilmiş çim şeritleri
+    for (let i = 0; i < 6; i++) b.add('box', i % 2 ? COL.grass2 : COL.grass3, [X(30), -0.04, -110 + i * 20], [44, 0.05, 10]);
+    // YAKIN (6-9 m): çit/çiçek tarhı/variller dönüşümlü
+    for (let i = 0; i < 6; i++) {
+      const z = -110 + i * 20 + rng() * 4;
+      if ((i + theme) % 2) bFlowerBed(b, X(6.5), z, 8, rng); else bHedge(b, X(6.5), z, 10);
+    }
+    b = bS;
+    // ORTA: tribün (her iki yanda; tema ile kapalı/açık), kulüp binası veya çadır sırası
+    const L = 40;
+    const standZ = side < 0 ? -30 - (theme % 2) * 10 : -80 + (theme % 2) * 10;
+    bStand(b, X(11), standZ, L, fx, (theme + (side > 0 ? 1 : 0)) % 2 === 0, rng, anim.crowd);
+    anim.flags.push([X(11 + 5.5), 9.8, standZ - L / 2 + 2], [X(11 + 5.5), 9.8, standZ + L / 2 - 2]);
+    // tribünün boş kalan tarafı
+    const otherZ = standZ < -60 ? -25 : -95;
+    const k = (theme + (side > 0 ? 2 : 0)) % 4;
+    if (k === 0) { bClubhouse(b, X(19), otherZ, fx, rng); anim.flags.push([X(19), 14.6, otherZ]); }
+    else if (k === 1) { bTent(b, X(14), otherZ - 8, true, COL.tentRed); bTent(b, X(14), otherZ + 8, false, COL.tentBlue); bTent(b, X(21), otherZ, false, COL.tentRed); }
+    else if (k === 2) { for (let t = 0; t < 4; t++) bTrailer(b, X(14 + (t % 2) * 4), otherZ - 12 + t * 6, 0.1 * t, rng); }
+    else { bBarn(b, X(20), otherZ, side < 0 ? Math.PI / 2 : -Math.PI / 2); bHay(b, X(13), otherZ - 9); bHay(b, X(13), otherZ + 10); }
+    // ışık kuleleri + reklam panosu
+    bLightTower(b, X(9), standZ - L / 2 - 6, fx);
+    bLightTower(b, X(9), otherZ + (otherZ < -60 ? 22 : -22), fx);
+    bBillboard(b, X(9.5), standZ + L / 2 + 6, fx, COL.ads[(seg + side + 6) % 6]);
+    // arkadaki ağaç sırası (tribün arkası boş kalmasın)
+    for (let i = 0; i < 9; i++) bTree(b, X(27 + rng() * 10), -118 + i * 13.5 + rng() * 5, 1.1 + rng() * 0.6, rng);
+  }
+  for (const [x, y, z] of anim.flags) bS.add('cyl6', COL.white, [x, 0, z], [0.08, y + 0.15, 0.08]);
+  // başlangıç kapısı (her iki segmentte bir)
+  if (theme % 2 === 0) {
+    const b = bS, z = -60;
+    for (const sx of [-1, 1]) { b.add('box', COL.grey, [sx * 12, 0, z], [1.0, 11, 2.4]); }
+    b.add('box', COL.white, [0, 10.0, z], [25, 2.2, 2.6]);
+    for (let i = 0; i < 20; i++) for (let r = 0; r < 2; r++) b.add('box', (i + r) % 2 ? '#111111' : '#f4f4f4', [-9.5 + i, 10.3 + r * 0.8, z + 1.32], [1, 0.8, 0.05]);
+  }
+}
+
+// Uzak katman: ağaçlı tepeler, tarlalar, çiftlik — gölgesiz
+function buildFar(b, seg) {
+  for (const side of [-1, 1]) {
+    const rng = mulberry(seg * 7717 + side * 13);
+    const X = (d) => side * (ROAD_HALF + d);
+    for (let i = 0; i < 4; i++) b.add('box', [COL.grass2, COL.hay, COL.grass3, '#8aa040'][Math.floor(rng() * 4)], [X(60 + rng() * 30), -0.03, -110 + i * 30], [30 + rng() * 10, 0.05, 26]);
+    for (let i = 0; i < 3; i++) {
+      const hx = X(80 + rng() * 60), hz = -120 + i * 40 + rng() * 20, r = 24 + rng() * 20;
+      b.add('blob', [COL.hill, COL.hill2, COL.hill3][i % 3], [hx, -r * 0.35, hz], [r, r * 0.6, r * 0.8], [0, rng() * 3, 0]);
+      for (let t = 0; t < 4; t++) bTree(b, hx + (rng() - 0.5) * r, hz + (rng() - 0.5) * r * 0.8, 2 + rng(), rng);
+    }
+    for (let i = 0; i < 6; i++) bTree(b, X(42 + rng() * 18), -120 + rng() * 120, 1.3 + rng() * 0.8, rng);
+    if (rng() > 0.4) bBarn(b, X(70 + rng() * 20), -60 + rng() * 40, rng() * 6);
+  }
+}
+
+// ── Hareketli gövdeler ─────────────────────────────────────────────────────
+const bodyGeo = bakeGeo((b) => { b.add('box', '#ffffff', [0, 0, 0], [0.42, 0.62, 0.3]); });
+const headGeo = bakeGeo((b) => { b.add('box', '#e8b890', [0, 0.62, 0], [0.24, 0.27, 0.24]); });
+const flagGeo = bakeGeo((b) => { for (let i = 0; i < 3; i++) b.add('box', ['#d02c2c', '#ffffff', '#2c6ee8'][i], [0.9, -0.3 * i, 0], [1.8, 0.3, 0.03]); });
+const birdGeo = bakeGeo((b) => {
+  b.add('box', '#2a2a30', [0.45, 0, 0], [0.9, 0.04, 0.3], [0, 0, 0.35]);
+  b.add('box', '#2a2a30', [-0.45, 0, 0], [0.9, 0.04, 0.3], [0, 0, -0.35]);
+  b.add('box', '#2a2a30', [0, 0, 0], [0.18, 0.12, 0.6]);
+});
+const SHIRTS = ['#e04040', '#3070e0', '#f0c020', '#30a050', '#ffffff', '#ff8030', '#a050d0', '#40c0d0', '#f070a0', '#202830'].map((c) => new THREE.Color(c));
+const _c = new THREE.Color();
+
+// Seyirci zıplaması GPU'da: örnek matrisleri statik kalır (kare başı yükleme
+// yok); faz örneğin konumundan türetilir, zaman tek bir uniform.
+const crowdTime = { value: 0 };
+function makeCrowdMat() {
+  const m = BATCH_MAT.clone();
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uCrowdT = crowdTime;
+    sh.vertexShader = 'uniform float uCrowdT;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+#ifdef USE_INSTANCING
+  vec3 ip = instanceMatrix[3].xyz;
+  float ph = fract(sin(dot(ip.xz, vec2(12.9898, 78.233))) * 43758.5453);
+  float w = ph > 0.75 ? 9.0 : 3.5 + ph * 4.0;
+  transformed.y += max(0.0, sin(uCrowdT * w + ph * 40.0)) * 0.22;
+#endif`);
+  };
+  m.customProgramCacheKey = () => 'crowd-bob';
   return m;
 }
-const SHADOW = !IS_MOBILE;
-function CityBuildingM({ spec, sky }) {
-  const [w, d, h, color] = spec;
-  const hb = sky ? h * 0.7 : h;             // gökdelende kademeli üst kısım
-  const rows = Math.max(2, Math.round(hb / 0.16));
-  const cols = Math.max(2, Math.round(w / 0.2));
+const crowdMat = makeCrowdMat();
+
+function Crowd({ crowd }) {
+  const n = crowd.length;
+  const colors = useMemo(() => crowd.map((c) => SHIRTS[Math.floor(c[3] * 997) % SHIRTS.length]), [crowd]);
+  const init = (i, o) => { const [x, y, z] = crowd[i]; o.position.set(x, y, z); };
+  if (!n) return null;
   return (<>
-    <mesh geometry={G.box} material={cbMat(color, cols, rows)} scale={[w, hb, d]} castShadow={SHADOW} receiveShadow={SHADOW} />
-    <P g="box" m="roof" p={[0, hb, 0]} s={[w + 0.04, 0.04, d + 0.04]} />
-    {sky && (<>
-      <mesh geometry={G.box} material={cbMat(color, cols - 1, Math.max(2, Math.round((h - hb) / 0.16)))}
-        position={[0, hb, 0]} scale={[w * 0.72, h - hb - 0.05, d * 0.72]} castShadow={SHADOW} />
-      <P g="box" m="roof" p={[0, h - 0.05, 0]} s={[w * 0.76, 0.05, d * 0.76]} />
-    </>)}
+    <Anim geo={bodyGeo} mat={crowdMat} count={n} init={init} colors={colors} margin={3} lod={170} />
+    <Anim geo={headGeo} mat={crowdMat} count={n} init={init} margin={3} lod={170} />
   </>);
 }
 
-// ── Dekor öğeleri (eski GLB yerleşimleriyle aynı konum/ölçek) ─────────────────
-function Item({ position, scale = 1, rotY = 0, children }) {
-  return <group position={position} scale={scale} rotation={[0, rotY, 0]}>{children}</group>;
+function SegmentContent({ seg }) {
+  const { geos, detail, far, anim } = useMemo(() => {
+    const anim = { crowd: [], flags: [] };
+    const bS = makeBatch(), bD = makeBatch(), bF = makeBatch();
+    buildSegment(bS, bD, seg, anim); buildFar(bF, seg);
+    return { geos: bS.build(), detail: bD.build(), far: bF.build(), anim };
+  }, [seg]);
+  const { flags } = anim;
+  return (<>
+    <Baked geos={geos} shadow lod={400} />
+    <Baked geos={detail} shadow lod={180} />
+    <Baked geos={far} />
+    <Crowd crowd={anim.crowd} />
+    <Anim geo={flagGeo} count={flags.length} lod={300}
+      init={(i, o) => { const [x, y, z] = flags[i]; o.position.set(x, y, z); o.userData.p = i * 1.9; }}
+      update={(i, t, o) => { const p = o.userData.p; o.rotation.y = Math.sin(t * 2.5 + p) * 0.5; o.scale.x = 0.85 + Math.sin(t * 6 + p) * 0.15; }} />
+  </>);
 }
 
-// ── Racing track barrier strip (no GLBs — procedural red/white blocks) ────────
-const barrierGeo = new THREE.BoxGeometry(2.0, 0.9, 0.4);
-const barrierMatR = new THREE.MeshStandardMaterial({ color: '#cc2222', roughness: 0.7 });
-const barrierMatW = new THREE.MeshStandardMaterial({ color: '#eeeeee', roughness: 0.7 });
-
-function BarrierRow({ x = 0, z = 0 }) {
-  const count = Math.ceil(SEG_LEN / 2.0);
-  const half  = SEG_LEN / 2;
-  return (
-    <group position={[x, 0, z]}>
-      {Array.from({ length: count }, (_, i) => (
-        <mesh key={i} castShadow receiveShadow
-          geometry={barrierGeo}
-          material={i % 2 === 0 ? barrierMatR : barrierMatW}
-          position={[0, 0.45, -half + i * 2.0 + 1.0]}
-        />
-      ))}
-    </group>
-  );
-}
-
-
-// ── Racing fence (spaced, not every metre) ───────────────────────────────────
-function RacingFence({ x = 0, z = 0 }) {
-  const spacing = 8;
-  const count   = Math.ceil(SEG_LEN / spacing);
-  const half    = SEG_LEN / 2;
-  return (
-    <group position={[x, 0, z]}>
-      {Array.from({ length: count }, (_, i) => (
-        <Item key={i} position={[0, 0, -half + i * spacing + spacing / 2]} scale={8} rotY={Math.PI / 2}>
-          <RFence />
-        </Item>
-      ))}
-    </group>
-  );
-}
-
-// lightPostLarge H=0.80 → scale=7.5 → H≈6m
-function LightPost({ x = 0, z = 0, rotY = 0 }) {
-  return <Item position={[x, 0, z]} scale={7.5} rotY={rotY}><RLightPost /></Item>;
-}
-// grandStand H=0.90 → scale=9 → H≈8.1m
-function GrandStand({ x = 0, z = 0, rotY = 0, covered = false }) {
-  return <Item position={[x, 0, z]} scale={9} rotY={rotY}><RGrandStand covered={covered} /></Item>;
-}
-// tent H=0.70 → scale=6 → H≈4.2m
-function Tent({ x = 0, z = 0, rotY = 0, long = false }) {
-  return <Item position={[x, 0, z]} scale={6} rotY={rotY}><RTent long={long} /></Item>;
-}
-// billboard 1×1 → scale=5 → 5×5m
-function Billboard({ x = 0, z = 0, rotY = 0, low = false }) {
-  return <Item position={[x, 0, z]} scale={5} rotY={rotY}><RBillboard low={low} /></Item>;
-}
-// flag H=1.25 → scale=4 → H≈5m
-function Flag({ x = 0, z = 0, rotY = 0, green = false }) {
-  return <Item position={[x, 0, z]} scale={4} rotY={rotY}><RFlag green={green} /></Item>;
-}
-// treeLarge H=1.51 → scale=3.5 → H≈5.3m
-function RaceTree({ x = 0, z = 0, scale = 1, rotY = 0, small = false }) {
-  return <Item position={[x, 0, z]} scale={3.5 * scale} rotY={rotY}><RTree small={small} /></Item>;
-}
-// retro barrel / crate (scale 0.5)
-function Barrel({ x = 0, z = 0, rotY = 0, group = false }) {
-  return <Item position={[x, 0, z]} scale={0.5} rotY={rotY}>{group ? <BarrelGroupM /> : <BarrelM />}</Item>;
-}
-function Crate({ x = 0, z = 0, rotY = 0, small = false }) {
-  return <Item position={[x, 0, z]} scale={0.5} rotY={rotY}><CrateM k={small ? 2 / 3 : 1} /></Item>;
-}
-// retro tree H=1.70 → scale=3 → H≈5.1m
-function RetroTree({ x = 0, z = 0, scale = 1, rotY = 0 }) {
-  return <Item position={[x, 0, z]} scale={3 * scale} rotY={rotY}><RetroTreeM /></Item>;
-}
-// Arka plan şehir binaları (scale 7 / gökdelen 10 / düşük detay 6)
-function CityBuilding({ x = 0, z = 0, rotY = 0, type = 0, sky = false, low = false }) {
-  const list = sky ? CB.sky : low ? CB.low : CB.bld;
-  const sc   = sky ? 10 : low ? 6 : 7;
-  return <Item position={[x, 0, z]} scale={sc} rotY={rotY}><CityBuildingM spec={list[type % list.length]} sky={sky} /></Item>;
-}
-// overhead W=1.26 → scale=20
-function Overhead({ z = 0 }) {
-  return <Item position={[0, 0, z]} scale={20}><ROverhead /></Item>;
-}
-
-// ── Procedural elements (no GLBs) ────────────────────────────────────────────
-function HayStack({ x = 0, z = 0 }) {
-  const bales = [[-0.9,0.45,0],[0,0.45,0],[0.9,0.45,0],[-0.45,1.35,0],[0.45,1.35,0],[0,2.25,0]];
-  return (
-    <group position={[x, 0, z]}>
-      {bales.map(([bx,by,bz], i) => (
-        <mesh key={i} castShadow position={[bx,by,bz]} rotation={[0,0,Math.PI/2]}>
-          <cylinderGeometry args={[0.44,0.44,0.88,10]} />
-          <primitive object={i%2===0 ? M.hay : M.hayDark} attach="material" />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function CornField({ x = 0, z = 0, w = 12, d = 18 }) {
-  const rows = 4, cols = 6;
-  return (
-    <group position={[x, 0, z]}>
-      <mesh receiveShadow position={[0,0.02,0]}>
-        <boxGeometry args={[w,0.08,d]} />
-        <primitive object={M.grassDark} attach="material" />
-      </mesh>
-      {Array.from({ length: rows }, (_, r) =>
-        Array.from({ length: cols }, (_, c) => {
-          const px = -w/2+(w/cols)*c+w/cols/2+Math.sin(r*7+c*3)*0.3;
-          const pz = -d/2+(d/rows)*r+d/rows/2;
-          const h  = 1.4+Math.sin(r*3+c*5)*0.3;
-          return (
-            <group key={`${r}-${c}`} position={[px,0,pz]}>
-              <mesh position={[0,h/2,0]}>
-                <cylinderGeometry args={[0.055,0.09,h,5]} />
-                <primitive object={M.cornStem} attach="material" />
-              </mesh>
-              <mesh position={[0.13,h*0.62,0]} rotation={[0,0,0.4]}>
-                <cylinderGeometry args={[0.09,0.07,0.42,6]} />
-                <primitive object={M.cornCob} attach="material" />
-              </mesh>
-            </group>
-          );
-        })
-      )}
-    </group>
-  );
-}
-
-function Barn({ x = 0, z = 0 }) {
-  return (
-    <group position={[x, 0, z]}>
-      <mesh castShadow receiveShadow position={[0,2.6,0]}>
-        <boxGeometry args={[7,5.2,9]} /><primitive object={M.barnRed} attach="material" />
-      </mesh>
-      {[-3.51,3.51].map((ox,i) => (
-        <mesh key={i} position={[ox,2.6,0]}>
-          <boxGeometry args={[0.12,5.2,9]} /><primitive object={M.barnSide} attach="material" />
-        </mesh>
-      ))}
-      <mesh castShadow position={[0,8.4,0]}>
-        <coneGeometry args={[2.6,3.4,4]} /><primitive object={M.barnRoof} attach="material" />
-      </mesh>
-      <mesh position={[0,1.55,4.62]}>
-        <boxGeometry args={[2.2,3.1,0.15]} /><primitive object={M.barnDoor} attach="material" />
-      </mesh>
-      {[[-2.4,3.8],[2.4,3.8]].map(([wx,wy],i) => (
-        <mesh key={i} position={[wx,wy,4.62]}>
-          <boxGeometry args={[0.9,0.9,0.12]} /><primitive object={M.barnWindow} attach="material" />
-        </mesh>
-      ))}
-      {/* silo */}
-      <group position={[4.8,0,-1.5]}>
-        <mesh castShadow receiveShadow position={[0,4.0,0]}>
-          <cylinderGeometry args={[1.3,1.35,8.0,12]} /><primitive object={M.siloWall} attach="material" />
-        </mesh>
-        <mesh castShadow position={[0,8.0,0]}>
-          <sphereGeometry args={[1.34,12,8,0,Math.PI*2,0,Math.PI/2]} />
-          <primitive object={M.siloDome} attach="material" />
-        </mesh>
-      </group>
-    </group>
-  );
+function Birds() {
+  const N = 12;
+  return (<Anim geo={birdGeo} count={N} margin={80}
+    init={(i, o) => { o.userData = { r: 30 + (i % 4) * 8, h: 24 + (i % 3) * 4, p: i * 0.5, cx: i < 6 ? -40 : 45, cz: -120 - (i % 2) * 30 }; }}
+    update={(i, t, o) => {
+      const u = o.userData, a = t * 0.25 + u.p;
+      o.position.set(u.cx + Math.cos(a) * u.r, u.h + Math.sin(t * 2 + i) * 0.6, u.cz + Math.sin(a) * u.r);
+      o.rotation.set(0, -a, Math.sin(t * 8 + i) * 0.5);
+    }} />);
 }
 
 // ── Sky ───────────────────────────────────────────────────────────────────────
@@ -486,96 +405,6 @@ function GroundPlane() {
   );
 }
 
-// ── Track Segment ─────────────────────────────────────────────────────────────
-// Each segment has ~14-18 procedural props.
-// seed=0-5 cycles through 4 themes for variety.
-function TrackSegment({ seed }) {
-  const theme = seed % 4;
-  // deterministic "random" from seed
-  const h = n => (seed * 7919 + n * 1013) % 1000 / 1000;
-
-  const leftX  = -(ROAD_HALF + 1.5);
-  const rightX =   ROAD_HALF + 1.5;
-
-  return (
-    <group>
-      {/* ── Safety barriers flush with road ── */}
-      <BarrierRow x={leftX  - 0.5} z={0} />
-      <BarrierRow x={rightX + 0.5} z={0} />
-
-      {/* ── Racing fence panels outside barriers ── */}
-      <RacingFence x={leftX  - 2.0} z={0} />
-      <RacingFence x={rightX + 2.0} z={0} />
-
-      {/* ── Light posts (2 per segment, alternating sides) ── */}
-      <LightPost x={leftX  - 1.0} z={-25} rotY={ Math.PI * 0.5} />
-      <LightPost x={rightX + 1.0} z={-85} rotY={-Math.PI * 0.5} />
-
-      {/* ── Overhead gantry every other segment ── */}
-      {theme % 2 === 0 && <Overhead z={-60} />}
-
-      {/* ── Flags ── */}
-      <Flag x={leftX  - 2.5} z={-10}  rotY={Math.PI * 0.5} green={theme === 1} />
-      <Flag x={rightX + 2.5} z={-100} rotY={Math.PI * 0.5} green={theme === 2} />
-
-      {/* ── Grandstands (far outside, 1 per segment side alternating) ── */}
-      {theme === 0 && (
-        <GrandStand x={leftX  - 22} z={-50} rotY={-Math.PI/2} covered={false} />
-      )}
-      {theme === 1 && (
-        <GrandStand x={rightX + 22} z={-70} rotY={ Math.PI/2} covered={true}  />
-      )}
-      {theme === 2 && (
-        <GrandStand x={leftX  - 22} z={-30} rotY={-Math.PI/2} covered={true}  />
-      )}
-      {theme === 3 && (
-        <GrandStand x={rightX + 22} z={-90} rotY={ Math.PI/2} covered={false} />
-      )}
-
-      {/* ── Tents (1-2 per segment) ── */}
-      <Tent x={leftX  - 18} z={-80} rotY={-Math.PI/2} long={theme % 2 === 0} />
-      {theme % 3 !== 0 && (
-        <Tent x={rightX + 16} z={-30} rotY={Math.PI/2} long={false} />
-      )}
-
-      {/* ── Billboard (1 per segment) ── */}
-      <Billboard
-        x={(theme % 2 === 0 ? leftX : rightX) + (theme%2===0 ? -28 : 28)}
-        z={-45 - h(5)*20}
-        rotY={theme % 2 === 0 ? -Math.PI/2 : Math.PI/2}
-        low={theme === 3}
-      />
-
-      {/* ── Roadside props (barrels / crates at fence line) ── */}
-      <Barrel x={leftX  - 3} z={-20} rotY={h(1)*Math.PI*2} group={theme===1} />
-      <Crate  x={rightX + 3} z={-55} rotY={h(2)*Math.PI*2} small={theme===2} />
-      {theme % 2 === 0 && (
-        <Barrel x={rightX + 3} z={-90} rotY={h(3)*Math.PI*2} />
-      )}
-
-      {/* ── Background city buildings (far left and right) ── */}
-      <CityBuilding x={leftX  - 55} z={-40}  rotY={-Math.PI/2} type={seed}     sky={theme===0} />
-      <CityBuilding x={rightX + 55} z={-80}  rotY={ Math.PI/2} type={seed+1}   sky={theme===1} />
-      <CityBuilding x={leftX  - 70} z={-100} rotY={-Math.PI/2} type={seed+2}   low={theme===2} />
-      {theme % 3 !== 2 && (
-        <CityBuilding x={rightX + 70} z={-20} rotY={Math.PI/2} type={seed+3}   low={theme===3} />
-      )}
-
-      {/* ── Trees (4 per segment, outside the spectator zone) ── */}
-      <RaceTree  x={leftX  - 38} z={-35}  scale={0.9 + h(6)*0.3} rotY={h(7)*Math.PI*2} />
-      <RaceTree  x={rightX + 38} z={-65}  scale={0.8 + h(8)*0.3} rotY={h(9)*Math.PI*2} />
-      <RetroTree x={leftX  - 42} z={-95}  scale={0.9 + h(10)*0.2} rotY={h(11)*Math.PI*2} />
-      <RetroTree x={rightX + 42} z={-15}  scale={0.8 + h(12)*0.2} rotY={h(13)*Math.PI*2} />
-
-      {/* ── Farm feature on one side per theme ── */}
-      {theme === 0 && <Barn    x={leftX  - 38} z={-70} />}
-      {theme === 2 && <Barn    x={rightX + 38} z={-45} />}
-      {theme === 1 && <HayStack x={leftX  - 16} z={-55} />}
-      {theme === 3 && <CornField x={leftX - 22} z={-75} />}
-    </group>
-  );
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 export default function FarmEnvironment() {
   const grpRefs = useRef([]);
@@ -589,7 +418,8 @@ export default function FarmEnvironment() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId]);
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
+    crowdTime.value = clock.elapsedTime;
     if (phase !== 'playing') return;
     const speed = useGameStore.getState().speed;
     posRef.current = posRef.current.map((z, i) => {
@@ -605,9 +435,10 @@ export default function FarmEnvironment() {
       <Sky />
       <Mountains />
       <GroundPlane />
+      <Birds />
       {posRef.current.map((z, i) => (
         <group key={i} ref={el => (grpRefs.current[i] = el)} position={[0, 0, z]}>
-          <TrackSegment seed={i} />
+          <SegmentContent seg={i} />
         </group>
       ))}
     </>
