@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { GoogleButton } from './SignInButtons';
 import useGameStore from '@/store/useGameStore';
 import { CHARACTERS } from '@/constants/characters';
 import { HORSES } from '@/constants/horses';
@@ -580,13 +581,9 @@ export default function MainMenu() {
                 >
                   ☁️ {t('GERİ YÜKLE')}
                 </button>
-                <button
-                  className="hr-press"
-                  style={{ ...styles.nameBtn, background: '#fff', color: C.ink, '--hr-edge': C.edge }}
-                  onClick={() => signInWith('google')}
-                >
-                  🇬 {t('Google hesabımla geri yükle')}
-                </button>
+                <GoogleButton style={{ marginTop: 10, width: '100%' }} onClick={() => signInWith('google')}>
+                  {t('Google hesabımla geri yükle')}
+                </GoogleButton>
                 {restoreMsg && <div style={{ fontSize: 11, fontWeight: 800, color: restoreMsg.startsWith('⚠') ? C.red : C.green }}>{restoreMsg}</div>}
               </div>
             )}

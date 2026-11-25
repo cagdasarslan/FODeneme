@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { GoogleButton, AppleButton } from './SignInButtons';
 import useGameStore from '@/store/useGameStore';
 import { sfx } from '@/utils/audio';
 import { getRecoveryCode, restoreFromCloud, pushCloudSave, deleteAllData, hasLocalProgress } from '@/services/CloudSave';
@@ -151,18 +152,12 @@ function CloudSection() {
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-          <button
-            className="hr-press"
-            style={{ ...btn.secondary, flex: 1, padding: '10px 8px', minHeight: 48, fontSize: 13,
-              background: '#fffaf0', color: C.ink }}
-            onClick={() => { sfx.click(); signInWith('google'); }}
-          >🇬 {t('Google ile Giriş')}</button>
-          <button
-            className="hr-press"
-            style={{ ...btn.secondary, flex: 1, padding: '10px 8px', minHeight: 48, fontSize: 13,
-              background: C.edgeDk, color: C.textOnDark }}
-            onClick={() => { sfx.click(); signInWith('apple'); }}
-          > {t('Apple ile Giriş')}</button>
+          <GoogleButton style={{ flex: 1 }} onClick={() => { sfx.click(); signInWith('google'); }}>
+            {t('Google ile Giriş')}
+          </GoogleButton>
+          <AppleButton style={{ flex: 1 }} onClick={() => { sfx.click(); signInWith('apple'); }}>
+            {t('Apple ile Giriş')}
+          </AppleButton>
         </div>
       )}
 
