@@ -1,68 +1,127 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
-import { SHADOW_MAP } from '@/utils/device';
+import { SHADOW_MAP, IS_MOBILE } from '@/utils/device';
+import { G, makeMats, makeP } from '@/utils/procKit';
 
 const SEG_LEN = 120;
 const SEG_COUNT = 6;
 const RECYCLE_AFTER = SEG_LEN + 20;
 
-const SPC = '/assets/models/space/';
-const M_ROCKET_BASE  = SPC + 'rocket_baseA.glb';
-const M_ROCKET_TOP   = SPC + 'rocket_topA.glb';
-const M_ROCKET_FINS  = SPC + 'rocket_finsA.glb';
-const M_HANGAR_LG    = SPC + 'hangar_largeA.glb';
-const M_HANGAR_RD    = SPC + 'hangar_roundA.glb';
-const M_SAT_LG       = SPC + 'satelliteDish_large.glb';
-const M_SAT_SM       = SPC + 'satelliteDish.glb';
-const M_GENERATOR    = SPC + 'machine_generator.glb';
-const M_ROCK_A       = SPC + 'rock_largeA.glb';
-const M_ROCK_B       = SPC + 'rock_largeB.glb';
-const M_CRATER       = SPC + 'crater.glb';
-const M_CRATER_LG    = SPC + 'craterLarge.glb';
+// Mars dekoru kodla üretilir (eskiden 12 space-kit GLB). Ölçüler GLB sınır
+// kutularından; kitin orijin kayması (merkez ≈ x2, z1.5) da korunur ki
+// yerleşim/döndürme eskisiyle aynı görünsün.
+const DM = makeMats({
+  hull: '#e4e2dc', hullDk: '#a8a8a8', red: '#c8402c', metal: '#8a8e94', metalDk: '#55595e',
+  panel: '#2c4c7a', window: { color: '#9cd8ff', emissive: '#4aa8e0', emissiveIntensity: 0.5 },
+  glow: { color: '#ffb070', emissive: '#ff7a20', emissiveIntensity: 0.9 },
+  rock: '#8a3a1e', rock2: '#a04a26', rockDk: '#6a2a14', craterIn: '#5e2410', craterRim: '#a8482a',
+  door: '#3a3e44', yellow: '#e0b030',
+});
+const P = makeP(DM);
+const C = ({ c, children }) => <group position={[c[0], 0, c[1]]}>{children}</group>;
 
-useGLTF.preload(M_ROCKET_BASE);
-useGLTF.preload(M_ROCKET_TOP);
-useGLTF.preload(M_ROCKET_FINS);
-useGLTF.preload(M_HANGAR_LG);
-useGLTF.preload(M_HANGAR_RD);
-useGLTF.preload(M_SAT_LG);
-useGLTF.preload(M_SAT_SM);
-useGLTF.preload(M_GENERATOR);
-useGLTF.preload(M_ROCK_A);
-useGLTF.preload(M_ROCK_B);
-useGLTF.preload(M_CRATER);
-useGLTF.preload(M_CRATER_LG);
-
-function cloneScene(scene) {
-  const c = scene.clone(true);
-  c.traverse((n) => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
-  return c;
+// hangar_largeA: 2 × 3, H 1.0 — tonoz çatılı hangar
+function HangarLg() {
+  return (<C c={[2, 1.5]}>
+    <P g="box" m="hullDk" p={[0, 0, 0]} s={[2, 0.5, 2.9]} />
+    <P g="halfCylZ" m="hull" p={[0, 0.5, 0]} s={[1, 0.5, 3]} />
+    <P g="box" m="door" p={[0, 0, 1.45]} s={[1.2, 0.7, 0.04]} />
+    <P g="box" m="yellow" p={[0, 0.7, 1.46]} s={[1.3, 0.05, 0.04]} />
+    <P g="box" m="metalDk" p={[1.0, 0, -0.6]} s={[0.08, 0.35, 0.8]} />
+  </C>);
 }
-
-function Model({ path, position, scale = 1, rotation = [0, 0, 0] }) {
-  const { scene } = useGLTF(path);
-  const clone = useMemo(() => cloneScene(scene), [scene]);
-  const s = Array.isArray(scale) ? scale : [scale, scale, scale];
-  return <primitive object={clone} position={position} scale={s} rotation={rotation} />;
+// hangar_roundA: 3.3 × 2.8, H 1.5 — kubbe + giriş tüneli
+function HangarRd() {
+  return (<C c={[2, 1.5]}>
+    <P g="cyl12" m="hullDk" p={[0, 0, 0]} s={[1.38, 0.15, 1.2]} />
+    <mesh geometry={G.dome} material={DM.hull} position={[0, 0.15, 0]} scale={[1.38, 1.35, 1.2]} castShadow={!IS_MOBILE} receiveShadow={!IS_MOBILE} />
+    <P g="halfCylZ" m="hull" p={[0, 0, 1.2]} s={[0.4, 0.55, 0.6]} />
+    <P g="box" m="door" p={[0, 0, 1.5]} s={[0.5, 0.45, 0.03]} />
+    <P g="box" m="window" p={[0, 1.0, 0.78]} s={[0.6, 0.12, 0.05]} r={[-0.6, 0, 0]} />
+  </C>);
 }
-
+// satelliteDish(_large): 0.84 / 0.68 genişlik, H 0.81 / 0.62
+function Dish({ big }) {
+  return (<C c={big ? [2, 1.4] : [2, 1.465]}>
+    <group scale={big ? 1 : 0.77}>
+      <P g="box" m="metalDk" p={[0, 0, 0]} s={[0.36, 0.08, 0.36]} />
+      <P g="cyl8" m="metal" p={[0, 0.08, 0]} s={[0.04, 0.3, 0.04]} />
+      <group position={[0, 0.48, 0]} rotation={[-0.7, 0, 0]}>
+        <mesh geometry={G.dome} material={DM.hull} scale={[0.4, -0.14, 0.4]} castShadow={!IS_MOBILE} />
+        <P g="cyl8" m="metal" p={[0, 0, 0]} s={[0.012, 0.3, 0.012]} />
+        <P g="box" m="red" p={[0, 0.3, 0]} s={[0.05, 0.05, 0.05]} />
+      </group>
+    </group>
+  </C>);
+}
+// machine_generator: 0.7 × 0.53, H 0.4
+function Generator() {
+  return (<C c={[1.95, 1.435]}>
+    <P g="box" m="metal" p={[-0.08, 0, 0]} s={[0.5, 0.3, 0.5]} />
+    <P g="box" m="metalDk" p={[-0.08, 0.3, 0]} s={[0.4, 0.04, 0.4]} />
+    <P g="cyl8" m="hull" p={[0.26, 0, 0.12]} s={[0.08, 0.4, 0.08]} />
+    <P g="cyl8" m="hull" p={[0.26, 0, -0.12]} s={[0.08, 0.36, 0.08]} />
+    <P g="box" m="glow" p={[-0.08, 0.12, 0.251]} s={[0.3, 0.06, 0.01]} />
+    <P g="box" m="yellow" p={[-0.08, 0.02, 0.252]} s={[0.5, 0.03, 0.01]} />
+  </C>);
+}
+// rock_largeA/B: 0.92 × 0.85, H 0.5 — kaya kümesi
+function Rocks({ b }) {
+  const parts = b
+    ? [[0.1, 0.05, 0.32, 0.5], [-0.25, 0.2, 0.2, 0.3], [0.25, -0.28, 0.16, 0.22]]
+    : [[-0.1, 0, 0.3, 0.48], [0.25, 0.15, 0.22, 0.32], [-0.2, -0.3, 0.14, 0.2], [0.15, -0.25, 0.12, 0.15]];
+  return (<C c={[2.0, 1.5]}>
+    {parts.map(([x, z, r, h], i) => (
+      <P key={i} g="rock" m={['rock', 'rock2', 'rockDk', 'rock'][i]} p={[x, h * 0.42, z]} s={[r, h * 0.62, r * 0.9]} r={[0, i * 1.7 + (b ? 0.5 : 0), 0]} />
+    ))}
+  </C>);
+}
+// crater: 0.72 × 0.82, H 0.12 — sığ çanak
+function Crater() {
+  return (<C c={[2, 1.5]}>
+    <P g="cyl12" m="craterRim" p={[0, 0, 0]} s={[0.38, 0.1, 0.4]} />
+    <P g="cyl12" m="craterIn" p={[0, 0.1, 0]} s={[0.27, 0.012, 0.29]} />
+    <P g="rock" m="rockDk" p={[0.33, 0.04, 0.12]} s={[0.06, 0.05, 0.06]} />
+  </C>);
+}
+// Roket: eski üç parça (yüzgeç + gövde + burun, ×2.2) ≈ 6.2 m; merkez (4.4, 3.3)
 function Rocket({ position, ry = 0 }) {
-  const bases = useGLTF(M_ROCKET_BASE);
-  const tops  = useGLTF(M_ROCKET_TOP);
-  const fins  = useGLTF(M_ROCKET_FINS);
-  const base  = useMemo(() => cloneScene(bases.scene), [bases.scene]);
-  const top   = useMemo(() => cloneScene(tops.scene),  [tops.scene]);
-  const fin   = useMemo(() => cloneScene(fins.scene),  [fins.scene]);
   return (
     <group position={position} rotation={[0, ry, 0]}>
-      <primitive object={fin}  scale={[2.2, 2.2, 2.2]} position={[0, 0,    0]} />
-      <primitive object={base} scale={[2.2, 2.2, 2.2]} position={[0, 2.2,  0]} />
-      <primitive object={top}  scale={[2.2, 2.2, 2.2]} position={[0, 4.4,  0]} />
+      <group position={[4.4, 0, 3.3]}>
+        <P g="cyl8" m="metalDk" p={[0, 0, 0]} s={[1.3, 0.12, 1.3]} />
+        <P g="cone8" m="metalDk" p={[0, 0.12, 0]} s={[0.55, 0.6, 0.55]} />
+        <P g="cyl12" m="hull" p={[0, 0.7, 0]} s={[0.75, 3.4, 0.75]} />
+        <P g="cyl12" m="red" p={[0, 2.4, 0]} s={[0.77, 0.3, 0.77]} />
+        <P g="cone8" m="red" p={[0, 4.1, 0]} s={[0.75, 2.05, 0.75]} />
+        <P g="box" m="window" p={[0, 3.3, 0.7]} s={[0.35, 0.35, 0.12]} />
+        {[0, 1, 2, 3].map((k) => (
+          <group key={k} rotation={[0, k * Math.PI / 2 + Math.PI / 4, 0]}>
+            <P g="box" m="red" p={[0, 0.5, 0.95]} s={[0.1, 1.3, 0.75]} />
+          </group>
+        ))}
+        {[-1, 1].map((sx) => (<group key={sx}>
+          <P g="cyl8" m="hullDk" p={[sx * 1.0, 0.5, 0]} s={[0.28, 2.2, 0.28]} />
+          <P g="cone8" m="red" p={[sx * 1.0, 2.7, 0]} s={[0.28, 0.6, 0.28]} />
+        </group>))}
+      </group>
     </group>
   );
+}
+
+const ITEMS = {
+  hangarLg: () => <HangarLg />, hangarRd: () => <HangarRd />, satLg: () => <Dish big />, satSm: () => <Dish />,
+  generator: () => <Generator />, rockA: () => <Rocks />, rockB: () => <Rocks b />, crater: () => <Crater />,
+};
+const M_HANGAR_LG = 'hangarLg', M_HANGAR_RD = 'hangarRd', M_SAT_LG = 'satLg', M_SAT_SM = 'satSm',
+  M_GENERATOR = 'generator', M_ROCK_A = 'rockA', M_ROCK_B = 'rockB', M_CRATER = 'crater';
+
+function Model({ path, position, scale = 1, rotation = [0, 0, 0] }) {
+  const s = Array.isArray(scale) ? scale : [scale, scale, scale];
+  const make = ITEMS[path];
+  return <group position={position} scale={s} rotation={rotation}>{make ? make() : null}</group>;
 }
 
 // Stars procedural

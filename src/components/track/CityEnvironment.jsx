@@ -1,8 +1,8 @@
-import { useRef, useEffect, Suspense } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
+import { G, makeMats, makeP } from '@/utils/procKit';
 
 const SEG_LEN       = 120;
 const SEG_COUNT     = 6;
@@ -13,42 +13,145 @@ const BLD_SCALE     = 5;   // building tile 2m → 10m footprint
 const BLD_HALF      = BLD_SCALE;            // 5 = half of 10m footprint
 const BLD_CENTER_X  = ROAD_HALF + SIDEWALK_W + BLD_HALF; // 6+3+5 = 14
 
-const K = '/assets/models/kaykit/';
+// ── Sokak donatısı — kodla üretilir (eskiden kaykit GLTF'leri) ────────────────
+// Ölçüler kaykit modellerinin sınır kutularından (model birimi); çağıranlar
+// eski ölçekleri kullanır.
+const CM = makeMats({
+  pole: '#3c4046', poleLt: '#6a7078', lamp: { color: '#fff4c8', emissive: '#ffe08a', emissiveIntensity: 0.8 },
+  housing: '#2a2c30', red: { color: '#ff3b30', emissive: '#ff2010', emissiveIntensity: 0.9 },
+  amber: '#7a5a10', green: '#1e5a2a', leaf: '#3f8a3a', leaf2: '#2f7030', planter: '#8a8478',
+  sedan: '#3a6ea8', taxi: '#f2c230', police: '#f4f4f4', policeDk: '#1c2a4a',
+  glass: { color: '#2a3a4c', roughness: 0.25, metalness: 0.4 }, tire: '#1c1c1e', hub: '#b0b4ba',
+  head: { color: '#fff8e0', emissive: '#fff0c0', emissiveIntensity: 0.4 }, tail: '#a01818',
+  sirenR: { color: '#ff2020', emissive: '#ff0000', emissiveIntensity: 1 },
+  sirenB: { color: '#2050ff', emissive: '#0030ff', emissiveIntensity: 1 },
+  checker: '#1a1a1a', dump: '#2e6a3e', dumpLid: '#24543a', hydrant: '#c8261e', hydrantCap: '#e0d8c8',
+  tank: '#8a6a4a', tankRoof: '#5a4232', wood: '#8a5a32', iron: '#2a2a2c',
+});
+const P = makeP(CM);
 
-// Props
-const K_ROAD     = K+'road_straight.gltf';
-const K_LIGHT    = K+'streetlight.gltf';
-const K_TRAFFIC  = K+'trafficlight_A.gltf';
-const K_BUSH     = K+'bush.gltf';
-const K_CAR_S    = K+'car_sedan.gltf';
-const K_CAR_T    = K+'car_taxi.gltf';
-const K_CAR_P    = K+'car_police.gltf';
-const K_DUMP     = K+'dumpster.gltf';
-const K_HYDRANT  = K+'firehydrant.gltf';
-const K_TOWER    = K+'watertower.gltf';
-const K_BENCH    = K+'bench.gltf';
-
-[K_TOWER, K_ROAD, K_LIGHT, K_TRAFFIC, K_BUSH, K_CAR_S, K_CAR_T,
-  K_CAR_P, K_DUMP, K_HYDRANT, K_BENCH]
-  .forEach(p => useGLTF.preload(p));
-
-// ── Per-instance GLB clone ────────────────────────────────────────────────────
-function GLBInner({ path, position = [0,0,0], scale = 1, rotY = 0 }) {
-  const { scene } = useGLTF(path);
-  const cloned = useRef(null);
-  if (!cloned.current) {
-    cloned.current = scene.clone(true);
-    cloned.current.traverse(o => {
-      if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
-    });
-  }
-  return (
-    <primitive object={cloned.current}
-      position={position} scale={scale} rotation={[0, rotY, 0]} />
-  );
+// streetlight: kol −x yönünde 0.24, H 0.96
+function StreetLightM() {
+  return (<>
+    <P g="cyl8" m="pole" p={[0, 0, 0]} s={[0.03, 0.05, 0.03]} />
+    <P g="cyl8" m="pole" p={[0, 0, 0]} s={[0.014, 0.93, 0.014]} />
+    <P g="box" m="pole" p={[-0.11, 0.9, 0]} s={[0.24, 0.015, 0.015]} />
+    <P g="box" m="pole" p={[-0.2, 0.88, 0]} s={[0.08, 0.035, 0.045]} />
+    <P g="box" m="lamp" p={[-0.2, 0.875, 0]} s={[0.065, 0.008, 0.035]} />
+  </>);
 }
-function GLB(props) {
-  return <Suspense fallback={null}><GLBInner {...props} /></Suspense>;
+// trafficlight_A: direk + kol + 3 lambalı kutu, H 0.73
+function TrafficLightM() {
+  return (<>
+    <P g="cyl8" m="pole" p={[0, 0, 0]} s={[0.014, 0.6, 0.014]} />
+    <P g="box" m="housing" p={[-0.05, 0.42, 0.04]} s={[0.07, 0.21, 0.06]} />
+    <P g="box" m="red" p={[-0.05, 0.585, 0.071]} s={[0.04, 0.035, 0.008]} />
+    <P g="box" m="amber" p={[-0.05, 0.52, 0.071]} s={[0.04, 0.035, 0.008]} />
+    <P g="box" m="green" p={[-0.05, 0.455, 0.071]} s={[0.04, 0.035, 0.008]} />
+    <P g="box" m="pole" p={[-0.05, 0.6, 0.04]} s={[0.075, 0.01, 0.07]} />
+    <P g="box" m="housing" p={[0.0, 0.66, 0.03]} s={[0.03, 0.07, 0.03]} />
+    <P g="box" m="lamp" p={[0.0, 0.7, 0.03]} s={[0.025, 0.03, 0.025]} />
+  </>);
+}
+// bush: saksı + yaprak kümesi, H 0.38
+function BushM() {
+  return (<>
+    <P g="cyl8" m="planter" p={[0, 0, 0]} s={[0.1, 0.1, 0.1]} />
+    <P g="blob" m="leaf" p={[0, 0.2, 0]} s={[0.1, 0.12, 0.1]} />
+    <P g="blob" m="leaf2" p={[0.03, 0.29, -0.02]} s={[0.07, 0.08, 0.07]} r={[0, 0.7, 0]} />
+  </>);
+}
+// Arabalar: 0.42 × 0.94 (z boyunca), alt −0.06 — gövde, kabin+camlar, tekerlekler
+function CarM({ kind }) {
+  const body = kind === 0 ? 'sedan' : kind === 1 ? 'taxi' : 'police';
+  return (<>
+    <P g="box" m={body} p={[0, 0.0, 0]} s={[0.4, 0.15, 0.92]} />
+    {kind === 2 && <P g="box" m="policeDk" p={[0, 0.0, 0.08]} s={[0.405, 0.09, 0.34]} />}
+    <P g="box" m={body} p={[0, 0.15, -0.04]} s={[0.36, 0.12, 0.46]} />
+    <P g="box" m="glass" p={[0, 0.16, -0.04]} s={[0.365, 0.09, 0.4]} />
+    <P g="box" m="glass" p={[0, 0.155, 0.19]} s={[0.33, 0.085, 0.02]} r={[-0.5, 0, 0]} />
+    <P g="box" m="head" p={[-0.13, 0.07, 0.46]} s={[0.07, 0.035, 0.01]} />
+    <P g="box" m="head" p={[0.13, 0.07, 0.46]} s={[0.07, 0.035, 0.01]} />
+    <P g="box" m="tail" p={[-0.13, 0.08, -0.46]} s={[0.07, 0.03, 0.01]} />
+    <P g="box" m="tail" p={[0.13, 0.08, -0.46]} s={[0.07, 0.03, 0.01]} />
+    <P g="box" m="tire" p={[0, -0.02, 0]} s={[0.36, 0.03, 0.9]} />
+    {[[-1, 1], [1, 1], [-1, -1], [1, -1]].map(([x, z], i) => (
+      <group key={i}>
+        <P g="wheel" m="tire" p={[x * 0.18, 0.02, z * 0.29]} s={[0.05, 0.08, 0.08]} />
+        <P g="wheel" m="hub" p={[x * 0.205, 0.02, z * 0.29]} s={[0.01, 0.04, 0.04]} />
+      </group>
+    ))}
+    {kind === 1 && (<>
+      <P g="box" m="checker" p={[0, 0.06, 0]} s={[0.405, 0.03, 0.6]} />
+      <P g="box" m="taxi" p={[0, 0.27, -0.04]} s={[0.12, 0.06, 0.06]} />
+      <P g="box" m="lamp" p={[0, 0.28, -0.04]} s={[0.1, 0.04, 0.065]} />
+    </>)}
+    {kind === 2 && (<>
+      <P g="box" m="pole" p={[0, 0.27, -0.04]} s={[0.26, 0.015, 0.06]} />
+      <P g="box" m="sirenR" p={[-0.07, 0.285, -0.04]} s={[0.11, 0.04, 0.055]} />
+      <P g="box" m="sirenB" p={[0.07, 0.285, -0.04]} s={[0.11, 0.04, 0.055]} />
+    </>)}
+  </>);
+}
+// dumpster: 0.56 × 0.36, H 0.32
+function DumpsterM() {
+  return (<>
+    <P g="box" m="iron" p={[-0.22, 0, 0]} s={[0.05, 0.03, 0.3]} />
+    <P g="box" m="iron" p={[0.22, 0, 0]} s={[0.05, 0.03, 0.3]} />
+    <P g="box" m="dump" p={[0, 0.03, 0]} s={[0.54, 0.25, 0.34]} />
+    <P g="box" m="dumpLid" p={[0, 0.28, -0.02]} s={[0.56, 0.03, 0.36]} r={[0.12, 0, 0]} />
+    <P g="box" m="iron" p={[0, 0.2, 0.175]} s={[0.5, 0.025, 0.02]} />
+  </>);
+}
+// firehydrant: r 0.07, H 0.22
+function HydrantM() {
+  return (<>
+    <P g="cyl8" m="hydrant" p={[0, 0, 0]} s={[0.06, 0.025, 0.06]} />
+    <P g="cyl8" m="hydrant" p={[0, 0.02, 0]} s={[0.042, 0.15, 0.042]} />
+    <P g="cyl8" m="hydrantCap" p={[0, 0.165, 0]} s={[0.05, 0.015, 0.05]} />
+    <mesh geometry={G.dome} material={CM.hydrant} position={[0, 0.18, 0]} scale={[0.04, 0.035, 0.04]} />
+    <P g="wheel" m="hydrantCap" p={[0, 0.11, 0]} s={[0.12, 0.022, 0.022]} />
+    <P g="cyl8" m="hydrantCap" p={[0, 0.1, 0.035]} s={[0.022, 0.03, 0.022]} r={[Math.PI / 2, 0, 0]} />
+  </>);
+}
+// watertower: r 0.25, H 0.67 — ayaklar, fıçı tank, konik çatı
+function WaterTowerM() {
+  return (<>
+    {[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([x, z], i) => (
+      <P key={i} g="box" m="iron" p={[x * 0.15, 0, z * 0.15]} s={[0.025, 0.24, 0.025]} />
+    ))}
+    <P g="box" m="iron" p={[0, 0.1, 0]} s={[0.32, 0.015, 0.015]} />
+    <P g="box" m="iron" p={[0, 0.1, 0]} s={[0.015, 0.015, 0.32]} />
+    <P g="cyl12" m="iron" p={[0, 0.23, 0]} s={[0.23, 0.02, 0.23]} />
+    <P g="cyl12" m="tank" p={[0, 0.25, 0]} s={[0.2, 0.28, 0.2]} />
+    <P g="cyl12" m="iron" p={[0, 0.33, 0]} s={[0.205, 0.012, 0.205]} />
+    <P g="cyl12" m="iron" p={[0, 0.45, 0]} s={[0.205, 0.012, 0.205]} />
+    <P g="cone8" m="tankRoof" p={[0, 0.53, 0]} s={[0.23, 0.14, 0.23]} />
+  </>);
+}
+// bench: 0.4 × 0.16, H 0.1 — alçak sırtlı bank
+function BenchM() {
+  return (<>
+    {[-0.17, 0.17].map((x) => (<group key={x}>
+      <P g="box" m="iron" p={[x, 0, 0]} s={[0.02, 0.05, 0.11]} />
+      <P g="box" m="iron" p={[x, 0, -0.06]} s={[0.02, 0.1, 0.02]} />
+    </group>))}
+    {[0.03, -0.01, -0.045].map((z) => <P key={z} g="box" m="wood" p={[0, 0.05, z]} s={[0.4, 0.01, 0.03]} />)}
+    <P g="box" m="wood" p={[0, 0.075, -0.07]} s={[0.4, 0.025, 0.01]} />
+  </>);
+}
+
+const PROPS = {
+  light: StreetLightM, traffic: TrafficLightM, bush: BushM, dump: DumpsterM, hydrant: HydrantM,
+  tower: WaterTowerM, bench: BenchM,
+  carS: () => <CarM kind={0} />, carT: () => <CarM kind={1} />, carP: () => <CarM kind={2} />,
+};
+const K_LIGHT = 'light', K_TRAFFIC = 'traffic', K_BUSH = 'bush', K_CAR_S = 'carS', K_CAR_T = 'carT',
+  K_CAR_P = 'carP', K_DUMP = 'dump', K_HYDRANT = 'hydrant', K_TOWER = 'tower', K_BENCH = 'bench';
+
+function GLB({ path, position = [0, 0, 0], scale = 1, rotY = 0 }) {
+  const Make = PROPS[path];
+  return <group position={position} scale={scale} rotation={[0, rotY, 0]}>{Make ? <Make /> : null}</group>;
 }
 
 // ── Materials ─────────────────────────────────────────────────────────────────
@@ -67,7 +170,6 @@ const cloudMatN   = new THREE.MeshStandardMaterial({ color: '#2a3048', transpare
 const groundMat   = new THREE.MeshStandardMaterial({ color: '#4a4a4a', roughness:0.95 });
 
 // Track.jsx already renders the visual road — no road tiles needed here.
-// K_ROAD is kept in preload list for potential future use.
 
 // ── Sidewalk (procedural concrete strip) ─────────────────────────────────────
 const swGeo = new THREE.BoxGeometry(SIDEWALK_W, 0.18, SEG_LEN);
