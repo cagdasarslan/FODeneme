@@ -1,9 +1,10 @@
-import { useRef, useMemo, useLayoutEffect } from 'react';
+import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 import { SHADOW_MAP, IS_MOBILE } from '@/utils/device';
+import { makeStoneTexture } from '@/utils/stoneTexture';
 
 const SEG_LEN = 120;
 const SEG_COUNT = 6;
@@ -102,57 +103,37 @@ function pr(a, b = 0) {
 }
 
 // Parke taşı geometri/materyali (paylaşılan) + renk paleti
-const cobbleGeo = new THREE.BoxGeometry(0.92, 0.22, 0.92);
-const cobbleMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 });
 const COBBLE_COLORS = ['#4a463f', '#534e46', '#3e3a34', '#5a544b', '#423e38', '#4f4942'].map(c => new THREE.Color(c));
 
-// InstancedMesh ile binlerce taş tek draw call'da — segIdx'e göre deterministik
-function CobbleRoad({ segIdx }) {
-  const ref = useRef();
-  const { count, matrices, colors } = useMemo(() => {
-    const dummy = new THREE.Object3D();
-    // Mobilde taş sayısını ~yarıya indir (en ağır haritaydı) — taşlar biraz
-    // daha büyük/seyrek olur ama kare süresi belirgin düşer.
-    const STEP = IS_MOBILE ? 1.4 : 1.0;      // taş aralığı
-    const cols = Math.floor(ROAD_W / STEP);  // ~18 sütun
-    const rows = Math.floor(SEG_LEN / STEP); // 120 sıra
-    const mats = [];
-    const cols_ = [];
-    let n = 0;
-    for (let r = 0; r < rows; r++) {
-      const z = -SEG_LEN / 2 + r * STEP + STEP / 2;
-      const rowOffset = (r % 2) * 0.5;       // tuğla deseni — sıralar kaydırılır
-      for (let c = 0; c < cols; c++) {
-        let x = -ROAD_W / 2 + c * STEP + STEP / 2 + rowOffset;
-        if (x > ROAD_W / 2 - 0.3) continue;  // kenardan taşmasın
-        const jx = (pr(n, segIdx) - 0.5) * 0.12;
-        const jz = (pr(n + 1, segIdx) - 0.5) * 0.12;
-        const sy = 0.7 + pr(n + 2, segIdx) * 0.6;       // yükseklik varyasyonu
-        const sxz = 0.9 + pr(n + 3, segIdx) * 0.14;
-        dummy.position.set(x + jx, 0.16, z + jz);
-        dummy.rotation.set(0, (pr(n + 4, segIdx) - 0.5) * 0.5, 0);
-        dummy.scale.set(sxz, sy, sxz);
-        dummy.updateMatrix();
-        mats.push(dummy.matrix.clone());
-        cols_.push(COBBLE_COLORS[Math.floor(pr(n + 5, segIdx) * COBBLE_COLORS.length) % COBBLE_COLORS.length]);
-        n++;
-      }
+// Yol yüzeyi: tek düzlem + kanvasa çizilmiş taş dokusu (eskiden ~2.100 ayrı
+// 3B kutu → yol parçası başına ~25.000 üçgen; şimdi 2). Doku tüm parçalarda ortak.
+let _roadTex = null;
+function CobbleRoad() {
+  const tex = useMemo(() => {
+    if (!_roadTex) {
+      _roadTex = makeStoneTexture({
+        colors: COBBLE_COLORS.map(c => '#' + c.getHexString()),
+        mortar: '#33302b', cells: 16, fill: 0.9, seed: 7,
+      });
     }
-    return { count: n, matrices: mats, colors: cols_ };
-  }, [segIdx]);
-
-  useLayoutEffect(() => {
-    const m = ref.current;
-    if (!m) return;
-    for (let i = 0; i < matrices.length; i++) {
-      m.setMatrixAt(i, matrices[i]);
-      m.setColorAt(i, colors[i]);
-    }
-    m.instanceMatrix.needsUpdate = true;
-    if (m.instanceColor) m.instanceColor.needsUpdate = true;
-  }, [matrices, colors]);
-
-  return <instancedMesh ref={ref} args={[cobbleGeo, cobbleMat, count]} receiveShadow />;
+    return _roadTex;
+  }, []);
+  // Taş boyutu eskisiyle aynı: masaüstünde 1,0 m, mobilde 1.4 m aralık
+  const step = IS_MOBILE ? 1.4 : 1.0;
+  const repX = ROAD_W / step / 16;
+  const repY = (SEG_LEN + 0.6) / step / 16;
+  const map = useMemo(() => {
+    const t = tex.clone();
+    t.repeat.set(repX, repY);
+    t.needsUpdate = true;
+    return t;
+  }, [tex, repX, repY]);
+  return (
+    <mesh rotation-x={-Math.PI / 2} position={[0, 0.245, 0]} receiveShadow>
+      <planeGeometry args={[ROAD_W, SEG_LEN + 0.6]} />
+      <meshStandardMaterial map={map} roughness={1} metalness={0} />
+    </mesh>
+  );
 }
 
 function RoadSegment({ segIdx = 0 }) {
@@ -173,7 +154,7 @@ function RoadSegment({ segIdx = 0 }) {
         <meshStandardMaterial color="#33302b" roughness={1} />
       </mesh>
       {/* Parke taşları */}
-      <CobbleRoad segIdx={segIdx} />
+      <CobbleRoad />
     </group>
   );
 }

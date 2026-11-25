@@ -1,9 +1,10 @@
-import { useRef, useMemo, useLayoutEffect } from 'react';
+import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 import { SHADOW_MAP, IS_MOBILE } from '@/utils/device';
+import { makeStoneTexture } from '@/utils/stoneTexture';
 
 // ── ZİNDAN (KayKit Dungeon Pack) — karanlık taş koridor, meşale ışıkları ──────
 const SEG_LEN = 120;
@@ -63,51 +64,37 @@ function pr(a, b = 0) {
 
 // ── Zemin — koyu taş döşeme (instanced, tek draw call) ───────────────────────
 const ROAD_W = 18;
-const tileGeo = new THREE.BoxGeometry(0.94, 0.2, 0.94);
-const tileMat = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 });
 const TILE_COLORS = ['#8a8494', '#7d7789', '#948da0', '#736d80', '#867f93', '#9a93a8'].map(c => new THREE.Color(c));
 
-function StoneFloor({ segIdx }) {
-  const ref = useRef();
-  const { count, matrices, colors } = useMemo(() => {
-    const dummy = new THREE.Object3D();
-    const STEP = IS_MOBILE ? 1.5 : 1.0;
-    const cols = Math.floor(ROAD_W / STEP);
-    const rows = Math.floor(SEG_LEN / STEP);
-    const mats = [];
-    const cols_ = [];
-    let n = 0;
-    for (let r = 0; r < rows; r++) {
-      const z = -SEG_LEN / 2 + r * STEP + STEP / 2;
-      const rowOffset = (r % 2) * 0.5;
-      for (let c = 0; c < cols; c++) {
-        const x = -ROAD_W / 2 + c * STEP + STEP / 2 + rowOffset;
-        if (x > ROAD_W / 2 - 0.3) continue;
-        const sy = 0.6 + pr(n + 2, segIdx) * 0.5;
-        dummy.position.set(x + (pr(n, segIdx) - 0.5) * 0.1, 0.14, z + (pr(n + 1, segIdx) - 0.5) * 0.1);
-        dummy.rotation.set(0, (pr(n + 4, segIdx) - 0.5) * 0.3, 0);
-        dummy.scale.set(1, sy, 1);
-        dummy.updateMatrix();
-        mats.push(dummy.matrix.clone());
-        cols_.push(TILE_COLORS[Math.floor(pr(n + 5, segIdx) * TILE_COLORS.length) % TILE_COLORS.length]);
-        n++;
-      }
+// Yol yüzeyi: tek düzlem + kanvasa çizilmiş taş dokusu (eskiden ~2.100 ayrı
+// 3B kutu → yol parçası başına ~25.000 üçgen; şimdi 2). Doku tüm parçalarda ortak.
+let _roadTex = null;
+function StoneFloor() {
+  const tex = useMemo(() => {
+    if (!_roadTex) {
+      _roadTex = makeStoneTexture({
+        colors: TILE_COLORS.map(c => '#' + c.getHexString()),
+        mortar: '#55505f', cells: 16, fill: 0.9, seed: 11,
+      });
     }
-    return { count: n, matrices: mats, colors: cols_ };
-  }, [segIdx]);
-
-  useLayoutEffect(() => {
-    const m = ref.current;
-    if (!m) return;
-    for (let i = 0; i < matrices.length; i++) {
-      m.setMatrixAt(i, matrices[i]);
-      m.setColorAt(i, colors[i]);
-    }
-    m.instanceMatrix.needsUpdate = true;
-    if (m.instanceColor) m.instanceColor.needsUpdate = true;
-  }, [matrices, colors]);
-
-  return <instancedMesh ref={ref} args={[tileGeo, tileMat, count]} receiveShadow />;
+    return _roadTex;
+  }, []);
+  // Taş boyutu eskisiyle aynı: masaüstünde 1,0 m, mobilde 1.5 m aralık
+  const step = IS_MOBILE ? 1.5 : 1.0;
+  const repX = ROAD_W / step / 16;
+  const repY = (SEG_LEN + 0.6) / step / 16;
+  const map = useMemo(() => {
+    const t = tex.clone();
+    t.repeat.set(repX, repY);
+    t.needsUpdate = true;
+    return t;
+  }, [tex, repX, repY]);
+  return (
+    <mesh rotation-x={-Math.PI / 2} position={[0, 0.205, 0]} receiveShadow>
+      <planeGeometry args={[ROAD_W, SEG_LEN + 0.6]} />
+      <meshStandardMaterial map={map} roughness={1} metalness={0} />
+    </mesh>
+  );
 }
 
 // ── Meşale alevi — SADECE emissive küre (dinamik ışık YOK) ────────────────────
@@ -151,7 +138,7 @@ function RoadSegment({ segIdx }) {
           <meshStandardMaterial color="#8f8998" roughness={1} />
         </mesh>
       ))}
-      <StoneFloor segIdx={segIdx} />
+      <StoneFloor />
     </group>
   );
 }

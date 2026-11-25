@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import useGameStore from '@/store/useGameStore';
 import CameraRig from '@/components/CameraRig';
 import Horse from '@/components/horse/Horse';
@@ -59,6 +59,16 @@ if (typeof window !== 'undefined' && localStorage.getItem('dbg') === '1') {
 // type across re-renders. Defining it inside App creates a new function
 // reference every render → React unmounts/remounts the entire environment
 // subtree, causing asset flickering and wrong-map assets appearing.
+// Kamera görüş mesafesini sisin tamamen kapattığı yere çeker: sis ötesindeki
+// nesneler zaten görünmez ama çiziliyordu (far 600, sis 280-500'de bitiyor).
+function FarSync({ far }) {
+  const { camera } = useThree();
+  useEffect(() => {
+    if (camera.far !== far) { camera.far = far; camera.updateProjectionMatrix(); }
+  }, [camera, far]);
+  return null;
+}
+
 function EnvLayer({ mapId }) {
   if (mapId === 6) return <DungeonEnvironment />;
   if (mapId === 5) return <MedievalEnvironment />;
@@ -156,6 +166,10 @@ export default function App() {
   const isDungeon = mapId === 6;
   const selfLit  = isSpace || isMars || isMedieval || isDungeon; // env yönetir kendi ışığını
   const isNight  = false; // gece modu kaldırıldı
+  // Sis mesafesi. Ortaçağ/Zindan'da 500'den 380'e: en ağır iki harita, uzak
+  // orman/dağ/sütunlar sis ötesinde kalıp çizilmez (kamera far sise eşit).
+  const fogNear  = selfLit ? 120 : isNight ? 60 : 90;
+  const fogFar   = (isMedieval || isDungeon) ? 380 : selfLit ? 500 : isNight ? 280 : 420;
   const fogColor = mapId === 6 ? '#a8c8e8' : mapId === 4 ? '#0d0518' : mapId === 3 ? '#c0581a'
     : mapId === 5 ? '#9fd0e8'
     : isNight ? '#0a0e1e'
@@ -167,11 +181,13 @@ export default function App() {
       <Canvas key={graphics} shadows={shadowsOn} camera={{ position: [0,8,14], fov:68, near:0.1, far:600 }}
         style={{ width:'100vw', height:'100vh' }}
         gl={{ antialias, powerPreference:'high-performance' }}
-        dpr={[1,dprMax]} performance={{ min:0.5 }}>
+        dpr={[1,dprMax]} performance={{ min:0.5 }}
+        onCreated={({ gl, scene }) => { if (window.__dbg) { window.__dbg.gl = gl; window.__dbg.scene = scene; } }}>
         {/* Sahne arka planı: uzun/portre ekranlarda zeminin bitiği yerde SİYAH
             boşluk kalmasın — ufukla (fog) aynı renge boyanır, dikişsiz görünür. */}
         <color attach="background" args={[isPaddock ? '#8fb95f' : fogColor]} />
-        {!isPaddock && <fog attach="fog" args={[fogColor, selfLit ? 120 : isNight ? 60 : 90, selfLit ? 500 : isNight ? 280 : 420]} />}
+        {!isPaddock && <fog attach="fog" args={[fogColor, fogNear, fogFar]} />}
+        <FarSync far={isPaddock ? 600 : fogFar + 15} />
         <CameraRig />
         {isPaddock ? (
           <PaddockScene />
