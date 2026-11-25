@@ -455,6 +455,17 @@ export default function ObstacleSpawner() {
   );
   // Her yuvanın ekranda çizilen tipi — çarpışma tipiyle (registry) aynı kaynak
   const [slotTypes, setSlotTypes] = useState(() => poolRef.current.map(o => o.Type));
+  // Geliştirme test kancası: ekranda çizilen tip ile çarpışma tipini karşılaştırmak için
+  const slotTypesRef = useRef(slotTypes);
+  slotTypesRef.current = slotTypes;
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    window.__hrObstacles = () => poolRef.current.map(o => ({
+      id: o.id, active: o.active, x: o.x, z: o.z,
+      type: o.TypeFn?.name, shown: slotTypesRef.current[o.id]?.name, kind: getKind(o.TypeFn),
+    }));
+    return () => { delete window.__hrObstacles; };
+  }, []);
   const rbRefs   = useRef({});
   const timerRef = useRef(0);
   const waveIdx  = useRef(0);

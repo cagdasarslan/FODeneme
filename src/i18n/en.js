@@ -713,4 +713,5 @@ export const EN = {
   "Mağaza hazır değil, biraz sonra tekrar dene": "The store isn't ready yet, try again shortly",
   "Geri yükleme başarısız": "Restore failed",
   "Satın alma iptal edildi": "Purchase cancelled",
+  "ADRENALİN PATLAMASI — 2X SKOR!": "ADRENALINE BURST — 2X SCORE!",
 };

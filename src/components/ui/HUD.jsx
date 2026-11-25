@@ -14,6 +14,10 @@ import useLang from '@/i18n/useLang';
 const isMobile = 'ontouchstart' in window;
 
 // ── Close-call flash mesajları ────────────────────────────────────────────────
+// Yatayda ortalanmış sabit satır. 'pulse' animasyonu transform'u (scale) yazdığı
+// için translateX(-50%) ile ortalanan öğeler sağa kayıyordu; ortalama dış kutuda.
+const CENTER_ROW = (top) => ({ position: 'fixed', top, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' });
+
 const CLOSE_TEXTS = ['MAKAS!', 'KIL PAYI!', 'ADRENALIN!', 'YAKINDI!', 'ATEŞ!'];
 // çeviri: CLOSE_TEXTS öğeleri gösterilirken t() ile geçirilir
 
@@ -143,7 +147,7 @@ export default function HUD() {
       </div>
 
       {powerupLine && (
-        <div style={{ position:'fixed', top:70, left:'50%', transform:'translateX(-50%)',
+        <div style={{ position:'fixed', top: topPlus(70), left:'50%', transform:'translateX(-50%)',
           fontFamily:'var(--game-font)', fontSize:18, fontWeight:900, color:'#00e5ff',
           textShadow:'0 0 15px #00aaff', letterSpacing:2, pointerEvents:'none',
           whiteSpace:'nowrap' }}>
@@ -152,30 +156,36 @@ export default function HUD() {
       )}
 
       {adrenalinBoosting && (
-        <div style={{ position:'fixed', top:100, left:'50%', transform:'translateX(-50%)',
-          fontFamily:'var(--game-font)', fontSize:22, fontWeight:900, color:'#ff4400',
-          textShadow:'0 0 20px #ff6600, 0 0 40px #ff2200', letterSpacing:3, pointerEvents:'none',
+        <div style={CENTER_ROW(topPlus(58))}>
+        <div style={{ textAlign:'center', maxWidth:'92vw',
+          fontFamily:'var(--game-font)', fontSize:20, fontWeight:900, color:'#ff4400',
+          textShadow:'0 0 20px #ff6600, 0 0 40px #ff2200', letterSpacing:2, pointerEvents:'none',
           animation:'pulse 0.3s infinite alternate' }}>
-          ⚡ ADRENALİN PATLAMASI — 2X SKOR!
+          ⚡ {t('ADRENALİN PATLAMASI — 2X SKOR!')}
+        </div>
         </div>
       )}
 
       {/* Combo çarpanı — art arda riskli hamleler skoru katlar */}
       {comboMult > 1 && (
-        <div style={{ position:'fixed', top:132, left:'50%', transform:'translateX(-50%)',
-          fontFamily:'var(--game-font)', fontSize:18, fontWeight:900, color:'#ffd54a',
+        <div style={CENTER_ROW(topPlus(90))}>
+        <div style={{ fontFamily:'var(--game-font)', fontSize:18, fontWeight:900, color:'#ffd54a',
           textShadow:'0 0 14px #ffb300', letterSpacing:3, pointerEvents:'none',
           animation:'pulse 0.4s infinite alternate' }}>
           🔥 COMBO x{comboMult}
+        </div>
         </div>
       )}
 
       {/* Tökezleme uyarısı — pencere içinde ikinci çarpma öldürür */}
       {stumbleActive && (
-        <div style={{ position:'fixed', top: topPlus(118), left:'50%', transform:'translateX(-50%)', textAlign:'center',
-          fontFamily:'var(--game-font)', fontSize:14, fontWeight:900, color:'#ff5544',
-          textShadow:'0 0 12px #ff2200', letterSpacing:2, pointerEvents:'none',
-          background:'rgba(0,0,0,0.45)', padding:'6px 14px', borderRadius:8,
+        // Konum dış kutuda, animasyon iç kutuda: 'pulse' keyframe'i transform'u
+        // (scale) yazdığı için translateX(-50%)'i eziyor, uyarı sağa kayıp taşıyordu
+        <div style={{ position:'fixed', top: topPlus(118), left:0, right:0, display:'flex', justifyContent:'center', pointerEvents:'none' }}>
+        <div style={{ textAlign:'center', maxWidth:'88vw',
+          fontFamily:'var(--game-font)', fontSize:13, fontWeight:900, color:'#ff5544',
+          textShadow:'0 0 12px #ff2200', letterSpacing:1, pointerEvents:'none',
+          background:'rgba(0,0,0,0.55)', padding:'6px 14px', borderRadius:8,
           border:'1px solid rgba(255,60,40,0.5)',
           animation:'pulse 0.6s infinite alternate' }}>
           ⚠️ {t('TÖKEZLEDİN — bir daha çarparsan düşersin!')}
@@ -184,6 +194,7 @@ export default function HUD() {
             <div style={{ height:'100%', background:'#ff5544',
               width: `${Math.max(0, Math.min(100, (useGameStore.getState().stumbleUntil - Date.now()) / STUMBLE_WINDOW_MS * 100))}%` }} />
           </div>
+        </div>
         </div>
       )}
 

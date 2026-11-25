@@ -105,7 +105,7 @@ export function scheduleCloudSave(delayMs = 4000) {
 }
 
 export async function pushCloudSave() {
-  if (!isSupaConfigured()) return false;
+  if (!isSupaConfigured() || window.__hrWiping) return false;
   try {
     const data = collectSave();
     const body = JSON.stringify(data);
@@ -201,6 +201,10 @@ export function initCloudSave() {
 // kayıt içeriği temizlenir; tam silme talebi gizlilik politikasındaki e-posta
 // ile de yapılabilir.)
 export async function deleteAllData() {
+  // Silme süresince hiçbir kayıt yazımı (havuç debounce'u, arka plan yedeği,
+  // sayfa kapanırken flush) hafızadaki eski ilerlemeyi geri yazmasın.
+  window.__hrWiping = true;
+  if (_pushTimer) { clearTimeout(_pushTimer); _pushTimer = null; }
   let cloudOk = true;
   if (isSupaConfigured()) {
     const ids = [getPlayerLocalId()];

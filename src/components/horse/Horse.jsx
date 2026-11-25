@@ -572,6 +572,9 @@ export default function Horse({ modelPath = MODEL_PATH, scale = 0.013 }) {
       jumpedRef.current.clear();
     }
 
+    // Test kancası (yalnızca window.__dbg tanımlıysa): otomatik test botu için at durumu
+    if (window.__dbg) window.__dbg.horseState = { x: pos.x, y: pos.y, z: pos.z, sliding, onGround: onGroundRef.current };
+
     // ── ÜST ENGELLER: zıplayarak geçilmez — eğilerek geçilir (ödüllü) ──────
     // Kapı düzlemi incedir: yalnız gerçekten kapı hizasından geçerken sayılır
     // (derin hitbox yüzünden kapıya varmadan "çarptın" olmaz).

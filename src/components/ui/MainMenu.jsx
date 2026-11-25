@@ -249,7 +249,8 @@ export default function MainMenu() {
               <div style={styles.titleSubline}>{t('KOŞ · YETİŞTİR · YARIŞ')}</div>
             </div>
           )}
-          <button style={styles.btn} onClick={startRun}>
+          {/* Oyun sonunda logo gizli: buton sağ üst ikonların altında kalsın */}
+          <button style={{ ...styles.btn, ...(isGameOver ? { marginTop: 46 } : {}) }} onClick={startRun}>
             {isGameOver ? t('TEKRAR OYNA') : '▶  ' + t('OYNA')}
           </button>
           {/* Harita madalyaları — seçili haritanın kısa vadeli hedefi */}

@@ -77,6 +77,7 @@ function scheduleCarrotSave(get) {
   if (_carrotSaveTimer) return;
   _carrotSaveTimer = setTimeout(() => {
     _carrotSaveTimer = null;
+    if (window.__hrWiping) return; // veri silme sürüyor: hafızadaki eski değeri geri yazma
     const s = get();
     localStorage.setItem('carrots', String(s.carrots));
     if (_todayKey) localStorage.setItem(_todayKey, String(s.dailyCarrots));
@@ -84,6 +85,7 @@ function scheduleCarrotSave(get) {
 }
 function flushCarrotSave(get) {
   if (_carrotSaveTimer) { clearTimeout(_carrotSaveTimer); _carrotSaveTimer = null; }
+  if (window.__hrWiping) return; // veri silme sürüyor: hafızadaki eski değeri geri yazma
   const s = get();
   localStorage.setItem('carrots', String(s.carrots));
   if (_todayKey) localStorage.setItem(_todayKey, String(s.dailyCarrots));
