@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { CARROT_PACKAGES, REMOVE_ADS_ID } from '@/constants/iap';
 import { initBilling, purchase, restorePurchases, setGrantHandler, setRemoveAdsHandler, setPricesUpdatedHandler, getDisplayPrice, getRemoveAdsPrice } from '@/services/BillingService';
-import { hideBanner } from '@/services/AdService';
+import { hideBanner, refreshBannerReserve } from '@/services/AdService';
 import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import { C, FONT, DISPLAY, btn, panel, tile, pill, titleText, backdrop, fmt } from '@/ui/theme';

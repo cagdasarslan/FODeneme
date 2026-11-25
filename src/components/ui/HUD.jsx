@@ -7,7 +7,7 @@ import { HORSES } from '@/constants/horses';
 const TOP_SPEED = Math.max(...HORSES.map(h => h.baseMaxSpeed ?? 40)) * 1.3;
 import TouchPad from '@/components/ui/TouchPad';
 import { POWERUP_IDS, POWERUP_BY_ID } from '@/constants/powerups';
-import { SAFE_TOP, topPlus } from '@/utils/safeArea';
+import { SAFE_TOP, topPlus, BOTTOM_SPACE } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
 import { C, FONT, DISPLAY, btn, panel, pill, titleText, backdrop, fmt } from '@/ui/theme';
@@ -289,7 +289,7 @@ const styles = {
   },
   adrWrap: {
     position: 'fixed',
-    bottom: 28,
+    bottom: `calc(28px + ${BOTTOM_SPACE})`,
     left: '50%',
     transform: 'translateX(-50%)',
     width: 'min(380px, calc(100vw - 32px))',

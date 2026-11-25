@@ -82,7 +82,7 @@ export default function TouchPad() {
 const hint = {
   position: 'fixed',
   // Adrenalin barının (alt 28-56px) ÜSTÜNDE — eskiden barın üzerine biniyordu
-  bottom: 'calc(66px + env(safe-area-inset-bottom, 0px))',
+  bottom: 'calc(66px + var(--banner-h, 0px) + env(safe-area-inset-bottom, 0px))',
   whiteSpace: 'nowrap',
   left: '50%',
   transform: 'translateX(-50%)',

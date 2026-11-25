@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 import { INITIAL_SPEED, MAX_SPEED } from '@/constants/game';
 import { getSlowmoIntensity, updateSlowmo } from '@/utils/slowmo';
+import { horseRef } from '@/utils/horseRef';
 
 // Sinematik slow-mo kamera efekt sabitleri
 const SLOWMO_FOV_ZOOM = 12;   // slow-mo'da FOV bu kadar küçülür (zoom-in)
@@ -29,6 +30,11 @@ const BASE_Y      = 6.8;    // kamera yüksekliği
 const BASE_Z      = 11.9;   // kamera derinliği
 const LOOK_AT     = new THREE.Vector3(0, 0.5, -6); // kamera hedefi: piste doğru
 const REST_POS    = new THREE.Vector3(0, BASE_Y, BASE_Z); // menü/idle kamera konumu (paylaşılan)
+// Kamera atı yana doğru kısmen takip eder: dar telefon ekranında kenar
+// şeritteki at kadrajdan taşmasın, ama yol ve yanlar da görünmeye devam etsin.
+const FOLLOW_X    = 0.65;
+const _look       = new THREE.Vector3();
+let _camX = 0;
 const BOB_AMP     = 0.07;
 const BOB_FREQ    = 2.2;
 const SHAKE_DECAY = 6;
@@ -77,6 +83,7 @@ export function useDynamicCamera() {
     applyDesat(gl, smInt, desatRef);
 
     if (phase !== 'playing') {
+      _camX = 0;
       camera.position.lerp(REST_POS, 5 * delta); // paylaşılan sabit — allocation yok
       camera.lookAt(LOOK_AT);
       return;
@@ -97,11 +104,14 @@ export function useDynamicCamera() {
     const targetY = BASE_Y + bob + sy - adLean * 0.4;
     const targetZ = BASE_Z + sx - adLean * 0.8;
 
-    posRef.current.set(sx * 0.3, targetY, targetZ);
+    _camX = THREE.MathUtils.lerp(_camX, horseRef.x * FOLLOW_X, Math.min(1, 6 * delta));
+    const camX = _camX;
+    posRef.current.set(camX + sx * 0.3, targetY, targetZ);
     camera.position.lerp(posRef.current, 12 * delta);
 
-    // Kamera her zaman pistin önüne baksın
-    camera.lookAt(LOOK_AT);
+    // Kamera pistin önüne, atın tarafına hafif kayarak baksın
+    _look.set(camX * 0.85, LOOK_AT.y, LOOK_AT.z);
+    camera.lookAt(_look);
 
     // Hafif tilt (lookAt sonrası z-eksen dönüşü)
     const adTilt = (adrenaline / 100) * 0.03;

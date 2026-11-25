@@ -152,10 +152,20 @@ let sizeListener = null;
 
 // Banner web görünümünün ÜZERİNE çizilir; arayüzün altı kapanmasın diye
 // yüksekliğini CSS değişkenine yazıyoruz (#root bunu alt boşluk olarak kullanır).
+// Banner alanı reklam yüklenmese/gizlense bile HER ZAMAN ayrılır: arayüz
+// reklam gelince zıplamasın, alt butonlar banner'ın altında kalmasın.
+// "Reklamları Kaldır" satın alındıysa alan kapatılır.
+export const BANNER_RESERVE_PX = 60;
 function setBannerHeight(px) {
   if (typeof document === 'undefined') return;
-  document.documentElement.style.setProperty('--banner-h', `${px || 0}px`);
+  let adsRemoved = false;
+  try { adsRemoved = localStorage.getItem('adsRemoved') === '1'; } catch { /* yok */ }
+  const h = adsRemoved ? 0 : Math.max(px || 0, BANNER_RESERVE_PX);
+  document.documentElement.style.setProperty('--banner-h', `${h}px`);
 }
+// Açılışta alanı hemen ayır
+setBannerHeight(0);
+export function refreshBannerReserve() { setBannerHeight(bannerShown ? null : 0); }
 
 export async function showBanner() {
   if (!isNative || !BANNER_ENABLED || bannerShown) return;
