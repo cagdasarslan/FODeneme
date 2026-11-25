@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { useState, useEffect, useRef } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import ProcHorse from '@/components/horse/ProcHorse';
+import { PowerupMesh } from '@/components/track/powerupMeshes';
 import useGameStore from '@/store/useGameStore';
 import { CHARACTERS } from '@/constants/characters';
 import { HORSES, upgradeCost } from '@/constants/horses';
@@ -13,6 +14,29 @@ import { t } from '@/i18n';
 import { C, FONT, DISPLAY, btn, panel, tile, pill, titleText, backdrop } from '@/ui/theme';
 import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import useLang from '@/i18n/useLang';
+
+// ── Yetenek 3D önizleme (yoldaki toplanabilirle aynı mesh) ──────────────────
+function SpinningPowerup({ type }) {
+  const ref = useRef();
+  useFrame((st) => {
+    if (!ref.current) return;
+    ref.current.rotation.y = Math.sin(st.clock.elapsedTime * 0.9) * 0.75; // ön yüz hep görünsün
+    ref.current.position.y = Math.sin(st.clock.elapsedTime * 2) * 0.08;
+  });
+  return <group ref={ref}><group position={[0, 0.18, 0]}><PowerupMesh type={type} /></group></group>;
+}
+function PowerupPreview({ type, color }) {
+  return (
+    <div style={{ width: '100%', height: 150, borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(180deg, #f7e2b0, #d9b677)', border: `3px solid ${C.edge}`, boxSizing: 'border-box' }}>
+      <Canvas camera={{ position: [0, 0.1, 3.0], fov: 40 }} dpr={[1, 1.5]}>
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[2, 3, 3]} intensity={1.4} />
+        <pointLight color={color} intensity={2} distance={6} position={[0, 0, 1.5]} />
+        <SpinningPowerup type={type} />
+      </Canvas>
+    </div>
+  );
+}
 
 // ── 3D önizleme: prosedürel at + binici (idle) ───────────────────────────────
 function PreviewCanvas({ variant, characterId, camera }) {
@@ -70,6 +94,7 @@ export default function Garage() {
   const tickFoals           = useGameStore(s => s.tickFoals);
   const powerupLevels       = useGameStore(s => s.powerupLevels ?? {});
   const upgradePowerup      = useGameStore(s => s.upgradePowerup);
+  const [selPowerup, setSelPowerup] = useState(POWERUPS[0].id);
 
   const allHorses = [...HORSES, ...customHorses];
 
@@ -357,6 +382,12 @@ export default function Garage() {
             <div style={{ fontSize: 12, fontWeight: 700, color: C.inkSoft, textAlign: 'center' }}>
               {t('Koşuda yolda beliren yetenekleri topla. Havuçla geliştir → süreleri uzasın!')}
             </div>
+            {(() => { const sp = POWERUPS.find(p => p.id === selPowerup) ?? POWERUPS[0]; return (
+              <div style={{ position: 'relative' }}>
+                <PowerupPreview type={sp.id} color={sp.color} />
+                <div style={{ position: 'absolute', left: 0, right: 0, bottom: 8, textAlign: 'center', fontSize: 14, fontFamily: DISPLAY, letterSpacing: 1, color: C.ink, pointerEvents: 'none' }}>{t(sp.name)}</div>
+              </div>
+            ); })()}
             {flash && (
               <div style={{ ...S.actionBtn, ...(flashBad ? btn.danger : btn.success), cursor: 'default' }}>{t(flash)}</div>
             )}
@@ -368,7 +399,7 @@ export default function Garage() {
               const curDur  = powerupDuration(p.id, lvl);
               const nextDur = powerupDuration(p.id, lvl + 1);
               return (
-                <div key={p.id} style={{ ...S.statBox, borderColor: C.edge }}>
+                <div key={p.id} onClick={() => setSelPowerup(p.id)} style={{ ...S.statBox, borderColor: selPowerup === p.id ? C.goldHi : C.edge, cursor: 'pointer' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
                     <span style={{ fontSize: 24 }}>{p.emoji}</span>
                     <div style={{ flex: 1 }}>

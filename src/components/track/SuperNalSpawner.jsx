@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 import { horseRef } from '@/utils/horseRef';
 import { POWERUPS } from '@/constants/powerups';
+import { PowerupMesh } from './powerupMeshes';
 
 // ── Genel YETENEK spawner'ı ───────────────────────────────────────────────────
 // 10-15 saniyede bir (rastgele) yolda bir yetenek belirir. Tip seçimi "karışık
@@ -21,58 +21,6 @@ function shuffledBag() {
     [bag[i], bag[j]] = [bag[j], bag[i]];
   }
   return bag;
-}
-
-// ── Tip başına ayırt edici mini-meshler ──────────────────────────────────────
-const mats = Object.fromEntries(POWERUPS.map(p => [p.id,
-  new THREE.MeshStandardMaterial({
-    color: p.color, metalness: 0.6, roughness: 0.25,
-    emissive: p.color, emissiveIntensity: 0.55,
-  })]));
-// Altın nal: torus kesiti (açık uç aşağıda) + uç tırnakları + çivi delikleri
-const SHOE_ARC   = Math.PI * 1.45;
-const torusGeo   = new THREE.TorusGeometry(0.5, 0.14, 8, 22, SHOE_ARC).rotateZ(Math.PI / 2 - SHOE_ARC / 2 + Math.PI);
-const goldMat    = new THREE.MeshStandardMaterial({ color: '#ffc83a', metalness: 0.85, roughness: 0.22, emissive: '#ffb020', emissiveIntensity: 0.7 });
-const nailMat    = new THREE.MeshStandardMaterial({ color: '#7a4a10', emissive: '#3a2008', emissiveIntensity: 0.3 });
-const shoeEndGeo = new THREE.BoxGeometry(0.3, 0.12, 0.3);
-const nailGeo    = new THREE.SphereGeometry(0.045, 6, 4);
-const SHOE_ENDS  = [-1, 1].map(sgn => { const a = -Math.PI / 2 + sgn * SHOE_ARC / 2; return [Math.cos(a) * 0.5, Math.sin(a) * 0.5]; });
-const SHOE_NAILS = [-0.55, -0.25, 0.25, 0.55].map(f => { const a = -Math.PI / 2 + f * SHOE_ARC * 0.6; return [Math.cos(a) * 0.5, Math.sin(a) * 0.5]; });
-function Horseshoe() {
-  return (
-    <group rotation={[0, 0, Math.PI]}>
-      <mesh geometry={torusGeo} material={goldMat} />
-      {SHOE_ENDS.map(([x, y], i) => <mesh key={i} geometry={shoeEndGeo} material={goldMat} position={[x, y, 0]} />)}
-      {SHOE_NAILS.map(([x, y], i) => <mesh key={'n' + i} geometry={nailGeo} material={nailMat} position={[x, y, 0.13]} />)}
-    </group>
-  );
-}
-const wingGeo    = new THREE.BoxGeometry(0.85, 0.08, 0.42);
-const boltGeo    = new THREE.ConeGeometry(0.32, 1.0, 4);
-const shieldGeo  = new THREE.CylinderGeometry(0.55, 0.55, 0.12, 16);
-const coneGeo    = new THREE.ConeGeometry(0.42, 0.7, 8);
-const carrotGeo  = new THREE.ConeGeometry(0.3, 1.0, 8);
-
-function PowerupMesh({ type }) {
-  const m = mats[type];
-  switch (type) {
-    case 'wings': return (
-      <group>
-        <mesh geometry={wingGeo} material={m} position={[-0.5, 0, 0]} rotation={[0, 0,  0.45]} />
-        <mesh geometry={wingGeo} material={m} position={[ 0.5, 0, 0]} rotation={[0, 0, -0.45]} />
-      </group>
-    );
-    case 'turbo': return <mesh geometry={boltGeo} material={m} rotation={[0, 0, Math.PI]} />;
-    case 'shield': return <mesh geometry={shieldGeo} material={m} rotation={[Math.PI / 2, 0, 0]} />;
-    case 'slowmo': return ( // kum saati
-      <group>
-        <mesh geometry={coneGeo} material={m} position={[0,  0.35, 0]} rotation={[Math.PI, 0, 0]} />
-        <mesh geometry={coneGeo} material={m} position={[0, -0.35, 0]} />
-      </group>
-    );
-    case 'golden': return <mesh geometry={carrotGeo} material={m} rotation={[0, 0, Math.PI]} />;
-    default: return <Horseshoe />; // magnet: altın nal
-  }
 }
 
 export default function SuperNalSpawner() {
@@ -129,7 +77,9 @@ export default function SuperNalSpawner() {
       s.active = true;
       // Karışık torbadan sıradaki yetenek (torba bitince yeniden karılır)
       if (bagRef.current.length === 0) bagRef.current = shuffledBag();
-      setType(bagRef.current.pop());
+      // geliştirme: window.__pupForce = 'shield' → sonraki spawn bu tip olur
+      const forced = import.meta.env.DEV && window.__pupForce;
+      setType(forced || bagRef.current.pop());
     }
   });
 
