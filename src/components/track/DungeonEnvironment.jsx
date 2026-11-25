@@ -1,58 +1,83 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
 import { SHADOW_MAP, IS_MOBILE } from '@/utils/device';
 import { makeStoneTexture } from '@/utils/stoneTexture';
+import { makeMats, makeP } from '@/utils/procKit';
 
 // ── ZİNDAN (KayKit Dungeon Pack) — karanlık taş koridor, meşale ışıkları ──────
 const SEG_LEN = 120;
 const SEG_COUNT = 6;
 const RECYCLE_AFTER = SEG_LEN + 20;
 
-const DUN = '/assets/models/dungeon/';
-const D_WALL       = DUN + 'wall.glb';
-const D_WALL_BROKE = DUN + 'wall_broken.glb';
-const D_WALL_GATE  = DUN + 'wall_gate.glb';
-const D_TORCH      = DUN + 'torch.glb';
-const D_BANNER     = DUN + 'banner.glb';
-const D_BARREL     = DUN + 'barrelDark.glb';
-const D_CRATE      = DUN + 'crateDark.glb';
-const D_CHEST      = DUN + 'chest_rare.glb';
-const D_BOOKCASE   = DUN + 'bookcaseFilled.glb';
-const D_BOOKCASE_W = DUN + 'bookcaseWideFilled.glb';
-const D_TABLE      = DUN + 'tableSmall.glb';
-const D_BENCH      = DUN + 'bench.glb';
-const D_WEAPONRACK = DUN + 'weaponRack.glb';
-const D_POTS       = DUN + 'pots.glb';
-const D_LOOT       = DUN + 'lootSackA.glb';
-const D_BRICKS     = DUN + 'bricks.glb';
-
-// Yalnızca gerçekten kullanılan modeller preload edilir (bellek/yük için).
-const ALL_MODELS = [
-  D_WALL_BROKE, D_WALL_GATE, D_TORCH, D_BANNER,
-  D_BARREL, D_CRATE, D_CHEST, D_WEAPONRACK, D_POTS, D_LOOT,
-];
-ALL_MODELS.forEach((p) => useGLTF.preload(p));
-
-// Model döndürüldükten sonra yatayda merkeze çek (pivot kaymalarını giderir)
-function Model({ path, position, scale = 1, rotation = [0, 0, 0] }) {
-  const { scene } = useGLTF(path);
-  const cloned = useRef(null);
-  const off    = useRef([0, 0]);
-  if (!cloned.current) {
-    cloned.current = scene.clone(true);
-    cloned.current.traverse((n) => { if (n.isMesh) { n.castShadow = !IS_MOBILE; n.receiveShadow = !IS_MOBILE; } });
-    const box = new THREE.Box3().setFromObject(cloned.current);
-    off.current = [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
-  }
-  const s = Array.isArray(scale) ? scale : [scale, scale, scale];
-  return (
-    <group position={position} scale={s} rotation={rotation}>
-      <primitive object={cloned.current} position={[-off.current[0], 0, -off.current[1]]} />
+// Dekor kodla üretilir (eskiden KayKit GLB'leri: kırık duvar 3.736, çömlekler
+// 3.638, çuval 1.168 üçgen...). Her öğe aynı ölçüde onlarca üçgen.
+const MAT = makeMats({
+  stone: '#8f8998', stoneDk: '#6c6676', wood: '#5a3b22', woodDk: '#3e2816', iron: '#3a3a40',
+  gold: { color: '#d8a83a', metalness: 0.6, roughness: 0.4 }, cloth: '#7a1f2a', clay: '#9a5a3a',
+  sack: '#a88a5a', fire: { color: '#ffb040', emissive: '#ff7a10', emissiveIntensity: 1.2 },
+});
+const P = makeP(MAT);
+const ITEMS = {
+  // Duvar süsleri birim ölçüde: 4 m genişlik, 4 m boy (×2.2)
+  gate: () => (<>
+    <P g="box" m="stoneDk" p={[-1.5, 0, 0]} s={[1, 4, 1.5]} />
+    <P g="box" m="stoneDk" p={[1.5, 0, 0]} s={[1, 4, 1.5]} />
+    <P g="box" m="stoneDk" p={[0, 3, 0]} s={[2, 1, 1.5]} />
+    <P g="box" m="woodDk" p={[0, 0, 0.1]} s={[2, 3, 0.2]} />
+  </>),
+  broken: () => (<>
+    <P g="box" m="stone" p={[-1.2, 0, 0]} s={[1.6, 3.2, 1.4]} />
+    <P g="box" m="stone" p={[1.2, 0, 0]} s={[1.6, 2.2, 1.4]} />
+    <P g="rock" m="stoneDk" p={[0.2, 0.3, 0.9]} s={[0.5, 0.35, 0.5]} />
+    <P g="rock" m="stone" p={[-0.5, 0.2, 1.1]} s={[0.35, 0.25, 0.35]} />
+  </>),
+  banner: () => (<>
+    <P g="box" m="iron" p={[0, 1.9, 0.1]} s={[1.5, 0.06, 0.06]} />
+    <P g="box" m="cloth" p={[0, 0.5, 0.12]} s={[1.3, 1.4, 0.03]} />
+    <P g="box" m="gold" p={[0, 1.1, 0.14]} s={[0.4, 0.4, 0.02]} />
+  </>),
+  barrel: () => (<>
+    <P g="cyl8" m="wood" p={[0, 0, 0]} s={[0.45, 1, 0.45]} />
+    <P g="cyl8" m="iron" p={[0, 0.2, 0]} s={[0.47, 0.06, 0.47]} />
+    <P g="cyl8" m="iron" p={[0, 0.75, 0]} s={[0.47, 0.06, 0.47]} />
+  </>),
+  crate: () => (<>
+    <P g="box" m="wood" p={[0, 0, 0]} s={[1, 1, 1]} />
+    <P g="box" m="woodDk" p={[0, 0, 0]} s={[1.03, 0.12, 1.03]} />
+    <P g="box" m="woodDk" p={[0, 0.88, 0]} s={[1.03, 0.12, 1.03]} />
+  </>),
+  chest: () => (<>
+    <P g="box" m="wood" p={[0, 0, 0]} s={[1.8, 0.45, 1.05]} />
+    <P g="cyl8" m="woodDk" p={[-0.9, 0.45, 0]} s={[0.52, 1.8, 0.52]} r={[0, 0, -Math.PI / 2]} />
+    <P g="box" m="gold" p={[0, 0.25, 0.53]} s={[0.2, 0.25, 0.04]} />
+  </>),
+  pots: () => [[0, 0, 0.42, 0.9], [0.5, 0.35, 0.3, 0.6], [-0.45, 0.3, 0.32, 0.7]].map(([x, z, r, h], i) => (
+    <group key={i} position={[x, 0, z]}>
+      <P g="cyl8" m="clay" p={[0, 0, 0]} s={[r, h * 0.7, r]} />
+      <P g="cone8" m="clay" p={[0, h * 0.7, 0]} s={[r, h * 0.3, r]} />
     </group>
-  );
+  )),
+  loot: () => (<>
+    <P g="rock" m="sack" p={[0, 0.45, 0]} s={[0.48, 0.5, 0.48]} />
+    <P g="cyl8" m="woodDk" p={[0, 0.85, 0]} s={[0.12, 0.2, 0.12]} />
+  </>),
+  rack: () => (<>
+    <P g="box" m="wood" p={[0, 0, -0.1]} s={[1.1, 0.8, 0.1]} />
+    {[-0.35, 0, 0.35].map((x) => <P key={x} g="box" m="iron" p={[x, 0.05, 0]} s={[0.05, 0.85, 0.05]} />)}
+  </>),
+  torch: () => (<>
+    <P g="cyl8" m="woodDk" p={[0, 0, 0]} s={[0.06, 1.2, 0.06]} />
+    <P g="cone8" m="iron" p={[0, 1.15, 0]} s={[0.2, 0.25, 0.2]} r={[Math.PI, 0, 0]} />
+  </>),
+};
+const D_WALL_BROKE = 'broken', D_WALL_GATE = 'gate', D_TORCH = 'torch', D_BANNER = 'banner', D_BARREL = 'barrel',
+  D_CRATE = 'crate', D_CHEST = 'chest', D_WEAPONRACK = 'rack', D_POTS = 'pots', D_LOOT = 'loot';
+
+function Model({ path, position, scale = 1, rotation = [0, 0, 0] }) {
+  const make = ITEMS[path];
+  return <group position={position} scale={scale} rotation={rotation}>{make ? make() : null}</group>;
 }
 
 // Sütunlar kodla üretilir: GLB sütun 2.656 üçgendi (×30 ≈ 80.000), bu
