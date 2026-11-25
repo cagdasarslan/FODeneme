@@ -714,4 +714,11 @@ export const EN = {
   "Geri yükleme başarısız": "Restore failed",
   "Satın alma iptal edildi": "Purchase cancelled",
   "ADRENALİN PATLAMASI — 2X SKOR!": "ADRENALINE BURST — 2X SCORE!",
+  // ── UI/UX revizyonu ──
+  'OYUN BİTTİ': 'GAME OVER',
+  'REKOR': 'BEST',
+  'Menü': 'Menu',
+  'Ödül': 'Reward',
+  'Hayır, teşekkürler': 'No thanks',
+  'Sürüm': 'Version',
 };

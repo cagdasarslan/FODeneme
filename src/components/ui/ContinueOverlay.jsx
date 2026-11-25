@@ -3,7 +3,7 @@ import useGameStore from '@/store/useGameStore';
 import { showRewardedAds, REWARDED_AVAILABLE } from '@/services/AdService';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
-import { C, FONT, DISPLAY, btn, panel, titleText, backdrop } from '@/ui/theme';
+import { C, FONT, DISPLAY, btn, panel, titleText, backdrop, fmt } from '@/ui/theme';
 
 // Çarpışma sonrası "devam et" ekranı:
 //  - Havuçla devam et (maliyet her seferinde 3 kat artar)
@@ -90,17 +90,6 @@ export default function ContinueOverlay() {
         <div style={S.title}>{t('ÇARPTIN!')}</div>
         <div style={S.sub}>{t('Devam etmek ister misin?')}</div>
 
-        <button
-          className="hr-press"
-          style={{ ...S.btn, ...S.carrotBtn, ...(canAfford ? {} : S.disabled) }}
-          onClick={() => { if (canAfford) startCountdown(() => continueWithCarrots()); }}
-        >
-          <span style={S.btnMain}>🥕 {t('{n} havuçla devam et', { n: cost.carrots.toLocaleString() })}</span>
-          <span style={S.btnSubText}>
-            {canAfford ? `${t('Bakiye:')} ${carrots.toLocaleString()} 🥕` : t('Yetersiz havuç ({n})', { n: carrots.toLocaleString() })}
-          </span>
-        </button>
-
         {adOffered && (
           <button
             className="hr-press"
@@ -112,8 +101,19 @@ export default function ContinueOverlay() {
           </button>
         )}
 
+        <button
+          className="hr-press"
+          style={{ ...S.btn, ...S.carrotBtn, ...(canAfford ? {} : S.disabled) }}
+          onClick={() => { if (canAfford) startCountdown(() => continueWithCarrots()); }}
+        >
+          <span style={S.btnMain}>🥕 {t('{n} havuçla devam et', { n: fmt(cost.carrots) })}</span>
+          <span style={S.btnSubText}>
+            {canAfford ? `${t('Bakiye:')} ${fmt(carrots)} 🥕` : t('Yetersiz havuç ({n})', { n: fmt(carrots) })}
+          </span>
+        </button>
+
         <button className="hr-press" style={S.giveUp} onClick={() => giveUp()} disabled={watching}>
-          {t('VAZGEÇ')}
+          {t('Hayır, teşekkürler')}
         </button>
 
         {reviveCount > 0 && (
@@ -152,6 +152,6 @@ const S = {
   disabled:  { opacity: 0.5, cursor: 'not-allowed', filter: 'grayscale(0.4)' },
   btnMain:    { fontFamily: DISPLAY, fontSize: 17, letterSpacing: 0.8, textTransform: 'uppercase' },
   btnSubText: { fontFamily: FONT, fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textShadow: 'none' },
-  giveUp: { ...btn.ghost, marginTop: 2, fontSize: 14, letterSpacing: 1, padding: 8, color: C.inkSoft },
+  giveUp: { ...btn.ghost, marginTop: 2, fontSize: 15, letterSpacing: 0.5, padding: '10px 8px', minHeight: 44, width: '100%', color: C.inkSoft },
   note: { fontFamily: FONT, fontSize: 11, fontWeight: 700, color: C.inkSoft, letterSpacing: 0.3 },
 };

@@ -1,3 +1,4 @@
+import { getLang } from '@/i18n';
 // "Saddle & Wood" arayüz teması — tüm ekranların ortak renk ve buton stilleri.
 // Kalın koyu kahve kenar + alt "taban" gölgesi = basılabilir ahşap/deri buton.
 // Butonlara className="hr-press" verin (index.css: basınca çöker).
@@ -92,3 +93,11 @@ export const titleText = (size = 40, color = C.cream) => ({
 
 // Ekran karartma (modal arkası)
 export const backdrop = 'rgba(42,26,14,0.78)';
+
+// Sayı biçimi — arayüzün her yerinde aynı: geçerli dile göre binlik ayırıcı
+// (tr: 1.000 · en: 1,000). Dil değişince useLang ile yeniden çizilir.
+export const fmt = (n) => Math.floor(Number(n) || 0).toLocaleString(getLang() === 'en' ? 'en-US' : 'tr-TR');
+
+// Hareket azaltma tercihi (yeni animasyonlar bunu dikkate alır)
+export const reducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;

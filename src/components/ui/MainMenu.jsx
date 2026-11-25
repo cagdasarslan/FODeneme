@@ -18,49 +18,52 @@ import { fetchLeaderboard } from '@/services/LeaderboardService';
 import { Capacitor } from '@capacitor/core';
 import { restoreFromCloud, hasLocalProgress } from '@/services/CloudSave';
 import { signInWith } from '@/services/AuthService';
-import { GAME_BUILD } from '@/constants/game';
-import { SAFE_TOP, BOTTOM_SPACE, topPlus } from '@/utils/safeArea';
+import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
-import { C, FONT, DISPLAY, btn, panel, tile, pill, titleText, backdrop } from '@/ui/theme';
+import { C, FONT, DISPLAY, btn, panel, tile, pill, titleText, backdrop, fmt, reducedMotion } from '@/ui/theme';
 
 const isNative = Capacitor.getPlatform() !== 'web';
 
-// Oyun sonu skoru: 0'dan hedefe hızla sayarak dolar (ease-out)
-function AnimatedScore({ value }) {
+// Oyun sonu sayaçları: 0'dan hedefe hızla sayarak dolar (ease-out).
+// Hareket azaltma tercihinde doğrudan son değeri gösterir.
+function CountUp({ value, dur = 800 }) {
   const [disp, setDisp] = useState(0);
   useEffect(() => {
     const target = Math.floor(value);
-    if (target <= 0) { setDisp(0); return; }
+    if (target <= 0 || reducedMotion()) { setDisp(Math.max(0, target)); return; }
     const t0 = performance.now();
-    const DUR = 800;
     let raf;
     const step = (t) => {
-      const p = Math.min(1, (t - t0) / DUR);
+      const p = Math.min(1, (t - t0) / dur);
       setDisp(Math.floor(target * (1 - Math.pow(1 - p, 3))));
       if (p < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [value]);
-  return <>{disp.toLocaleString()}</>;
+  }, [value, dur]);
+  return <>{fmt(disp)}</>;
 }
 
 // Yeni rekor konfetisi — hafif, saf CSS animasyonlu emoji parçacıkları
+// Yazının ARKASINDA (zIndex 0) kalır ve ~1.2 sn sonra tamamen kaybolur.
 const CONFETTI = ['🎉', '⭐', '🥕', '🏆', '✨'];
 function Confetti() {
+  const [on, setOn] = useState(true);
+  useEffect(() => { const tm = setTimeout(() => setOn(false), 1250); return () => clearTimeout(tm); }, []);
+  if (!on) return null;
   return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-      {Array.from({ length: 18 }, (_, i) => (
+    <div className="hr-confetti" style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+      {Array.from({ length: 14 }, (_, i) => (
         <span key={i} style={{
           position: 'absolute', top: -20, left: `${(i * 53) % 100}%`,
-          fontSize: 14 + (i % 3) * 6,
-          animation: `confFall ${1.6 + (i % 5) * 0.35}s ${(i % 7) * 0.18}s ease-in infinite`,
+          fontSize: 14 + (i % 3) * 5, opacity: 0,
+          animation: `confFall ${0.8 + (i % 4) * 0.1}s ${(i % 5) * 0.06}s ease-in 1 forwards`,
         }}>{CONFETTI[i % CONFETTI.length]}</span>
       ))}
       <style>{`@keyframes confFall {
-        0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
-        100% { transform: translateY(340px) rotate(300deg); opacity: 0; }
+        0%   { transform: translateY(0) rotate(0deg); opacity: 0.9; }
+        100% { transform: translateY(320px) rotate(300deg); opacity: 0; }
       }`}</style>
     </div>
   );
@@ -194,6 +197,11 @@ export default function MainMenu() {
     return () => { on = false; };
   }, [phase]);
 
+  // Oyun sonu: önce odaklı sonuç ekranı. "Menü" düğmesi yalnızca bu yerel
+  // görünümü kapatır (faz/oyun durumu değişmez) ve normal menüyü gösterir.
+  const [resultsDismissed, setResultsDismissed] = useState(false);
+  useEffect(() => { if (phase === 'gameover') setResultsDismissed(false); }, [phase]);
+
   const activeEvent = getActiveEvent();
 
   // Günlük sistem (re-render için ilgili alanlara abone ol)
@@ -233,27 +241,162 @@ export default function MainMenu() {
   const isGameOver  = phase === 'gameover';
   const isNewRecord = isGameOver && Math.floor(score) > 0 && Math.floor(score) >= Math.floor(mapHs);
 
+  const showResults = isGameOver && !resultsDismissed;
+  const claimable = onboarding.find(x => x.done && !x.claimed);
+
+  // İLK ADIMLAR kartı — krem kart, altın sol şerit, ilerleme çubuğu
+  const renderOnboard = () => {
+    const doneN = onboarding.filter(s => s.claimed).length;
+    const st = claimable ?? onboarding.find(x => !x.done);
+    if (!st) return null;
+    const nav = () => {
+      if (st.id === 'play')  startRun();
+      else if (st.id === 'train') enterPaddock();
+      else if (st.id === 'hara')  openGarage('hara');
+      else if (st.id === 'shop')  openGarage();
+    };
+    return (
+      <div style={styles.onboardCard}>
+        <div style={styles.onboardHeader}>
+          <span style={{ fontSize: 18 }}>🚀</span>
+          <span style={styles.onboardTitle}>{t('İLK ADIMLAR')}</span>
+          <span style={styles.onboardCount}>{doneN}/{onboarding.length}</span>
+        </div>
+        <div style={styles.progressBarBg}>
+          <div style={{ ...styles.progressBarFill, width: `max(4px, ${doneN / onboarding.length * 100}%)` }} />
+        </div>
+        {/* Menü kalabalığını azaltmak için yalnızca SIRADAKİ adım gösterilir */}
+        <div style={styles.onboardRow}>
+          <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>{st.icon}</span>
+          <span style={{ flex: 1, fontSize: 13, color: C.ink, fontWeight: 800 }}>{t(st.label)}</span>
+          {st.done ? (
+            <button key={st.id} className="hr-press hr-claim" style={styles.onboardClaim} onClick={() => claimOnboardStep(st.id)}>
+              {t('AL')} +{fmt(st.reward)} 🥕
+            </button>
+          ) : (
+            <button className="hr-press" style={styles.onboardGo} onClick={nav}>{t('GİT')} →</button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={styles.overlay}>
       <div style={styles.card}>
-        {/* Üst köşe ikonları */}
-        <div style={styles.topIcons}>
-          <button className="hr-press" style={styles.iconBtn} aria-label={t('OYUN REHBERİ')} onClick={() => setShowGuide(true)}>📖</button>
-          <button className="hr-press" style={styles.iconBtn} aria-label={t('AYARLAR')} onClick={() => setShowSettings(true)}>⚙️</button>
-        </div>
-
-        {/* Sabit başlık + OYNA — menü açılınca ilk görünen, kaydırmayla oynamaz */}
-        <div style={styles.fixedHeader}>
-          {!isGameOver && (
-            <div style={styles.titleWrap}>
-              <div style={styles.titleSub}>🐴</div>
-              <h1 style={styles.title}>HORSE RUNNER</h1>
-              <div style={styles.titleSubline}>{t('KOŞ · YETİŞTİR · YARIŞ')}</div>
+        {showResults ? (
+          <>
+            {/* ── OYUN SONU: başlık + rozet → skor kartı → ilk adım ödülü → TEKRAR OYNA ── */}
+            <div style={{ ...styles.scrollArea, paddingTop: 20 }}>
+              <div style={{ ...styles.resultsWrap, position: 'relative' }}>
+                {isNewRecord && <Confetti />}
+                <div style={{ ...styles.resultsWrap, position: 'relative', zIndex: 1 }}>
+                  <div style={styles.gameOverText}>{t('OYUN BİTTİ')}</div>
+                  {isNewRecord && <div className="hr-popin" style={styles.newRecord}>🏆 {t('YENİ REKOR!')}</div>}
+                  <div style={styles.statsCard}>
+                    <div style={{ ...styles.mapBadge, borderColor: mapInfo.color }}>
+                      {mapInfo.emoji} {t(mapInfo.name)}
+                    </div>
+                    <div style={styles.bigScoreLabel}>{t('SKOR')}</div>
+                    <div style={styles.bigScore}><CountUp value={score} /></div>
+                    <StatRow label={t('BU HARİTA REKORU')} value={fmt(mapHs)} color={C.ink} />
+                    {(runCarrots ?? 0) > 0 && (
+                      <StatRow label={t('BU KOŞUDA')} value={<>+<CountUp value={runCarrots} dur={600} /> <span className="hr-bounce" style={{ animationDelay: '600ms' }}>🥕</span></>} color={C.ink} />
+                    )}
+                    <StatRow label={t('TOPLAM HAVUÇ')} value={`🥕 ${fmt(carrots)}`} color={C.ink} />
+                  </div>
+                  {/* Arkadaşını geç — liderlikte bir üstteki oyuncu */}
+                  {rival && (
+                    <div style={styles.rivalRow}>
+                      🎯 {t('{rank}. sıradaki', { rank: rival.rank })} <b>{rival.name}</b>{t('oyuncusunu geçmek için')}{' '}
+                      <b style={{ color: C.red }}>{fmt(rival.diff)}</b> {t('puan!')}
+                    </div>
+                  )}
+                  {runCarrots > 0 && !carrotsDoubled && (
+                    <div style={{ width: '100%' }}>
+                      <AdButton label={t('Havuçları 2 KATINA çıkar (+{n})', { n: fmt(runCarrots) })} sub={t('Bu koşuda {n} havuç topladın', { n: fmt(runCarrots) })} color="#ffcf66" onReward={() => doubleRunCarrots()} />
+                    </div>
+                  )}
+                  {claimable && renderOnboard()}
+                </div>
+              </div>
             </div>
-          )}
-          {/* Oyun sonunda logo gizli: buton sağ üst ikonların altında kalsın */}
-          <button className="hr-press" style={{ ...styles.btn, ...(isGameOver ? { marginTop: 46 } : {}) }} onClick={startRun}>
-            {isGameOver ? t('TEKRAR OYNA') : '▶  ' + t('OYNA')}
+            <div style={styles.goActions}>
+              <button className="hr-press" style={styles.btn} onClick={startRun}>▶ {t('TEKRAR OYNA')}</button>
+              <button className="hr-press" style={styles.menuBtn} onClick={() => setResultsDismissed(true)}>{t('Menü')}</button>
+            </div>
+          </>
+        ) : (
+          <>
+        {/* Sabit üst bölüm: başlık satırı → küçük logo → harita seçimi → OYNA */}
+        <div style={styles.fixedHeader}>
+          <div style={styles.headerRow}>
+            <button className="hr-press" style={styles.carrotPill} aria-label={t('Mağaza')} onClick={() => setShowShop(true)}>
+              🥕 <span style={styles.carrotNum}>{fmt(carrots)}</span>
+              <span style={styles.carrotPlus}>＋</span>
+            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button className="hr-press" style={styles.iconBtn} aria-label={t('GÜNLÜK ÖDÜL')} onClick={() => setShowDaily(true)}>
+                  🎁
+                  {canClaimStreak && <span style={styles.dailyDot} />}
+                </button>
+                <button className="hr-press" style={styles.iconBtn} aria-label={t('LİDERLİK')} onClick={() => setShowLeaderboard(true)}>🏆</button>
+                <button className="hr-press" style={styles.iconBtn} aria-label={t('OYUN REHBERİ')} onClick={() => setShowGuide(true)}>📖</button>
+                <button className="hr-press" style={styles.iconBtn} aria-label={t('AYARLAR')} onClick={() => setShowSettings(true)}>⚙️</button>
+              </div>
+              {sessionError && <span style={styles.offlineChip}>⚠ {t('Çevrimdışı mod')}</span>}
+            </div>
+          </div>
+
+          <div style={styles.titleWrap}>
+            <div style={styles.titleSub}>🐴</div>
+            <h1 style={styles.title}>HORSE RUNNER</h1>
+            <div style={styles.titleSubline}>{t('KOŞ · YETİŞTİR · YARIŞ')}</div>
+          </div>
+
+          {/* Harita seçici — yatay şerit, OYNA'nın hemen üstünde */}
+          <div style={styles.mapRow}>
+            {[
+              { id: 1, emoji: '🌿', name: 'AT YARIŞI',     sub: 'Çiftlik / Pist',    color: '#6aaa44', rgb: '106,170,68', hs: highScoreMap1 },
+              { id: 2, emoji: '🏙️', name: 'ŞEHİR',        sub: 'Kent Sokakları',    color: '#4a90d9', rgb: '74,144,217', hs: highScoreMap2 },
+              { id: 3, emoji: '🌵', name: 'ÇÖLLER',        sub: 'Çöl Koşusu',        color: '#d4a020', rgb: '212,160,32', hs: highScoreMap3 },
+              { id: 4, emoji: '🚀', name: 'UZAY KOLONİSİ', sub: "Mars'ta At Yarışı", color: '#aa44ff', rgb: '170,68,255', hs: highScoreMap4 ?? 0 },
+              { id: 5, emoji: '🏰', name: 'ORTAÇAĞ KÖYÜ',  sub: 'Köy Yolu',          color: '#c8843c', rgb: '200,132,60',  hs: highScoreMap5 ?? 0 },
+              { id: 6, emoji: '💀', name: 'ZİNDAN',        sub: 'Karanlık Koridor',  color: '#9a6cff', rgb: '154,108,255', hs: highScoreMap6 ?? 0 },
+            ].map(m => {
+              // Harita kilidi: herhangi bir haritadaki en iyi skor eşiği geçmeli
+              const maxHS = Math.max(highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4 ?? 0, highScoreMap5 ?? 0, highScoreMap6 ?? 0);
+              const need  = MAP_UNLOCKS[m.id] ?? 0;
+              const locked = need > 0 && maxHS < need;
+              const sel = mapId === m.id;
+              return (
+                <button
+                  key={m.id}
+                  className={locked ? undefined : 'hr-press'}
+                  aria-disabled={locked}
+                  style={{
+                    ...styles.mapCard,
+                    borderColor: sel ? m.color : C.edge,
+                    background:  sel ? C.cream : C.creamDk,
+                    boxShadow: sel ? `0 4px 0 ${C.edge}, 0 0 0 2px ${m.color}` : `0 3px 0 ${C.woodDk}`,
+                    cursor: locked ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() => { if (!locked) setMapId(m.id); }}
+                >
+                  <span style={{ ...styles.mapEmoji, filter: locked ? 'grayscale(1)' : 'none' }}>{m.emoji}</span>
+                  <span style={styles.mapName}>{t(m.name)}</span>
+                  <span style={styles.mapHsChip}>
+                    {locked ? `🔒 ${fmt(need)} ${t('skor')}` : `⬡ ${fmt(m.hs)}`}
+                  </span>
+                  {locked && <span style={styles.mapLockShade} aria-hidden><span style={styles.mapLockIcon}>🔒</span></span>}
+                </button>
+              );
+            })}
+          </div>
+
+          <button className="hr-press" style={styles.btn} onClick={startRun}>
+            ▶ {isGameOver ? t('TEKRAR OYNA') : t('OYNA')}<span style={styles.btnMap}> · {t(mapInfo.name)}</span>
           </button>
           {/* Harita madalyaları — seçili haritanın kısa vadeli hedefi */}
           {(() => {
@@ -264,15 +407,15 @@ export default function MainMenu() {
               <div style={styles.medalStrip}>
                 <div style={styles.medalIcons}>
                   {thr.map((thrVal, i) => (
-                    <span key={i} title={`${thrVal.toLocaleString()} ${t('skor')}`}
-                      style={{ fontSize: 18, opacity: i < earned ? 1 : 0.28, filter: i < earned ? 'none' : 'grayscale(1)' }}>
+                    <span key={i} title={`${fmt(thrVal)} ${t('skor')}`}
+                      style={{ fontSize: 16, opacity: i < earned ? 1 : 0.4, filter: i < earned ? 'none' : 'grayscale(1)' }}>
                       {MEDAL_ICONS[i]}
                     </span>
                   ))}
                 </div>
                 <span style={styles.medalGoal}>
                   {nextTarget
-                    ? <>{t('Sonraki madalya:')} <b style={{ color: C.gold }}>{nextTarget.toLocaleString()}</b> {t('skor')}</>
+                    ? <>{t('Sonraki madalya:')} <b style={{ color: C.gold }}>{fmt(nextTarget)}</b> {t('skor')}</>
                     : <span style={{ color: C.greenHi }}>{t('Tüm madalyalar alındı!')} 🏅</span>}
                 </span>
               </div>
@@ -289,127 +432,39 @@ export default function MainMenu() {
             </div>
           )}
 
-          {/* Yapı etiketi — hangi sürümün yüklü olduğunu doğrulamak için */}
-          <div style={{ position: 'fixed', top: topPlus(4), right: 8, fontSize: 10, color: C.cream, fontFamily: FONT, zIndex: 5 }}>
-            {GAME_BUILD}
-          </div>
-
-          {/* Oyun sonu skor paneli — en üstte, en görünür yerde */}
-          {isGameOver && (
-            <div style={{ ...styles.resultsWrap, position: 'relative' }}>
-              {isNewRecord && <Confetti />}
-              <div style={styles.gameOverText}>GAME OVER</div>
-              {isNewRecord && <div style={styles.newRecord}>🏆 {t('YENİ REKOR!')}</div>}
-              <div style={styles.statsCard}>
-                <div style={{ ...styles.mapBadge, borderColor: mapInfo.color }}>
-                  {mapInfo.emoji} {t(mapInfo.name)}
-                </div>
-                <StatRow label={t('SKOR')} value={<AnimatedScore value={score} />} color={C.ink} />
-                <StatRow label={t('BU HARİTA REKORU')} value={Math.floor(mapHs).toLocaleString()} color={C.inkSoft} />
-                <StatRow label={t('BU KOŞUDA')} value={`+${(runCarrots ?? 0).toLocaleString()} 🥕`} color={C.ink} />
-                <StatRow label={t('TOPLAM HAVUÇ')} value={`🥕 ${carrots.toLocaleString()}`} color={C.inkSoft} />
-              </div>
-              {/* Arkadaşını geç — liderlikte bir üstteki oyuncu */}
-              {rival && (
-                <div style={styles.rivalRow}>
-                  🎯 {t('{rank}. sıradaki', { rank: rival.rank })} <b>{rival.name}</b>{t('oyuncusunu geçmek için')}{' '}
-                  <b style={{ color: C.red }}>{rival.diff.toLocaleString()}</b> {t('puan!')}
-                </div>
-              )}
-              {runCarrots > 0 && !carrotsDoubled && (
-                <div style={{ marginTop: 10, width: '100%' }}>
-                  <AdButton label={t('Havuçları 2 KATINA çıkar (+{n})', { n: runCarrots })} sub={t('Bu koşuda {n} havuç topladın', { n: runCarrots })} color="#ffcf66" onReward={() => doubleRunCarrots()} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Havuç + günlük ödül */}
-          <div style={styles.topRow}>
-            <div style={{ ...styles.carrotPill, cursor: 'pointer' }} onClick={() => setShowShop(true)}>
-              🥕 <span style={styles.carrotNum}>{carrots.toLocaleString()}</span>
-              <span style={styles.carrotPlus}>＋</span>
-            </div>
-            <button className="hr-press" style={styles.dailyIconBtn} aria-label={t('GÜNLÜK ÖDÜL')} onClick={() => setShowDaily(true)}>
-              🎁
-              {canClaimStreak && <span style={styles.dailyDot} />}
-            </button>
-            {/* Liderlik — ana sayfadan hızlı erişim */}
-            <button className="hr-press" style={styles.dailyIconBtn} aria-label={t('LİDERLİK')} onClick={() => setShowLeaderboard(true)}>
-              🏆
-            </button>
-          </div>
-
-          {/* İLK ADIMLAR — yeni oyuncuya meta sistemleri tanıtan rehber (ölünce de görünür) */}
-          {onboardOpen && (
-            <div style={styles.onboardCard}>
-              <div style={styles.onboardHeader}>
-                <span style={{ fontSize: 18 }}>🚀</span>
-                <span style={styles.onboardTitle}>{t('İLK ADIMLAR')}</span>
-                <span style={styles.onboardCount}>
-                  {onboarding.filter(s => s.claimed).length}/{onboarding.length}
-                </span>
-              </div>
-              {/* Menü kalabalığını azaltmak için yalnızca SIRADAKİ adım gösterilir */}
-              {[onboarding.find(x => x.done && !x.claimed) ?? onboarding.find(x => !x.done)].filter(Boolean).map(st => {
-                const nav = () => {
-                  if (st.done) return;
-                  if (st.id === 'play')  startRun();
-                  else if (st.id === 'train') enterPaddock();
-                  else if (st.id === 'hara')  openGarage('hara');
-                  else if (st.id === 'shop')  openGarage();
-                };
-                return (
-                  <div key={st.id} style={{ ...styles.onboardRow, opacity: st.claimed ? 0.55 : 1, cursor: (!st.done || (st.done && !st.claimed)) ? 'pointer' : 'default' }}
-                    onClick={st.done && !st.claimed ? () => { claimOnboardStep(st.id); } : nav}>
-                    <span style={{ fontSize: 16, width: 22, textAlign: 'center' }}>
-                      {st.claimed ? '✅' : st.icon}
-                    </span>
-                    <span style={{ flex: 1, fontSize: 12, color: st.claimed ? C.green : C.ink, fontWeight: 800 }}>
-                      {t(st.label)}
-                    </span>
-                    {st.claimed ? null : st.done ? (
-                      <span style={styles.onboardClaim}>{t('AL')} +{st.reward} 🥕</span>
-                    ) : (
-                      <span style={styles.onboardGo}>{t('GİT')} →</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {/* İLK ADIMLAR — yeni oyuncuya meta sistemleri tanıtan rehber */}
+          {onboardOpen && renderOnboard()}
 
           {/* Günlük skor görevi: bugün tüm haritalarda 50.000 puan → hediye sandık */}
-          {(
-            <div style={{
-              ...styles.foalCard, cursor: goal.done && !goal.claimed ? 'pointer' : 'default',
-              borderColor: goal.done && !goal.claimed ? C.goldLo : C.edge,
-              background: goal.done && !goal.claimed ? '#ffe08a' : C.creamDk,
-            }} onClick={() => { if (goal.done && !goal.claimed) { const r = openDailyChest(); if (r) setChestReward(r); } }}>
-              <span style={{ fontSize: 26 }}>{goal.claimed ? '✅' : goal.done ? '🎁' : '🎯'}</span>
-              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                <div style={styles.foalName}>{t('Günlük Görev · 50.000 Puan')}</div>
-                {goal.claimed ? (
-                  <div style={{ ...styles.foalStatus, color: C.green }}>{t('Bugünkü sandık alındı — yarın tekrar!')} 🎁</div>
-                ) : goal.done ? (
-                  <div style={{ ...styles.foalStatus, color: C.inkSoft }}>{t('Tamamlandı! Sandığı açmak için dokun')} 👉</div>
-                ) : (
-                  <>
-                    <div style={{ height: 10, background: C.edgeDk, border: `2px solid ${C.edge}`, borderRadius: 999, overflow: 'hidden', marginTop: 5 }}>
-                      <div style={{ height: '100%', width: `${Math.min(100, goal.score / goal.target * 100)}%`, background: `linear-gradient(90deg, ${C.goldHi}, ${C.goldLo})`, borderRadius: 999 }} />
-                    </div>
-                    <div style={{ ...styles.foalStatus, color: C.inkSoft, marginTop: 3 }}>
-                      {goal.score.toLocaleString()} / {goal.target.toLocaleString()} ({t('tüm haritalar')})
-                    </div>
-                  </>
-                )}
-              </div>
-              {goal.done && !goal.claimed && <span style={{ ...styles.foalGo, color: C.ink }}>{t('AÇ')} →</span>}
+          <div style={{
+            ...styles.foalCard, cursor: goal.done && !goal.claimed ? 'pointer' : 'default',
+            borderColor: goal.done && !goal.claimed ? C.goldLo : C.edge,
+            background: goal.done && !goal.claimed ? '#ffe08a' : C.creamDk,
+          }} onClick={() => { if (goal.done && !goal.claimed) { const r = openDailyChest(); if (r) setChestReward(r); } }}>
+            <span style={{ fontSize: 26 }}>{goal.claimed ? '✅' : goal.done ? '🎁' : '🎯'}</span>
+            <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+              <div style={styles.foalName}>{t('Günlük Görev · 50.000 Puan')}</div>
+              {goal.claimed ? (
+                <div style={{ ...styles.foalStatus, color: C.green }}>{t('Bugünkü sandık alındı — yarın tekrar!')} 🎁</div>
+              ) : goal.done ? (
+                <div style={{ ...styles.foalStatus, color: C.inkSoft }}>{t('Tamamlandı! Sandığı açmak için dokun')} 👉</div>
+              ) : (
+                <>
+                  <div style={styles.progressBarBg}>
+                    <div style={{ ...styles.progressBarFill, width: `max(4px, ${Math.min(100, goal.score / goal.target * 100)}%)` }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, marginTop: 3 }}>
+                    <span style={{ ...styles.foalStatus, color: C.ink, marginTop: 0 }}>{fmt(goal.score)} / {fmt(goal.target)}</span>
+                    <span style={styles.mutedSmall}>{t('tüm haritalar')} · {t('Ödül')}: 🎁</span>
+                  </div>
+                </>
+              )}
             </div>
-          )}
+            {goal.done && !goal.claimed && <span style={{ ...styles.foalGo, color: C.ink }}>{t('AÇ')} →</span>}
+          </div>
 
           {/* Tay vitrini — oyunun farkı: koşu + at yetiştiriciliği */}
-          {!isGameOver && (foals.length > 0 ? (() => {
+          {foals.length > 0 ? (() => {
             const f = foals[0];
             const hungry = f.tokluk < 40;
             return (
@@ -434,49 +489,7 @@ export default function MainMenu() {
               </div>
               <span style={styles.foalGo}>{t('AHIR')} →</span>
             </div>
-          ))}
-
-          {/* Oyun bitti ekranı */}
-          {sessionError && <p style={styles.warn}>⚠ {t('Çevrimdışı mod')}</p>}
-
-          {/* Harita seçici */}
-          <div style={styles.sectionTitle}>🗺️ {t('HARİTA SEÇ')}</div>
-          <div style={styles.mapRow}>
-            {[
-              { id: 1, emoji: '🌿', name: 'AT YARIŞI',     sub: 'Çiftlik / Pist',    color: '#6aaa44', rgb: '106,170,68', hs: highScoreMap1 },
-              { id: 2, emoji: '🏙️', name: 'ŞEHİR',        sub: 'Kent Sokakları',    color: '#4a90d9', rgb: '74,144,217', hs: highScoreMap2 },
-              { id: 3, emoji: '🌵', name: 'ÇÖLLER',        sub: 'Çöl Koşusu',        color: '#d4a020', rgb: '212,160,32', hs: highScoreMap3 },
-              { id: 4, emoji: '🚀', name: 'UZAY KOLONİSİ', sub: "Mars'ta At Yarışı", color: '#aa44ff', rgb: '170,68,255', hs: highScoreMap4 ?? 0 },
-              { id: 5, emoji: '🏰', name: 'ORTAÇAĞ KÖYÜ',  sub: 'Köy Yolu',          color: '#c8843c', rgb: '200,132,60',  hs: highScoreMap5 ?? 0 },
-              { id: 6, emoji: '💀', name: 'ZİNDAN',        sub: 'Karanlık Koridor',  color: '#9a6cff', rgb: '154,108,255', hs: highScoreMap6 ?? 0 },
-            ].map(m => {
-              // Harita kilidi: herhangi bir haritadaki en iyi skor eşiği geçmeli
-              const maxHS = Math.max(highScoreMap1, highScoreMap2, highScoreMap3, highScoreMap4 ?? 0, highScoreMap5 ?? 0, highScoreMap6 ?? 0);
-              const need  = MAP_UNLOCKS[m.id] ?? 0;
-              const locked = need > 0 && maxHS < need;
-              return (
-                <div
-                  key={m.id}
-                  style={{
-                    ...styles.mapCard,
-                    borderColor: mapId === m.id ? m.color : C.edge,
-                    background:  mapId === m.id ? `rgba(${m.rgb},0.22)` : C.creamDk,
-                    boxShadow: mapId === m.id ? `0 4px 0 ${C.edge}` : `0 3px 0 ${C.woodDk}`,
-                    opacity: locked ? 0.45 : 1,
-                    cursor: locked ? 'not-allowed' : 'pointer',
-                  }}
-                  onClick={() => { if (!locked) setMapId(m.id); }}
-                >
-                  <span style={styles.mapEmoji}>{locked ? '🔒' : m.emoji}</span>
-                  <span style={{ ...styles.mapName, color: C.ink }}>{t(m.name)}</span>
-                  <span style={styles.mapSub}>{t(m.sub)}</span>
-                  <span style={{ ...styles.mapHsChip, color: locked ? C.red : C.inkSoft }}>
-                    {locked ? `🔒 ${t('{n} skor gerekli', { n: need.toLocaleString() })}` : `⬡ ${Math.floor(m.hs).toLocaleString()}`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          )}
 
           {/* Aktif jokey + at */}
           <div style={styles.activeRow} onClick={openGarage}>
@@ -504,6 +517,8 @@ export default function MainMenu() {
           </div>
 
         </div>
+          </>
+        )}
 
         {/* Alt sekme çubuğu */}
         <div style={styles.bottomNav}>
@@ -610,12 +625,12 @@ export default function MainMenu() {
       {/* Hediye sandığı açılış modalı */}
       {chestReward && (
         <div style={styles.chestOverlay} onClick={() => setChestReward(null)}>
-          <div style={styles.chestBox} onClick={(e) => e.stopPropagation()}>
+          <div className="hr-claim" style={styles.chestBox} onClick={(e) => e.stopPropagation()}>
             <div style={{ fontSize: 64, animation: 'pulse 0.6s ease-out' }}>🎁</div>
             <div style={styles.chestTitle}>{t('SANDIK AÇILDI!')}</div>
             <div style={{ fontSize: 44, margin: '8px 0' }}>{chestReward.icon}</div>
             <div style={styles.chestReward}>
-              {chestReward.type === 'carrots' ? `+${chestReward.amount.toLocaleString()} 🥕` : t(chestReward.label)}
+              {chestReward.type === 'carrots' ? `+${fmt(chestReward.amount)} 🥕` : t(chestReward.label)}
             </div>
             <div style={styles.chestSub}>{chestReward.type === 'carrots' ? t(chestReward.label) : t('Sonraki koşunda aktif!')}</div>
             <button className="hr-press" style={styles.chestBtn} onClick={() => setChestReward(null)}>{t('HARİKA!')}</button>
@@ -626,7 +641,7 @@ export default function MainMenu() {
       {/* Madalya ödül toast'ı — koşu sonunda yeni madalya kazanılınca */}
       {newMedals && newMedals.length > 0 && (
         <div style={styles.chestOverlay} onClick={clearNewMedals}>
-          <div style={styles.chestBox} onClick={(e) => e.stopPropagation()}>
+          <div className="hr-claim" style={styles.chestBox} onClick={(e) => e.stopPropagation()}>
             <div style={{ fontSize: 64, animation: 'pulse 0.6s ease-out' }}>
               {MEDAL_ICONS[newMedals[newMedals.length - 1].tier - 1]}
             </div>
@@ -634,7 +649,7 @@ export default function MainMenu() {
               {newMedals.length > 1 ? t('{n} MADALYA KAZANDIN!', { n: newMedals.length }) : t('MADALYA KAZANDIN!')}
             </div>
             <div style={styles.chestReward}>
-              +{newMedals.reduce((a, m) => a + m.reward, 0).toLocaleString()} 🥕
+              +{fmt(newMedals.reduce((a, m) => a + m.reward, 0))} 🥕
             </div>
             <div style={styles.chestSub}>{t('Yeni hedef için tekrar koş!')}</div>
             <button className="hr-press" style={styles.chestBtn} onClick={clearNewMedals}>{t('HARİKA!')}</button>
@@ -680,7 +695,7 @@ const styles = {
     padding: '14px 18px 14px',
   },
   topIcons: { position: 'absolute', top: 10, right: 12, display: 'flex', gap: 6, zIndex: 2 },
-  iconBtn: { ...btn.icon, width: 44, height: 44, fontSize: 18 },
+  iconBtn: { ...btn.icon, position: 'relative', width: 44, height: 44, fontSize: 18, flexShrink: 0 },
   topRow: { display: 'flex', alignItems: 'center', gap: 8 },
   nameOverlay: {
     position: 'fixed', inset: 0, zIndex: 15000,
@@ -720,8 +735,8 @@ const styles = {
     padding: '10px 12px', cursor: 'pointer', boxSizing: 'border-box', minHeight: 56,
   },
   foalName: { fontFamily: FONT, fontSize: 13, fontWeight: 800, color: C.ink },
-  foalStage: { fontSize: 11, color: C.inkSoft, fontWeight: 700 },
-  foalStatus: { fontFamily: FONT, fontSize: 11, fontWeight: 700, marginTop: 2 },
+  foalStage: { fontSize: 12, color: C.inkSoft, fontWeight: 700 },
+  foalStatus: { fontFamily: FONT, fontSize: 12, fontWeight: 700, marginTop: 2 },
   foalGo: { fontFamily: DISPLAY, fontSize: 13, letterSpacing: 0.5, color: C.woodDk, whiteSpace: 'nowrap' },
   // ── Hediye sandığı modalı ──
   chestOverlay: {
@@ -748,42 +763,38 @@ const styles = {
   dailyIconBtn: { ...btn.icon, position: 'relative', width: 44, height: 44, fontSize: 18 },
   sectionTitle: { alignSelf: 'flex-start', fontFamily: DISPLAY, fontSize: 14, letterSpacing: 1, color: C.ink, marginTop: 4 },
   bottomNav: {
-    display: 'flex', borderTop: `4px solid ${C.edge}`,
-    background: `linear-gradient(180deg, ${C.wood}, ${C.woodDk})`, flexShrink: 0,
+    display: 'flex', gap: 2, borderTop: `4px solid ${C.edge}`, flexShrink: 0,
+    padding: '6px 6px calc(6px + env(safe-area-inset-bottom, 0px))',
+    background: `linear-gradient(180deg, ${C.wood}, ${C.woodDk})`,
   },
   navBtn: {
-    position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-    background: 'transparent', border: 'none', cursor: 'pointer', minHeight: 52,
-    padding: '8px 2px calc(8px + env(safe-area-inset-bottom, 0px))', fontFamily: FONT,
+    position: 'relative', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+    background: 'transparent', border: 'none', borderRadius: 12, cursor: 'pointer', minHeight: 50,
+    padding: '4px 0', fontFamily: FONT, '--hr-edge': 'transparent',
   },
-  navActive: { background: `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})`, boxShadow: `inset 0 -4px 0 ${C.edge}` },
+  navActive: { background: `linear-gradient(180deg, ${C.goldHi}, ${C.goldLo})`, border: `2px solid ${C.edge}`, boxShadow: `0 3px 0 ${C.edge}`, '--hr-edge': C.edge },
   navIcon: { fontSize: 20 },
   navLabel: { fontSize: 11, letterSpacing: 0.3, color: C.cream, fontWeight: 800 },
   navDot: { position: 'absolute', top: 6, right: '50%', marginRight: -16, width: 10, height: 10, borderRadius: '50%', background: C.red, border: `2px solid ${C.cream}` },
   titleWrap: { textAlign: 'center' },
-  titleSub: { fontSize: 42, marginBottom: 2, animation: 'bounce 1.2s infinite alternate' },
-  title: { ...titleText(40), margin: 0, letterSpacing: 2, fontWeight: 400 },
-  titleSubline: {
-    fontSize: 12, fontWeight: 800,
-    letterSpacing: 4,
-    color: C.gold,
-    marginTop: 10,
-  },
+  titleSub: { fontSize: 28, lineHeight: 1, marginBottom: 2 },
+  title: { ...titleText(28), margin: 0, letterSpacing: 2, fontWeight: 400 },
+  titleSubline: { fontSize: 10, fontWeight: 800, letterSpacing: 3, color: C.gold, marginTop: 6 },
   carrotPill: {
     ...pill,
-    display: 'flex', alignItems: 'center', gap: 6, minHeight: 44, boxSizing: 'border-box',
-    border: `3px solid ${C.edgeDk}`, padding: '4px 6px 4px 14px', fontSize: 16,
+    display: 'flex', alignItems: 'center', gap: 4, minHeight: 44, boxSizing: 'border-box', cursor: 'pointer',
+    border: `3px solid ${C.edgeDk}`, padding: '4px 5px 4px 10px', fontSize: 15, flexShrink: 0,
   },
-  carrotNum: { fontFamily: DISPLAY, color: C.gold, fontSize: 20, letterSpacing: 0.5 },
+  carrotNum: { fontFamily: DISPLAY, color: C.gold, fontSize: 18, letterSpacing: 0.5 },
   carrotLabel: { color: C.gold, fontSize: 11 },
   carrotPlus: {
-    marginLeft: 8, width: 26, height: 26, borderRadius: '50%',
+    marginLeft: 4, width: 24, height: 24, borderRadius: '50%',
     background: `linear-gradient(180deg, ${C.greenHi}, ${C.green})`, border: `2px solid ${C.greenEdge}`,
-    color: '#fff', fontWeight: 900, fontSize: 15,
+    color: '#fff', fontWeight: 900, fontSize: 14,
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
   },
-  gameOverText: { ...titleText(34, '#ff8a6a'), textAlign: 'center', letterSpacing: 2 },
-  newRecord: { ...titleText(22, C.goldHi), textAlign: 'center' },
+  gameOverText: { ...titleText(36, C.red), textAlign: 'center', letterSpacing: 2, textTransform: 'uppercase' },
+  newRecord: { ...titleText(22, C.goldHi), textAlign: 'center', ...pill, background: C.edge, padding: '6px 16px', WebkitTextStroke: '0px', textShadow: 'none', fontFamily: DISPLAY, fontWeight: 400 },
   resultsWrap: { display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', width: '100%' },
   statsCard: {
     ...tile,
@@ -799,7 +810,7 @@ const styles = {
   },
   statRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 24 },
   statLabel: { color: C.inkSoft, fontSize: 12, fontWeight: 800, letterSpacing: 1 },
-  statValue: { fontFamily: DISPLAY, fontSize: 20, letterSpacing: 0.5 },
+  statValue: { fontFamily: DISPLAY, fontSize: 18, letterSpacing: 0.5 },
   introWrap: { textAlign: 'center', width: '100%' },
   dailyWidget: {
     ...tile, border: `2px solid ${C.woodDk}`,
@@ -810,7 +821,7 @@ const styles = {
   dailyLabel: { fontSize: 11, letterSpacing: 1.5, color: C.inkSoft, fontWeight: 800, flex: 1 },
   dailyDone: { fontSize: 11, color: C.green, letterSpacing: 1, fontWeight: 800 },
   dailyChallenge: { fontSize: 13, color: C.ink, fontWeight: 800, letterSpacing: 1, marginBottom: 8 },
-  progressBarBg: { height: 10, background: C.edgeDk, border: `2px solid ${C.edge}`, borderRadius: 999, overflow: 'hidden' },
+  progressBarBg: { height: 10, background: C.edgeDk, border: `2px solid ${C.edge}`, borderRadius: 999, overflow: 'hidden', marginTop: 5 },
   progressBarFill: { height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${C.goldHi}, ${C.goldLo})`, transition: 'width 0.5s ease' },
   dailyRewardBtn: {
     ...btn.primary,
@@ -839,20 +850,21 @@ const styles = {
   },
   mapHsVal: { fontFamily: DISPLAY, color: C.ink },
   mapRow: {
-    display: 'flex', gap: 8, width: '100%',
-    flexWrap: 'wrap', justifyContent: 'center',
+    display: 'flex', gap: 8, width: 'calc(100% + 28px)', margin: '0 -14px',
+    overflowX: 'auto', padding: '4px 14px 8px', boxSizing: 'border-box',
+    scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
   },
   mapCard: {
-    flex: '1 1 80px', minWidth: 78, maxWidth: 140,
+    position: 'relative', flex: '0 0 96px', scrollSnapAlign: 'start',
     display: 'flex', flexDirection: 'column',
-    alignItems: 'center', gap: 3, padding: '10px 6px', borderRadius: 14,
-    cursor: 'pointer', border: '3px solid', transition: 'all 0.15s',
-    boxSizing: 'border-box', marginBottom: 4,
+    alignItems: 'center', gap: 2, padding: '8px 4px', borderRadius: 14,
+    border: '3px solid', boxSizing: 'border-box', fontFamily: FONT, color: C.ink,
+    '--hr-edge': C.edge, overflow: 'hidden',
   },
-  mapEmoji: { fontSize: 24 },
-  mapName: { fontFamily: DISPLAY, fontSize: 12, letterSpacing: 0.5, textAlign: 'center' },
+  mapEmoji: { fontSize: 22, lineHeight: 1.1 },
+  mapName: { fontFamily: DISPLAY, fontSize: 12, letterSpacing: 0.3, textAlign: 'center', color: C.ink, lineHeight: 1.1, minHeight: 26, display: 'flex', alignItems: 'center' },
   mapSub:  { color: C.inkSoft, fontSize: 10, fontWeight: 700, textAlign: 'center' },
-  mapHsChip: { fontFamily: DISPLAY, fontSize: 12, letterSpacing: 0.5, marginTop: 2, textAlign: 'center' },
+  mapHsChip: { fontFamily: FONT, fontWeight: 800, fontSize: 12, color: C.ink, background: 'rgba(255,241,208,0.85)', borderRadius: 999, padding: '1px 6px', whiteSpace: 'nowrap', position: 'relative', zIndex: 2 },
   nightBtn: {
     ...btn.secondary,
     padding: '8px 24px', fontSize: 13, minHeight: 44,
@@ -874,7 +886,7 @@ const styles = {
   fixedHeader: {
     flexShrink: 0,
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-    padding: '18px 18px 14px',
+    padding: '12px 14px 12px',
     borderBottom: `4px solid ${C.edge}`,
     background: `linear-gradient(180deg, #3a2414 0%, ${C.bgDeep} 100%)`,
   },
@@ -885,25 +897,35 @@ const styles = {
   onboardCard: {
     ...tile,
     width: '100%', boxSizing: 'border-box',
-    border: `3px solid ${C.blueEdge}`, boxShadow: `0 4px 0 ${C.blueEdge}`,
-    background: '#e6eefa', padding: '10px 12px',
+    background: C.cream, border: `3px solid ${C.edge}`, borderLeft: `8px solid ${C.gold}`,
+    boxShadow: `0 4px 0 ${C.edge}`, padding: '10px 12px',
     display: 'flex', flexDirection: 'column', gap: 4,
   },
-  onboardHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 },
-  onboardTitle: { flex: 1, fontSize: 15, letterSpacing: 1, color: C.blueEdge, fontFamily: DISPLAY },
-  onboardCount: { fontSize: 12, color: C.blueEdge, fontWeight: 800 },
-  onboardRow: { display: 'flex', alignItems: 'center', gap: 8, padding: '5px 4px', minHeight: 44, borderTop: `2px dashed rgba(30,74,122,0.25)` },
-  onboardClaim: { ...btn.success, fontSize: 12, padding: '5px 10px', borderRadius: 10, boxShadow: `0 3px 0 ${C.greenEdge}`, whiteSpace: 'nowrap' },
-  onboardGo: { fontFamily: DISPLAY, fontSize: 13, color: C.blueEdge, whiteSpace: 'nowrap' },
+  onboardHeader: { display: 'flex', alignItems: 'center', gap: 8 },
+  onboardTitle: { flex: 1, fontSize: 15, letterSpacing: 1, color: C.ink, fontFamily: DISPLAY },
+  onboardCount: { fontSize: 12, color: C.inkSoft, fontWeight: 800 },
+  onboardRow: { display: 'flex', alignItems: 'center', gap: 8, paddingTop: 6, minHeight: 44 },
+  onboardClaim: { ...btn.success, fontSize: 13, padding: '6px 12px', minHeight: 44, borderRadius: 12, whiteSpace: 'nowrap' },
+  onboardGo: { ...btn.secondary, fontSize: 14, padding: '6px 14px', minHeight: 44, minWidth: 64, borderRadius: 12, whiteSpace: 'nowrap' },
   medalIcons: { display: 'flex', gap: 2 },
   medalGoal: { fontSize: 12, color: C.cream, fontFamily: FONT, fontWeight: 700 },
   btn: {
     ...btn.primary,
-    padding: '13px 52px', minHeight: 56,
-    fontSize: 24, textTransform: 'uppercase',
-    width: '100%',
+    padding: '12px 16px', minHeight: 56,
+    fontSize: 22, textTransform: 'uppercase',
+    width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
   },
   leaderboardBtn: { ...btn.secondary, padding: '10px 24px', fontSize: 15, minHeight: 44, width: '100%' },
   garageBtn: { ...btn.secondary, padding: '10px 24px', fontSize: 15, minHeight: 44, width: '100%' },
   guideBtn: { ...btn.ghost, padding: '9px 24px', fontSize: 13, width: '100%' },
+  headerRow: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 },
+  offlineChip: { fontSize: 12, fontWeight: 800, color: C.cream, opacity: 0.8, background: 'rgba(255,241,208,0.12)', border: `1px solid rgba(255,241,208,0.3)`, borderRadius: 999, padding: '1px 8px', whiteSpace: 'nowrap' },
+  mapLockShade: { position: 'absolute', inset: 0, background: 'rgba(42,26,14,0.28)', pointerEvents: 'none', zIndex: 1 },
+  mapLockIcon: { position: 'absolute', top: 4, right: 4, fontSize: 13, background: C.edge, borderRadius: 999, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  btnMap: { fontSize: 16, opacity: 0.85 },
+  menuBtn: { ...btn.secondary, width: '100%', minHeight: 48, fontSize: 16, padding: '10px 16px' },
+  goActions: { flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 18px 14px', borderTop: `4px solid ${C.edge}`, background: C.creamDk },
+  bigScoreLabel: { color: C.inkSoft, fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textAlign: 'center' },
+  bigScore: { fontFamily: DISPLAY, fontSize: 44, lineHeight: 1, color: C.ink, textAlign: 'center', marginBottom: 6, letterSpacing: 1 },
+  mutedSmall: { fontSize: 12, fontWeight: 700, color: C.inkSoft, whiteSpace: 'nowrap' },
 };

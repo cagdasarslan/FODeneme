@@ -8,6 +8,7 @@ import { t, getLang, setLang } from '@/i18n';
 import useLang from '@/i18n/useLang';
 import { C, FONT, DISPLAY, btn, panel, tile, titleText, backdrop } from '@/ui/theme';
 import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
+import { GAME_BUILD } from '@/constants/game';
 
 // Ayarlar: ses aç/kapat + görüntü kalitesi (DÜŞÜK / YÜKSEK)
 export default function Settings({ onClose }) {
@@ -98,6 +99,8 @@ export default function Settings({ onClose }) {
         <div style={S.note}>
           {t('DÜŞÜK: gölge yok, en akıcı · ORTA: dengeli · YÜKSEK: gölge + ışıltı (bloom). Yavaş telefonlar için DÜŞÜK/ORTA önerilir.')}
         </div>
+        {/* Yapı etiketi — yalnızca burada (menü/oyun sonunda değil) */}
+        <div style={{ ...S.note, marginTop: 8 }}>{t('Sürüm')}: {GAME_BUILD}</div>
       </div>
     </div>
   );

@@ -25,3 +25,21 @@ body { overflow: hidden; background: #2a1a0e; font-family: var(--game-font); fon
 .hr-press { transition: transform 80ms ease, box-shadow 80ms ease, filter 120ms ease; }
 .hr-press:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--hr-edge, #5a3418) !important; }
 .hr-press:disabled { filter: grayscale(0.6) brightness(0.85); cursor: default; }
+
+/* ── UI animasyonları (hareket azaltma tercihine saygılı) ── */
+@keyframes hrPopIn { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes hrClaimPop { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes hrBounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-6px); } 70% { transform: translateY(1px); } }
+@keyframes hrSwipeHand { 0% { transform: translateY(14px); opacity: 0; } 20% { opacity: 1; } 80% { transform: translateY(-14px); opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
+@keyframes hrSwipeHandX { 0% { transform: translateX(-8px); opacity: 0; } 20% { opacity: 1; } 80% { transform: translateX(8px); opacity: 1; } 100% { transform: translateX(8px); opacity: 0; } }
+@keyframes hrToastIn { from { transform: translateY(-8px); } to { transform: translateY(0); } }
+.hr-popin { animation: hrPopIn 350ms ease-out both; }
+.hr-claim { animation: hrClaimPop 260ms ease-out; }
+.hr-bounce { display: inline-block; animation: hrBounce 600ms ease-out 1; }
+.hr-toast { animation: hrToastIn 200ms ease-out both; }
+.hr-swipe-y { display: inline-block; animation: hrSwipeHand 1.2s ease-in-out infinite; }
+.hr-swipe-x { display: inline-block; animation: hrSwipeHandX 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .hr-popin, .hr-claim, .hr-bounce, .hr-toast, .hr-swipe-y, .hr-swipe-x, .hr-confetti span { animation: none !important; }
+  .hr-confetti { display: none; }
+}

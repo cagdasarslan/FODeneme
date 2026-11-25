@@ -5,7 +5,7 @@ import { initBilling, purchase, restorePurchases, setGrantHandler, setRemoveAdsH
 import { hideBanner } from '@/services/AdService';
 import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import { t } from '@/i18n';
-import { C, FONT, DISPLAY, btn, panel, tile, pill, titleText, backdrop } from '@/ui/theme';
+import { C, FONT, DISPLAY, btn, panel, tile, pill, titleText, backdrop, fmt } from '@/ui/theme';
 import useLang from '@/i18n/useLang';
 
 // Gerçek para ile havuç satın alma mağazası (Google Play Billing).
@@ -22,7 +22,7 @@ export default function CarrotShop({ onClose }) {
   useEffect(() => {
     setGrantHandler((productId, amount) => {
       addCarrots(amount);
-      setFlash('✅ ' + t('{n} havuç hesabına eklendi!', { n: amount.toLocaleString() }));
+      setFlash('✅ ' + t('{n} havuç hesabına eklendi!', { n: fmt(amount) }));
       setTimeout(() => setFlash(''), 2500);
     });
     setRemoveAdsHandler(() => {
@@ -51,28 +51,9 @@ export default function CarrotShop({ onClose }) {
           <button aria-label={t('Kapat')} className="hr-press" style={S.close} onClick={onClose}>✕</button>
         </div>
 
-        <div style={S.balance}>🥕 {carrots.toLocaleString()} {t('havuç')}</div>
+        <div style={S.balance}>🥕 {fmt(carrots)} {t('havuç')}</div>
 
         {flash && <div style={S.flash}>{flash}</div>}
-
-        {/* Reklamları Kaldır — tek seferlik, kalıcı */}
-        {adsRemoved ? (
-          <div style={S.adsDone}>✓ {t('Reklamlar kaldırıldı')}</div>
-        ) : (
-          <button
-            className="hr-press"
-            style={{ ...S.removeAds, opacity: busy ? 0.5 : 1 }}
-            disabled={!!busy}
-            onClick={() => handleBuy({ id: REMOVE_ADS_ID })}
-          >
-            <span style={{ fontSize: 18 }}>🚫</span>
-            <span style={{ flex: 1, textAlign: 'left' }}>
-              <b>{t('REKLAMLARI KALDIR')}</b>
-              <div style={{ fontSize: 10, color: C.inkSoft, fontWeight: 700, marginTop: 2 }}>{t('Banner tamamen kapanır · ödüllü reklamlar isteğe bağlı kalır')}</div>
-            </span>
-            <span style={S.priceBtn}>{busy === REMOVE_ADS_ID ? '...' : getRemoveAdsPrice()}</span>
-          </button>
-        )}
 
         <div style={S.grid}>
           {CARROT_PACKAGES.map(pkg => (
@@ -85,13 +66,32 @@ export default function CarrotShop({ onClose }) {
             >
               {pkg.badge && <span style={S.badge}>{t(pkg.badge)}</span>}
               <span style={S.carrotIcon}>🥕</span>
-              <span style={S.amount}>{pkg.carrots.toLocaleString()}</span>
+              <span style={S.amount}>{fmt(pkg.carrots)}</span>
               <span style={S.priceBtn}>
                 {busy === pkg.id ? '...' : getDisplayPrice(pkg)}
               </span>
             </button>
           ))}
         </div>
+
+        {/* Reklamları Kaldır — paketlerin altında; tek seferlik, kalıcı */}
+        {adsRemoved ? (
+          <div style={S.adsDone}>✓ {t('Reklamlar kaldırıldı')}</div>
+        ) : (
+          <button
+            className="hr-press"
+            style={{ ...S.removeAds, opacity: busy ? 0.5 : 1 }}
+            disabled={!!busy}
+            onClick={() => handleBuy({ id: REMOVE_ADS_ID })}
+          >
+            <span style={{ fontSize: 18 }}>🚫</span>
+            <span style={{ flex: 1, textAlign: 'left' }}>
+              <b style={{ whiteSpace: 'nowrap', fontSize: 13 }}>{t('REKLAMLARI KALDIR')}</b>
+              <div style={{ fontSize: 12, color: C.inkSoft, fontWeight: 700, marginTop: 2 }}>{t('Banner tamamen kapanır · ödüllü reklamlar isteğe bağlı kalır')}</div>
+            </span>
+            <span style={S.priceBtn}>{busy === REMOVE_ADS_ID ? '...' : getRemoveAdsPrice()}</span>
+          </button>
+        )}
 
         <button
           className="hr-press"
@@ -131,13 +131,13 @@ const S = {
     borderRadius: 12, padding: '8px', marginBottom: 10,
   },
   removeAds: {
-    ...tile, display: 'flex', alignItems: 'center', gap: 10, width: '100%', marginBottom: 12,
+    ...tile, display: 'flex', alignItems: 'center', gap: 10, width: '100%', marginTop: 16,
     border: `3px solid ${C.edge}`, boxShadow: `0 4px 0 ${C.edge}`, padding: '12px', color: C.ink,
     fontFamily: FONT, fontWeight: 700, fontSize: 12, cursor: 'pointer', minHeight: 56,
   },
   adsDone: {
     textAlign: 'center', color: C.greenEdge, fontFamily: FONT, fontSize: 13,
-    fontWeight: 800, marginBottom: 12, padding: 8, background: '#d8f0c8',
+    fontWeight: 800, marginTop: 16, padding: 8, background: '#d8f0c8',
     border: `3px solid ${C.greenEdge}`, borderRadius: 12,
   },
   grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, paddingTop: 6 },
@@ -159,8 +159,8 @@ const S = {
     marginTop: 4, fontSize: 14, fontFamily: DISPLAY, letterSpacing: 1, color: '#fff',
     background: `linear-gradient(180deg, ${C.greenHi}, ${C.green})`, border: `2px solid ${C.greenEdge}`,
     boxShadow: `0 3px 0 ${C.greenEdge}`, borderRadius: 10,
-    padding: '6px 14px', minWidth: 70, textAlign: 'center',
+    padding: '0 14px', minWidth: 70, minHeight: 44, boxSizing: 'border-box', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   },
   restoreBtn: { ...btn.secondary, marginTop: 16, width: '100%', padding: '11px', minHeight: 48, fontSize: 14 },
-  note: { marginTop: 14, fontSize: 11, fontWeight: 700, color: C.inkSoft, textAlign: 'center', lineHeight: 1.5 },
+  note: { marginTop: 14, fontSize: 12, fontWeight: 700, color: C.inkSoft, textAlign: 'center', lineHeight: 1.5 },
 };

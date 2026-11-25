@@ -74,7 +74,9 @@ export default function TouchPad() {
   if (phase !== 'playing') return null;
   // İpucu yalnızca ilk birkaç koşuda: öğrenen oyuncunun ekranını kalabalıklaştırmasın
   if ((useGameStore.getState().lifeStats?.runs ?? 0) >= 3) return null;
-  return <div style={hint}>{t('kaydır: ← → şerit · ↑ zıpla · ↓ eğil')}</div>;
+  // Dokunmatik olmayan cihazda klavye ipucu (tek hap — eskiden HUD'da ikinci hap vardı)
+  const touch = typeof window !== 'undefined' && 'ontouchstart' in window;
+  return <div style={hint}>{touch ? t('kaydır: ← → şerit · ↑ zıpla · ↓ eğil') : `← → / A D · SPACE / ↑ ${t('Zıpla')}`}</div>;
 }
 
 const hint = {

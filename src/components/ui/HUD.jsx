@@ -10,9 +10,7 @@ import { POWERUP_IDS, POWERUP_BY_ID } from '@/constants/powerups';
 import { SAFE_TOP, topPlus } from '@/utils/safeArea';
 import { t } from '@/i18n';
 import useLang from '@/i18n/useLang';
-import { C, FONT, DISPLAY, btn, panel, pill, titleText, backdrop } from '@/ui/theme';
-
-const isMobile = 'ontouchstart' in window;
+import { C, FONT, DISPLAY, btn, panel, pill, titleText, backdrop, fmt } from '@/ui/theme';
 
 // ── Close-call flash mesajları ────────────────────────────────────────────────
 // Yatayda ortalanmış sabit satır. 'pulse' animasyonu transform'u (scale) yazdığı
@@ -92,7 +90,8 @@ export default function HUD() {
 
   const TUT_MSGS = [t('👆 ← → kaydırarak şerit değiştir'), t('👆 ↑ yukarı kaydır = ZIPLA'), t('👆 ↓ aşağı kaydır = EĞİL')];
 
-  const adrColor = adrenaline > 75 ? C.red : adrenaline > 40 ? C.goldLo : C.edge;
+  // Düşük adrenalinde yazı krem: eskiden kahve hap üstüne kahve yazı → görünmez "boş hap"
+  const adrColor = adrenaline > 75 ? '#ff8a6a' : adrenaline > 40 ? C.gold : C.cream;
   const adrFillBg = adrenaline > 75 ? `linear-gradient(180deg, #ff6a3a, ${C.red})` : `linear-gradient(90deg, ${C.goldHi}, ${C.carrot})`;
   const isMaxAdr = adrenaline > 90;
 
@@ -105,7 +104,7 @@ export default function HUD() {
       {phase === 'paused' && (
         <div style={styles.pauseOverlay}>
           <div style={styles.pauseTitle}>⏸ {t('DURAKLATILDI')}</div>
-          <div style={styles.pauseScore}>{t('SKOR')}: {Math.floor(score).toLocaleString()}</div>
+          <div style={styles.pauseScore}>{t('SKOR')}: {fmt(score)}</div>
           <button className="hr-press" style={styles.pauseResume} onClick={() => useGameStore.getState().resumeRun()}>
             ▶ {t('DEVAM ET')}
           </button>
@@ -127,26 +126,14 @@ export default function HUD() {
         </button>
       )}
 
-      {/* Üst bar */}
+      {/* Üst şerit: havuç (sol) · skor + rekor (orta) · hız (sağ). Duraklat ayrı, sağda. */}
       <div style={styles.topBar}>
-        <div style={styles.statBlock}>
-          <span style={styles.label}>{t('SKOR')}</span>
-          <span style={styles.value}>{Math.floor(score).toLocaleString()}</span>
-          {/* Hız — skorun tam altında */}
-          <span style={{ ...styles.speedLine, color: speedColor }}>
-            🏇 {Math.floor(speed)} km/h
-          </span>
+        <span style={styles.stripCarrots}>🥕 {fmt(carrots)}</span>
+        <div style={styles.stripCenter}>
+          <span style={styles.value}>{fmt(score)}</span>
+          <span style={styles.label}>{t('REKOR')} {fmt(highScore)}</span>
         </div>
-        <div style={styles.statBlock}>
-          <span style={styles.label}>{t('EN YÜKSEK')}</span>
-          <span style={styles.value}>
-            {Math.floor(highScore).toLocaleString()}
-          </span>
-        </div>
-        <div style={styles.statBlock}>
-          <span style={styles.label}>🥕 {t('HAVUÇ')}</span>
-          <span style={{ ...styles.value, color: C.ink }}>{carrots}</span>
-        </div>
+        <span style={{ ...styles.speedLine, color: speedColor }}>{Math.floor(speed)} km/h</span>
       </div>
 
       {powerupLine && (
@@ -198,13 +185,17 @@ export default function HUD() {
         </div>
       )}
 
-      {/* İlk oyun eğitimi */}
-      {tutStep < 3 && (
-        <div style={{ position:'fixed', top:'46%', left:'50%', transform:'translateX(-50%)',
-          ...panel, fontSize:17, fontWeight:800, letterSpacing:0.5, pointerEvents:'none',
-          padding:'12px 20px', borderRadius:16, borderWidth:3,
-          boxShadow:`0 5px 0 ${C.edge}`, whiteSpace:'nowrap' }}>
-          {TUT_MSGS[tutStep]}
+      {/* İlk oyun eğitimi — üst üçte birde (şeridi kapatmaz); duraklatınca gizlenir */}
+      {tutStep < 3 && phase === 'playing' && (
+        <div style={{ position:'fixed', top:'26%', left:0, right:0, display:'flex', justifyContent:'center', pointerEvents:'none' }}>
+          <div style={{ ...panel, display:'flex', alignItems:'center', gap:10,
+            fontSize:16, fontWeight:800, letterSpacing:0.3,
+            padding:'10px 18px', borderRadius:16, borderWidth:3, maxWidth:'90vw', boxSizing:'border-box',
+            boxShadow:`0 5px 0 ${C.edge}` }}>
+            <span key={tutStep} className={tutStep === 0 ? 'hr-swipe-x' : 'hr-swipe-y'}
+              style={{ fontSize:26, width:40, textAlign:'center', flexShrink:0, animationDirection: tutStep === 2 ? 'reverse' : 'normal' }} aria-hidden>👆</span>
+            <span>{TUT_MSGS[tutStep].replace(/^👆\s*/, '')}</span>
+          </div>
         </div>
       )}
 
@@ -215,27 +206,22 @@ export default function HUD() {
           animation:'sandPulse 30s infinite', opacity:0 }} />
       )}
 
-      {/* Adrenalin barı */}
-      <div style={styles.adrWrap}>
-        <div style={{ ...styles.adrLabel, color: adrColor, animation: isMaxAdr ? 'pulse 0.5s infinite alternate' : 'none' }}>
-          {isMaxAdr ? '⚡ ' + t('MAX ADRENALİN') : `${t('ADRENALİN')} ${Math.floor(adrenaline)}%`}
-        </div>
-        <div style={styles.adrTrack}>
-          <div style={{ ...styles.adrFill, width: `${adrenaline}%`, background: adrFillBg }} />
-          {/* Parıltı efekti */}
-          {adrenaline > 5 && (
-            <div style={{ ...styles.adrGlow, width: `${adrenaline}%` }} />
-          )}
-        </div>
-      </div>
-
-      {/* Kontrol ipuçları (sol alt) */}
-      {!isMobile && (
-        <div style={styles.hints}>
-          <span>← → / A D &nbsp;|&nbsp; SPACE / ↑ {t('Zıpla')}</span>
+      {/* Adrenalin barı — 0 iken boş çerçeve göstermesin */}
+      {adrenaline > 0 && (
+        <div style={styles.adrWrap}>
+          <div style={{ ...styles.adrLabel, color: adrColor, animation: isMaxAdr ? 'pulse 0.5s infinite alternate' : 'none' }}>
+            {isMaxAdr ? '⚡ ' + t('MAX ADRENALİN') : `${t('ADRENALİN')} ${Math.floor(adrenaline)}%`}
+          </div>
+          <div style={styles.adrTrack}>
+            <div style={{ ...styles.adrFill, width: `${adrenaline}%`, background: adrFillBg }} />
+            {adrenaline > 5 && (
+              <div style={{ ...styles.adrGlow, width: `${adrenaline}%` }} />
+            )}
+          </div>
         </div>
       )}
 
+      {/* Kontrol ipucu tek hap olarak TouchPad'de (ilk koşular) */}
       {/* Close-call flash */}
       <CloseCallFlash />
 
@@ -273,60 +259,40 @@ const styles = {
   },
   pauseBtn: {
     ...btn.icon,
-    position: 'fixed', top: topPlus(8), right: 10, zIndex: 60,
-    width: 44, height: 44, fontSize: 18, lineHeight: 1,
+    position: 'fixed', top: topPlus(8), right: 8, zIndex: 60,
+    width: 48, height: 48, fontSize: 18, lineHeight: 1,
   },
   topBar: {
     position: 'fixed',
-    // Çentik / Dynamic Island altında kalmasın (iOS)
-    top: SAFE_TOP,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    gap: 6,
-    userSelect: 'none',
-    pointerEvents: 'none',
+    // Çentik / Dynamic Island altında kalmasın (iOS); sağda duraklat düğmesine yer
+    top: topPlus(8), left: 8, right: 64, height: 48,
+    maxWidth: 520, margin: '0 auto', boxSizing: 'border-box',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
+    padding: '0 12px',
+    background: 'rgba(42,26,14,0.55)', border: `2px solid ${C.edge}`, borderRadius: 14,
+    color: C.cream, fontFamily: FONT,
+    userSelect: 'none', pointerEvents: 'none',
   },
-  statBlock: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    background: C.cream,
-    border: `3px solid ${C.edge}`,
-    boxShadow: `0 4px 0 ${C.edge}`,
-    borderRadius: 14,
-    padding: '4px 14px 6px',
-    minWidth: 92,
-  },
+  stripCarrots: { flex: 1, fontFamily: DISPLAY, fontSize: 18, letterSpacing: 0.5, whiteSpace: 'nowrap', color: C.cream },
+  stripCenter: { display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 },
   label: {
-    color: C.inkSoft,
-    fontFamily: FONT,
-    fontSize: 10,
-    letterSpacing: 1.2,
-    marginBottom: 1,
-    fontWeight: 800,
+    color: C.cream, opacity: 0.85, fontFamily: FONT, fontSize: 12, fontWeight: 800,
+    letterSpacing: 0.8, whiteSpace: 'nowrap', marginTop: 1, textAlign: 'center',
   },
   value: {
-    color: C.ink,
-    fontFamily: DISPLAY,
-    fontSize: 22,
-    lineHeight: 1.05,
-    letterSpacing: 0.5,
+    color: C.cream, fontFamily: DISPLAY, fontSize: 28, lineHeight: 1, letterSpacing: 0.5,
+    textShadow: `0 2px 0 ${C.edgeDk}`,
   },
   speedLine: {
-    ...pill,
-    fontSize: 12,
-    padding: '2px 10px',
-    letterSpacing: 0.5,
-    marginTop: 4,
-    whiteSpace: 'nowrap',
+    flex: 1, textAlign: 'right', fontFamily: FONT, fontWeight: 800,
+    fontSize: 12, letterSpacing: 0.3, whiteSpace: 'nowrap',
   },
   adrWrap: {
     position: 'fixed',
     bottom: 28,
     left: '50%',
     transform: 'translateX(-50%)',
-    width: 380,
+    width: 'min(380px, calc(100vw - 32px))',
     userSelect: 'none',
     pointerEvents: 'none',
   },
@@ -362,16 +328,6 @@ const styles = {
     background: 'rgba(255,241,208,0.45)',
     position: 'absolute',
     transition: 'width 0.08s',
-  },
-  hints: {
-    ...pill,
-    position: 'fixed',
-    bottom: 16,
-    left: 16,
-    color: C.cream,
-    fontSize: 12,
-    userSelect: 'none',
-    pointerEvents: 'none',
   },
   flash: {
     position: 'fixed',
