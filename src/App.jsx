@@ -34,7 +34,7 @@ import { controlsState } from '@/hooks/useHorseControls';
 import { getKind, getHitbox } from '@/components/obstacles/ObstacleSpawner';
 import { initAds } from '@/services/AdService';
 import { t } from '@/i18n';
-import { bottomPlus } from '@/utils/safeArea';
+import { topPlus } from '@/utils/safeArea';
 
 // Test köprüsü — yalnız localStorage.dbg === '1' iken (bot/QA); oyuncuda kapalı
 if (typeof window !== 'undefined' && localStorage.getItem('dbg') === '1') {
@@ -85,6 +85,17 @@ export default function App() {
   const graphics  = useGameStore((s) => s.graphics);
   const phase = useGameStore((s) => s.phase);
   const initDaily = useGameStore((s) => s.initDaily);
+  // Yükleme ekranı (drei useProgress) DefaultLoadingManager'ı dinler. At/jokey
+  // artık GLB değil (prosedürel); hiç yüklenecek varlık kalmadığında ekran %0'da
+  // takılmasın diye yöneticiye boş bir "hazır" öğesi bildir.
+  useEffect(() => {
+    const m = THREE.DefaultLoadingManager;
+    m.itemStart('__procedural_ready__');
+    let done = false;
+    const end = () => { if (!done) { done = true; m.itemEnd('__procedural_ready__'); } };
+    const id = setTimeout(end, 50);
+    return () => { clearTimeout(id); end(); };
+  }, []);
   useEffect(() => {
     initSession(); initDaily(); initNotifications(); initCloudSave();
     refreshSessionIfNeeded();
@@ -140,8 +151,12 @@ export default function App() {
             if (bad >= 2) {
               const next = graphics === 'high' ? 'medium' : 'low';
               useGameStore.getState().setGraphics(next);
-              setAutoLowMsg(true);
-              setTimeout(() => setAutoLowMsg(false), 5000);
+              // Bildirim kurulum başına bir kez, 3 sn
+              if (!localStorage.getItem('gfx_toast_shown')) {
+                try { localStorage.setItem('gfx_toast_shown', '1'); } catch (e) {}
+                setAutoLowMsg(true);
+                setTimeout(() => setAutoLowMsg(false), 3000);
+              }
               return; // döngüyü bitir (yeni kalitede tekrar ölçülür)
             }
           } else bad = 0;
@@ -245,11 +260,13 @@ export default function App() {
       {isPaddock && <PaddockUI />}
       {/* Otomatik kalite bildirimi */}
       {autoLowMsg && phase === 'playing' && (
-        // Üst bölge oyun uyarılarına (combo, tökezleme, güçlendirici) ayrılmış — bildirim altta
-        <div style={{ position:'fixed', bottom: bottomPlus(104), left:'50%', transform:'translateX(-50%)', zIndex:9500, textAlign:'center', width:'max-content', maxWidth:'86vw',
-          background:'rgba(0,0,0,0.85)', border:'1px solid rgba(255,215,0,0.5)', color:'#ffd700',
-          fontFamily:'var(--game-font)', fontSize:12, fontWeight:700, padding:'10px 16px', borderRadius:10 }}>
-          ⚡ {t('Akıcılık için grafik kalitesi düşürüldü (Ayarlar\'dan değiştirebilirsin)')}
+        // Küçük krem bildirim — HUD şeridinin hemen altında
+        <div className="hr-toast" style={{ position:'fixed', top: topPlus(64), left:0, right:0, display:'flex', justifyContent:'center', zIndex:9500, pointerEvents:'none' }}>
+          <div style={{ maxWidth:'86vw', textAlign:'center', background:'#fff1d0', color:'#5a3418',
+            border:'2px solid #5a3418', boxShadow:'0 3px 0 #5a3418', borderRadius:12,
+            fontFamily:'var(--game-font)', fontSize:13, fontWeight:800, padding:'6px 12px' }}>
+            ⚡ {t('Akıcılık için grafik kalitesi düşürüldü (Ayarlar\'dan değiştirebilirsin)')}
+          </div>
         </div>
       )}
     </>

@@ -1,8 +1,7 @@
-import { useRef, useEffect, useState, Suspense } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF, useAnimations } from '@react-three/drei';
+import ProcHorse from '@/components/horse/ProcHorse';
 import * as THREE from 'three';
-import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import useGameStore from '@/store/useGameStore';
 import { HORSES } from '@/constants/horses';
 import { sfx } from '@/utils/audio';
@@ -22,8 +21,6 @@ const RUN_SPEED   = 9;
 const JUMP_V      = 8.5;
 const GRAVITY     = -22;
 const XP_PER_JUMP = 20;
-
-const MODEL_PATH = '/assets/models/horse.glb';
 
 // Sahne ↔ UI arası hafif giriş kanalı (re-render tetiklemez)
 export const paddockInput = { dx: 0, dz: 0, mag: 0, jump: false };
@@ -93,84 +90,24 @@ function PaddockObstacle({ type }) {
   );
 }
 
-// ── At modeli (varyant destekli: morph horse.glb veya iskeletli özel model) ───
+// ── At modeli: prosedürel at (yürüyüş / dörtnala / idle + zıplama pozu) ─────
+// Taylar (genes renkli özel atlar) kendi bodyColor/maneColor'ları ile çizilir;
+// `age` (0..1) verilirse küçük ölçeklenir.
 function PaddockHorseModel({ variant, animRef }) {
-  const path     = variant?.model ?? MODEL_PATH;
-  const skeletal = !!variant?.skeletal;
-  const useScale = variant?.modelScale ?? 0.013;
-  const useY     = variant?.modelY ?? -1.05;
-
-  const groupRef = useRef();
-  const { scene, animations } = useGLTF(path);
-  const { actions, names } = useAnimations(animations, groupRef);
-  const cloned = useRef(null);
-  const cur = useRef('');
-
-  if (!cloned.current) {
-    cloned.current = skeletal ? skeletonClone(scene) : scene.clone(true);
-    cloned.current.traverse((o) => {
-      if (o.isMesh) {
-        o.castShadow = true;
-        if (!variant?.noTint) {
-          o.material = o.material.clone();
-          o.material.color.set(variant?.bodyColor ?? '#8B4513');
-          if (variant?.whiteWash) { o.material.map = null; o.material.needsUpdate = true; }
-        }
-      }
-    });
-  }
-
-  // Klip adı çözümleyici: bazı modellerde 'walk/run' yerine 'horse.walk/
-  // horse.gallop' gibi adlar var. Aday listesinden ilk bulunanı döndür.
-  const pick = (cands) => { for (const c of cands) if (actions[c]) return c; return null; };
-  const clipFor = useRef(null);
-  // ÖNEMLİ: GLTF ilk render'da henüz yüklenmemişse `actions` boş olur; bu yüzden
-  // klip çözümlemesini ÇÖZÜLENE KADAR tekrarla (yoksa null'lar cache'lenip
-  // animasyon hiç oynamıyordu — Ahal Teke gibi preload'suz atlarda ayaklar
-  // hareket etmiyordu).
-  if (skeletal && (!clipFor.current || !(clipFor.current.idle || clipFor.current.walk || clipFor.current.run))) {
-    clipFor.current = {
-      idle: pick(['idle', 'Idle', 'horse.idle']),
-      walk: pick(['walk', 'Walk', 'horse.walk']),
-      run:  pick(['run', 'Run', 'gallop', 'horse.gallop', 'horse.canter', 'horse.trot']),
-    };
-  }
-
+  const characterId = useGameStore((s) => s.selectedCharacterId);
+  const driveRef = useRef({ mode: 'idle', speed: 0, airborne: false, velY: 0 });
   useFrame(() => {
-    const speed = animRef.current.speed;
-    if (skeletal) {
-      // idle / walk / run klipleri arasında geçiş (model-özel adlarla)
-      const key = speed === 0 ? 'idle' : speed <= WALK_SPEED + 0.1 ? 'walk' : 'run';
-      const want = clipFor.current?.[key] ?? clipFor.current?.walk ?? clipFor.current?.run;
-      if (want && cur.current !== want && actions[want]) {
-        if (actions[cur.current]) actions[cur.current].fadeOut(0.2);
-        actions[want].reset().fadeIn(0.2).play();
-        cur.current = want;
-      }
-    } else {
-      // Morph model (horse.glb): durunca animasyonu durdur VE morph
-      // etkilerini sıfırla — stop() mixer'ı keser ama son kare değerlerini
-      // mesh'te bırakır; fill(0) atı doğal duruşa (4 ayak yerde) döndürür.
-      const a = actions['horse_A_'] ?? actions[names[0]];
-      if (a) {
-        if (speed === 0) {
-          if (a.isRunning()) {
-            a.stop();
-            cloned.current.traverse((o) => {
-              if (o.morphTargetInfluences) o.morphTargetInfluences.fill(0);
-            });
-          }
-        } else {
-          if (!a.isRunning()) a.reset().play();
-          a.timeScale = Math.max(0.4, speed / 10);
-        }
-      }
-    }
+    const a = animRef.current, d = driveRef.current;
+    d.mode = a.speed === 0 ? 'idle' : a.speed <= WALK_SPEED + 0.1 ? 'walk' : 'run';
+    d.speed = a.speed > WALK_SPEED + 0.1 ? 22 : a.speed;
+    d.airborne = !!a.airborne;
+    d.velY = a.velY ?? 0;
   });
-
+  const age = variant?.age;
+  const s = age != null ? 0.55 + 0.45 * Math.min(1, Math.max(0, age)) : 1;
   return (
-    <group ref={groupRef} scale={useScale} position={[0, useY, 0]}>
-      <primitive object={cloned.current} />
+    <group position={[0, -1.1, 0]} scale={s}>
+      <ProcHorse variant={variant} characterId={characterId} driveRef={driveRef} />
     </group>
   );
 }
@@ -223,6 +160,8 @@ export default function PaddockScene() {
     const mag = paddockInput.mag;
     const speed = mag > 0.62 ? RUN_SPEED : mag > 0.05 ? WALK_SPEED : 0;
     animRef.current.speed = speed;
+    animRef.current.airborne = yRef.current > 0.01;
+    animRef.current.velY = vyRef.current;
     if (speed > 0) {
       p.x = THREE.MathUtils.clamp(p.x + paddockInput.dx * speed * delta, -MOVE_CLAMP, MOVE_CLAMP);
       p.z = THREE.MathUtils.clamp(p.z + paddockInput.dz * speed * delta, -MOVE_CLAMP, MOVE_CLAMP);
@@ -333,9 +272,7 @@ export default function PaddockScene() {
 
       {/* At */}
       <group ref={horseRefG} position={[0, 1.1, 4]}>
-        <Suspense fallback={null}>
-          <PaddockHorseModel variant={variant} animRef={animRef} />
-        </Suspense>
+        <PaddockHorseModel variant={variant} animRef={animRef} />
       </group>
     </group>
   );

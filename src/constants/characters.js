@@ -2,7 +2,6 @@ export const CHARACTERS = [
   {
     id: 'cowboy',
     name: 'KOVBOY',
-    file: 'Cowboy_Male.glb',
     price: 0,
     emoji: '🤠',
     desc: 'Varsayılan jokey',
@@ -11,7 +10,6 @@ export const CHARACTERS = [
   {
     id: 'casual',
     name: 'KASUAL',
-    file: 'Casual_Male.glb',
     price: 200,
     emoji: '👤',
     desc: 'Sıradan bir binici',
@@ -20,7 +18,6 @@ export const CHARACTERS = [
   {
     id: 'ninja',
     name: 'NİNJA',
-    file: 'Ninja_Male.glb',
     price: 500,
     emoji: '🥷',
     desc: 'Gizem ustası',
@@ -29,7 +26,6 @@ export const CHARACTERS = [
   {
     id: 'viking',
     name: 'VİKİNG',
-    file: 'Viking_Male.glb',
     price: 800,
     emoji: '⚔️',
     desc: 'Kuzeyden gelen savaşçı',
@@ -38,7 +34,6 @@ export const CHARACTERS = [
   {
     id: 'pirate',
     name: 'KORSAN',
-    file: 'Pirate_Male.glb',
     price: 1000,
     emoji: '🏴‍☠️',
     desc: 'Denizlerin efendisi',
@@ -47,7 +42,6 @@ export const CHARACTERS = [
   {
     id: 'zombie',
     name: 'ZOMBİ',
-    file: 'Zombie_Male.glb',
     price: 1200,
     emoji: '🧟',
     desc: 'Ölümsüz jokey',
@@ -56,7 +50,6 @@ export const CHARACTERS = [
   {
     id: 'knight',
     name: 'ALTIN ŞOVALYE',
-    file: 'Knight_Golden_Male.glb',
     price: 2000,
     emoji: '👑',
     desc: 'Efsanevi savaşçı',
@@ -65,7 +58,6 @@ export const CHARACTERS = [
   {
     id: 'wizard',
     name: 'BÜYÜCÜ',
-    file: 'Wizard.glb',
     price: 2500,
     emoji: '🧙',
     desc: 'Gizemli güçler',

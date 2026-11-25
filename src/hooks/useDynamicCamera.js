@@ -23,10 +23,10 @@ function applyDesat(gl, intensity, ref) {
   }
 }
 
-const BASE_FOV    = 68;
-const MAX_FOV     = 88;
-const BASE_Y      = 8;      // kamera yüksekliği
-const BASE_Z      = 14;     // kamera derinliği
+const BASE_FOV    = 60;   // prosedürel at: kamera ~%15 yakın/alçak, FOV 60→72
+const MAX_FOV     = 72;
+const BASE_Y      = 6.8;    // kamera yüksekliği
+const BASE_Z      = 11.9;   // kamera derinliği
 const LOOK_AT     = new THREE.Vector3(0, 0.5, -6); // kamera hedefi: piste doğru
 const REST_POS    = new THREE.Vector3(0, BASE_Y, BASE_Z); // menü/idle kamera konumu (paylaşılan)
 const BOB_AMP     = 0.07;

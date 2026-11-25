@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useGLTF, useAnimations, OrbitControls } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
+import ProcHorse from '@/components/horse/ProcHorse';
 import useGameStore from '@/store/useGameStore';
 import { CHARACTERS } from '@/constants/characters';
 import { HORSES, upgradeCost } from '@/constants/horses';
-import * as THREE from 'three';
-import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import Hara from './Hara';
 import AdButton from '@/components/ui/AdButton';
 import { AD_UPGRADE_DISCOUNT } from '@/constants/game';
@@ -15,43 +14,23 @@ import { C, FONT, DISPLAY, btn, panel, tile, pill, titleText, backdrop } from '@
 import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import useLang from '@/i18n/useLang';
 
-const CHAR_BASE = '/assets/models/characters/';
-const MODEL_PATH = '/assets/models/horse.glb';
-
-// ── 3D character preview ──────────────────────────────────────────────────────
-function CharModel3DInner({ file }) {
-  const { scene } = useGLTF(CHAR_BASE + file);
-  const cloned = useRef(null);
-  if (!cloned.current) {
-    cloned.current = scene.clone(true);
-    cloned.current.traverse(o => {
-      if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
-    });
-  }
-  return (
-    <primitive
-      object={cloned.current}
-      scale={1}
-      position={[0, -1.55, 0]}
-    />
-  );
-}
-
-function CharPreview3D({ charFile, accentColor }) {
+// ── 3D önizleme: prosedürel at + binici (idle) ───────────────────────────────
+function PreviewCanvas({ variant, characterId, camera }) {
   return (
     <div style={{ width: '100%', height: 200, borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(180deg, #f7e2b0, #d9b677)', border: `3px solid ${C.edge}`, boxSizing: 'border-box' }}>
-      <Canvas camera={{ position: [0, 0.5, 3.2], fov: 42 }}>
+      <Canvas camera={camera}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[3, 6, 4]} intensity={1.8} castShadow />
         <hemisphereLight skyColor="#aaaaff" groundColor="#443322" intensity={0.5} />
-        <Suspense fallback={null}>
-          <CharModel3DInner key={charFile} file={charFile} />
-        </Suspense>
+        <group position={[0, -0.95, 0]} scale={0.66}>
+          <ProcHorse variant={variant} characterId={characterId} />
+        </group>
         <OrbitControls
           enableZoom={false}
           enablePan={false}
           autoRotate
           autoRotateSpeed={2.5}
+          target={[0, 0.1, 0]}
           minPolarAngle={Math.PI / 3}
           maxPolarAngle={Math.PI / 1.8}
         />
@@ -60,82 +39,12 @@ function CharPreview3D({ charFile, accentColor }) {
   );
 }
 
-// ── 3D horse preview ──────────────────────────────────────────────────────────
-function HorseModel3DInner({ variant }) {
-  const path     = variant?.model ?? MODEL_PATH;
-  const useScale = variant?.modelScale ?? 0.013;
-  const useY     = variant?.modelY ?? -1.05;
-  const useZ     = variant?.modelZ ?? 0;
-  const clipName = variant?.animClip ?? 'horse_A_';
-  const skeletal = !!variant?.skeletal;
-  const noTint   = !!variant?.noTint;
-
-  const { scene, animations } = useGLTF(path);
-  const groupRef = useRef();
-  const { actions, names } = useAnimations(animations, groupRef);
-  const cloned = useRef(null);
-  const clonedPath = useRef(null);
-  const lastVariant = useRef(null);
-
-  if (clonedPath.current !== path) {
-    clonedPath.current = path;
-    lastVariant.current = null;
-    cloned.current = skeletal ? skeletonClone(scene) : scene.clone(true);
-    cloned.current.traverse(o => {
-      if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
-    });
-  }
-
-  if (!noTint && variant && variant.id !== lastVariant.current) {
-    lastVariant.current = variant.id;
-    let meshIdx = 0;
-    cloned.current.traverse(o => {
-      if (!o.isMesh) return;
-      o.material = o.material.clone();
-      o.material.color.set(meshIdx === 0 ? variant.bodyColor : variant.maneColor);
-      if (variant.whiteWash) {
-        o.material.map = null;
-        o.material.roughness = 0.55;
-        o.material.metalness = 0.0;
-        o.material.needsUpdate = true;
-      }
-      meshIdx++;
-    });
-  }
-
-  useState(() => {
-    const action = actions[clipName] ?? actions['idle'] ?? actions[names[0]];
-    if (action) { action.reset().play(); action.timeScale = 0.5; }
-  });
-
-  return (
-    <group ref={groupRef} scale={useScale} rotation={[0, Math.PI, 0]} position={[0, useY, useZ]}>
-      <primitive object={cloned.current} />
-    </group>
-  );
+function CharPreview3D({ characterId, variant }) {
+  return <PreviewCanvas variant={variant} characterId={characterId} camera={{ position: [2.4, 0.9, 2.6], fov: 42 }} />;
 }
 
-function HorsePreview3D({ variant }) {
-  return (
-    <div style={{ width: '100%', height: 200, borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(180deg, #f7e2b0, #d9b677)', border: `3px solid ${C.edge}`, boxSizing: 'border-box' }}>
-      <Canvas camera={{ position: [0, 0.8, 3.5], fov: 42 }}>
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[3, 6, 4]} intensity={1.8} castShadow />
-        <hemisphereLight skyColor="#aaaaff" groundColor="#443322" intensity={0.5} />
-        <Suspense fallback={<mesh><boxGeometry args={[1,0.6,2]} /><meshStandardMaterial color={variant.bodyColor} /></mesh>}>
-          <HorseModel3DInner variant={variant} />
-        </Suspense>
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          autoRotate
-          autoRotateSpeed={2.5}
-          minPolarAngle={Math.PI / 2.5}
-          maxPolarAngle={Math.PI / 1.8}
-        />
-      </Canvas>
-    </div>
-  );
+function HorsePreview3D({ variant, characterId }) {
+  return <PreviewCanvas variant={variant} characterId={characterId} camera={{ position: [2.6, 0.8, 2.8], fov: 42 }} />;
 }
 
 // ── Main Garage ───────────────────────────────────────────────────────────────
@@ -273,7 +182,7 @@ export default function Garage() {
 
             {/* 3D Preview */}
             <div style={{ ...S.preview, borderColor: previewChar.color }}>
-              <CharPreview3D charFile={previewChar.file} accentColor={previewChar.color} />
+              <CharPreview3D characterId={previewChar.id} variant={allHorses.find(h => h.id === selectedHorseId) ?? HORSES[0]} />
               <div style={{ ...S.previewName }}>{t(previewChar.name)}</div>
               <div style={S.previewDesc}>{t(previewChar.desc)}</div>
               {!charOwned && (
@@ -332,7 +241,7 @@ export default function Garage() {
 
             {/* 3D Horse Preview */}
             <div style={{ ...S.preview, borderColor: previewHorse.accentColor }}>
-              <HorsePreview3D variant={previewHorse} />
+              <HorsePreview3D variant={previewHorse} characterId={selectedCharacterId} />
               <div style={{ ...S.previewName }}>{t(previewHorse.name)}</div>
               <div style={S.previewDesc}>{t(previewHorse.desc)}</div>
 
