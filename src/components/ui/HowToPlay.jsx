@@ -114,7 +114,7 @@ const SECTIONS = [
         items: [
           'MAĞAZA → Yetenekler sekmesinden her gücü 5 seviyeye çıkar',
           'Her seviye etki süresini uzatır (Sv5\'te 2 katı)',
-          'Maliyet: 750 → 1.500 → 3.000 → 6.000 → 12.000 🥕',
+          'Maliyet: 750 → 1.200 → 1.900 → 3.050 → 4.900 🥕',
         ],
       },
     ],
@@ -234,7 +234,7 @@ const SECTIONS = [
         title: 'Yükseltme',
         items: [
           'Her stat ayrı ayrı 5 seviyeye çıkar',
-          'Maliyet: 750 → 1.500 → 3.000 → 6.000 → 12.000 🥕',
+          'Maliyet: 750 → 1.200 → 1.900 → 3.050 → 4.900 🥕',
           'Reklam izleyerek sonraki yükseltmede %50 indirim',
           'MAĞAZA → Atlarım sekmesinden yapılır',
         ],
@@ -282,8 +282,8 @@ const SECTIONS = [
           'Koşuda yoldaki turuncu havuçları toplayarak',
           'Madalyalar (300-1.500), görevler ve giriş serisinden',
           'Günlük hediye sandığından',
-          'Ödüllü reklam izleyerek (günde 5 kez, her biri 200 🥕)',
-          'MAĞAZA\'dan gerçek parayla havuç paketi (₺1,49 - ₺169,99)',
+          'Ödüllü reklam izleyerek (günde 5 kez, her biri 120 🥕)',
+          'MAĞAZA\'dan gerçek parayla havuç paketi',
         ],
       },
     ],

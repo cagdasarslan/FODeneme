@@ -87,4 +87,5 @@ export const HORSES = [
 ];
 
 export const MAX_UPGRADE_LEVEL = 5;
-export const upgradeCost = (currentLevel) => 750 * Math.pow(2, currentLevel);
+// 750 → 1.200 → 1.900 → 3.050 → 4.900 (eski 2^lvl eğrisi 12.000'e çıkıp ilerlemeyi duvara çarptırıyordu)
+export const upgradeCost = (currentLevel) => Math.round(750 * Math.pow(1.6, currentLevel) / 50) * 50;

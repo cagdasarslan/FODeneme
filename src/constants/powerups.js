@@ -16,5 +16,5 @@ export const powerupDuration = (id, level = 0) =>
   (POWERUP_BY_ID[id]?.baseDur ?? 5) * (1 + 0.2 * level);
 
 // At geliştirmeyle aynı maliyet eğrisi: 750 → 1500 → 3000 → 6000 → 12000
-export const powerupUpgradeCost = (level) => 750 * Math.pow(2, level);
+export const powerupUpgradeCost = (level) => Math.round(750 * Math.pow(1.6, level) / 50) * 50;
 export const POWERUP_MAX_LEVEL = 5;

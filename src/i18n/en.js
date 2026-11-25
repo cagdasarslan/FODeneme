@@ -539,8 +539,8 @@ export const EN = {
     'Raise each power to level 5 from SHOP → Abilities',
   "Her seviye etki süresini uzatır (Sv5'te 2 katı)":
     'Each level extends the duration (double at Lv5)',
-  'Maliyet: 750 → 1.500 → 3.000 → 6.000 → 12.000 🥕':
-    'Cost: 750 → 1,500 → 3,000 → 6,000 → 12,000 🥕',
+  'Maliyet: 750 → 1.200 → 1.900 → 3.050 → 4.900 🥕':
+    'Cost: 750 → 1,200 → 1,900 → 3,050 → 4,900 🥕',
   'HARİTALAR': 'MAPS',
   'Başlangıç haritası — herkese açık. Fıçı, saman ve kütük engelleri.':
     'The starting map — open to everyone. Barrel, hay and log obstacles.',
@@ -628,9 +628,9 @@ export const EN = {
   'Madalyalar (300-1.500), görevler ve giriş serisinden':
     'From medals (300-1,500), quests and login streaks',
   'Günlük hediye sandığından': 'From the daily gift chest',
-  'Ödüllü reklam izleyerek (günde 5 kez, her biri 200 🥕)':
-    'By watching rewarded ads (5 times a day, 200 🥕 each)',
-  "MAĞAZA'dan gerçek parayla havuç paketi (₺1,49 - ₺169,99)":
+  'Ödüllü reklam izleyerek (günde 5 kez, her biri 120 🥕)':
+    'By watching rewarded ads (5 times a day, 120 🥕 each)',
+  "MAĞAZA'dan gerçek parayla havuç paketi":
     'Carrot packs with real money from the SHOP',
   'AHIR & YAVRU AT': 'STABLE & FOALS',
   "AHIR'da iki atı çiftleştirip yavru üretir, büyütüp yeni bir ata dönüştürürsün. Yetişkin yavru, ebeveynlerinin statlarını miras alır.":

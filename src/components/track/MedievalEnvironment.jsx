@@ -244,14 +244,13 @@ function SegmentContent({ segIdx }) {
 }
 
 export default function MedievalEnvironment() {
-  const speed   = useGameStore((s) => s.speed);
   const phase   = useGameStore((s) => s.phase);
   const groupsRef = useRef([]);
   const posRef    = useRef(Array.from({ length: SEG_COUNT }, (_, i) => -i * SEG_LEN));
 
   useFrame((_, delta) => {
     if (phase !== 'playing') return;
-    const vel = (speed || 10) * delta;
+    const vel = (useGameStore.getState().speed || 10) * delta; // abonelik yok: kare başı render olmasın
     for (let i = 0; i < SEG_COUNT; i++) {
       posRef.current[i] += vel;
       if (posRef.current[i] > RECYCLE_AFTER) {

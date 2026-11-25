@@ -48,8 +48,8 @@ export const SPACE_GRAVITY_MULT = 0.62;
 export const SPACE_JUMP_MULT    = 1.05;
 
 // Ödüllü reklam ödülleri — 1 reklam ≈ 200 havuç değerinde olacak şekilde
-export const AD_CARROT_VALUE     = 200;  // 1 reklamın havuç karşılığı
-export const AD_DAILY_CARROTS    = 200;  // günlük bedava havuç (1 reklam = 200)
+export const AD_CARROT_VALUE     = 120;  // 1 reklamın havuç karşılığı
+export const AD_DAILY_CARROTS    = 120;  // günlük bedava havuç — günde 5×120=600, en küçük paketin (1000) altında
 export const AD_DAILY_MAX        = 5;    // günde en fazla kaç kez
 export const AD_UPGRADE_DISCOUNT = 0.5;  // yükseltmede %50 indirim
 

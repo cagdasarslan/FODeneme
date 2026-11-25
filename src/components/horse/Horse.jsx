@@ -125,7 +125,10 @@ const M_DARK  = new THREE.MeshStandardMaterial({ color: '#5C2A08' });
 const M_MANE  = new THREE.MeshStandardMaterial({ color: '#2C1005' });
 const M_EYE   = new THREE.MeshStandardMaterial({ color: '#111', emissive: '#ffffff', emissiveIntensity: 0.1 });
 const M_HOOF  = new THREE.MeshStandardMaterial({ color: '#1a1a1a' });
-const M_DUST  = new THREE.MeshStandardMaterial({ color: '#c8a06a', transparent: true, opacity: 0.35, depthWrite: false });
+// Her toz parçacığının kendi materyali: opaklık parçacık başına ayarlanıyor,
+// ortak materyalde son yazılan değer hepsine uygulanıp faz farkı kayboluyordu.
+const M_DUSTS = Array.from({ length: 4 }, () =>
+  new THREE.MeshStandardMaterial({ color: '#c8a06a', transparent: true, opacity: 0.35, depthWrite: false }));
 
 // ── Procedural placeholder ────────────────────────────────────────────────────
 function HorsePlaceholder({ groupRef }) {
@@ -136,10 +139,10 @@ function HorsePlaceholder({ groupRef }) {
   const dustRefs  = [useRef(), useRef(), useRef(), useRef()];
   const t         = useRef(0);
   const phase     = useGameStore((s) => s.phase);
-  const speed     = useGameStore((s) => s.speed);
 
   useFrame((_, delta) => {
     if (phase !== 'playing') return;
+    const speed = useGameStore.getState().speed; // abonelik yok: kare başı render olmasın
     t.current += delta * (speed / 12) * 3.5;
     const s = t.current;
 
@@ -263,7 +266,7 @@ function HorsePlaceholder({ groupRef }) {
           (pos, i) => (
             <mesh key={i} ref={dustRefs[i]} position={pos} visible={false}>
               <sphereGeometry args={[0.25, 5, 5]} />
-              <primitive object={M_DUST} attach="material" />
+              <primitive object={M_DUSTS[i]} attach="material" />
             </mesh>
           )
         )}

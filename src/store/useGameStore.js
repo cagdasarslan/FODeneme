@@ -5,7 +5,7 @@ import { STREAK_REWARDS, STREAK_MAX_REWARD, pickDailyMissions, pickWeeklyMission
 import { submitScoreSupa, addTotalScore } from '@/services/SupaLeaderboard';
 import { scheduleCloudSave } from '@/services/CloudSave';
 import { triggerSlowmo, getTimeScale, resetSlowmo } from '@/utils/slowmo';
-import { HORSES } from '@/constants/horses';
+import { HORSES, upgradeCost } from '@/constants/horses';
 import {
   INITIAL_SPEED,
   MAX_SPEED,
@@ -38,6 +38,8 @@ import { haptic } from '@/utils/haptics';
 
 // Bozuk ya da yarım yazılmış tek bir kayıt anahtarı uygulamayı açılışta
 // çökertmesin: ayrıştırılamazsa veya beklenen türde değilse varsayılana dön.
+let _capCache = { id: null, ups: null, custom: null, cap: 0 };
+
 function safeParse(key, defJson) {
   const def = JSON.parse(defJson);
   const raw = localStorage.getItem(key);
@@ -410,11 +412,18 @@ const useGameStore = create(
       // zıplatmasın — tek kare asla 100ms'den uzun sayılmaz.
       delta = Math.min(delta, 0.1);
 
-      const allHorsesForTick = [...HORSES, ...(get().customHorses ?? [])];
-      const horse = allHorsesForTick.find(h => h.id === get().selectedHorseId);
-      const ups = horseUpgrades[get().selectedHorseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
-      const speedMult = (horse?.baseSpeedMult ?? 1.0) * (1 + ups.speedLevel * 0.05);
-      const cap = (horse?.baseMaxSpeed ?? MAX_SPEED) * speedMult;
+      // Atın hız tavanı yalnızca at/yükseltme değişince yeniden hesaplanır
+      // (eskiden her karede dizi kurulup aranıyordu → mobilde GC takılması)
+      const selId = get().selectedHorseId;
+      const custom = get().customHorses;
+      const upsObj = horseUpgrades[selId];
+      if (_capCache.id !== selId || _capCache.ups !== upsObj || _capCache.custom !== custom) {
+        const horse = HORSES.find(h => h.id === selId) ?? (custom ?? []).find(h => h.id === selId);
+        const ups = upsObj ?? { speedLevel: 0 };
+        const speedMult = (horse?.baseSpeedMult ?? 1.0) * (1 + (ups.speedLevel ?? 0) * 0.05);
+        _capCache = { id: selId, ups: upsObj, custom, cap: (horse?.baseMaxSpeed ?? MAX_SPEED) * speedMult };
+      }
+      const cap = _capCache.cap;
 
       // Adrenalin boost: MAX'a ulaşınca 3s 2x skor + hız patlaması
       let boostUpdate = {};
@@ -445,10 +454,11 @@ const useGameStore = create(
       // Hız: gerçek ilerleme speedBase'te; turbo/slowmo geçici bindirme yapar
       const boostCap = adrenalinBoosting ? Math.min(cap * 1.3, MAX_SPEED * 1.3) : cap;
       let speedBase = Math.min((get().speedBase ?? speed) + SPEED_INCREMENT * delta, boostCap);
-      // Tökezleme sonrası HIZLI toparlanma: ~2 saniyede eski hıza dön
+      // Tökezleme sonrası toparlanma: ~3,5 saniyede eski hıza dön
+      // (2 sn'de toparlanınca tökezleme cezası hiç hissedilmiyordu)
       const recoverTo = get().stumbleRecover ?? 0;
       if (recoverTo > speedBase) {
-        speedBase = Math.min(recoverTo, speedBase + (recoverTo - speedBase) * Math.min(1, delta * 2.2));
+        speedBase = Math.min(recoverTo, speedBase + (recoverTo - speedBase) * Math.min(1, delta * 1.3));
         if (recoverTo - speedBase < 0.2) puUpdate.stumbleRecover = 0;
       }
       let effSpeed = speedBase;
@@ -1045,7 +1055,7 @@ const useGameStore = create(
       const ups = horseUpgrades[horseId] ?? { speedLevel: 0, maneuvLevel: 0, jumpLevel: 0 };
       const currentLevel = ups[stat] ?? 0;
       if (currentLevel >= 5) return false;
-      let cost = 750 * Math.pow(2, currentLevel);
+      let cost = upgradeCost(currentLevel);
       if (upgradeDiscount) cost = Math.ceil(cost * (1 - AD_UPGRADE_DISCOUNT));
       if (carrots < cost) return false;
       const newUps = { ...horseUpgrades, [horseId]: { ...ups, [stat]: currentLevel + 1 } };

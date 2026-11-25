@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { useGLTF, useAnimations, OrbitControls } from '@react-three/drei';
 import useGameStore from '@/store/useGameStore';
 import { CHARACTERS } from '@/constants/characters';
-import { HORSES } from '@/constants/horses';
+import { HORSES, upgradeCost } from '@/constants/horses';
 import * as THREE from 'three';
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import Hara from './Hara';
@@ -358,7 +358,7 @@ export default function Garage() {
                     {STATS.map(({ key, label, sub, icon, color }) => {
                       const lvl = ups[key] ?? 0;
                       const maxed = lvl >= 5;
-                      const baseCost = 750 * Math.pow(2, lvl);
+                      const baseCost = upgradeCost(lvl);
                       const cost = upgradeDiscount ? Math.ceil(baseCost * (1 - AD_UPGRADE_DISCOUNT)) : baseCost;
                       const canAfford = !maxed && carrots >= cost;
                       return (
