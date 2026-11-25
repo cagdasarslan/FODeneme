@@ -29,7 +29,24 @@ const mats = Object.fromEntries(POWERUPS.map(p => [p.id,
     color: p.color, metalness: 0.6, roughness: 0.25,
     emissive: p.color, emissiveIntensity: 0.55,
   })]));
-const torusGeo   = new THREE.TorusGeometry(0.5, 0.15, 8, 20, Math.PI * 1.6);
+// Altın nal: torus kesiti (açık uç aşağıda) + uç tırnakları + çivi delikleri
+const SHOE_ARC   = Math.PI * 1.45;
+const torusGeo   = new THREE.TorusGeometry(0.5, 0.14, 8, 22, SHOE_ARC).rotateZ(Math.PI / 2 - SHOE_ARC / 2 + Math.PI);
+const goldMat    = new THREE.MeshStandardMaterial({ color: '#ffc83a', metalness: 0.85, roughness: 0.22, emissive: '#ffb020', emissiveIntensity: 0.7 });
+const nailMat    = new THREE.MeshStandardMaterial({ color: '#7a4a10', emissive: '#3a2008', emissiveIntensity: 0.3 });
+const shoeEndGeo = new THREE.BoxGeometry(0.3, 0.12, 0.3);
+const nailGeo    = new THREE.SphereGeometry(0.045, 6, 4);
+const SHOE_ENDS  = [-1, 1].map(sgn => { const a = -Math.PI / 2 + sgn * SHOE_ARC / 2; return [Math.cos(a) * 0.5, Math.sin(a) * 0.5]; });
+const SHOE_NAILS = [-0.55, -0.25, 0.25, 0.55].map(f => { const a = -Math.PI / 2 + f * SHOE_ARC * 0.6; return [Math.cos(a) * 0.5, Math.sin(a) * 0.5]; });
+function Horseshoe() {
+  return (
+    <group rotation={[0, 0, Math.PI]}>
+      <mesh geometry={torusGeo} material={goldMat} />
+      {SHOE_ENDS.map(([x, y], i) => <mesh key={i} geometry={shoeEndGeo} material={goldMat} position={[x, y, 0]} />)}
+      {SHOE_NAILS.map(([x, y], i) => <mesh key={'n' + i} geometry={nailGeo} material={nailMat} position={[x, y, 0.13]} />)}
+    </group>
+  );
+}
 const wingGeo    = new THREE.BoxGeometry(0.85, 0.08, 0.42);
 const boltGeo    = new THREE.ConeGeometry(0.32, 1.0, 4);
 const shieldGeo  = new THREE.CylinderGeometry(0.55, 0.55, 0.12, 16);
@@ -54,7 +71,7 @@ function PowerupMesh({ type }) {
       </group>
     );
     case 'golden': return <mesh geometry={carrotGeo} material={m} rotation={[0, 0, Math.PI]} />;
-    default: return <mesh geometry={torusGeo} material={m} rotation={[Math.PI / 2, 0, 0]} />; // magnet nal
+    default: return <Horseshoe />; // magnet: altın nal
   }
 }
 

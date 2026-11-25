@@ -1,4 +1,4 @@
-import { useRef, Suspense } from 'react';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import useGameStore from '@/store/useGameStore';
@@ -32,19 +32,27 @@ const FORMATIONS = [
   () => Array.from({length:18}, (_,i) => ({ x: LANES[i%3], z: SPAWN_Z - i*2 })),
 ];
 
-// Emissive (öz-parlayan) toplanabilirler — ucuz görsel iyileştirme; YÜKSEK
-// kalitede bloom bunları hafifçe parlatır. Düşük/orta'da sadece renk katkısı
-// olduğu için performans maliyeti yok denecek kadar az.
-const carrotMat  = new THREE.MeshStandardMaterial({ color: '#ff7700', roughness:0.55, emissive: '#ff5a00', emissiveIntensity: 0.6 });
-const leafMat    = new THREE.MeshStandardMaterial({ color: '#22aa22', roughness:0.8, emissive: '#1e8a1e', emissiveIntensity: 0.35 });
+// Prosedürel havuç: 6 dilimli turuncu koni + 3 yeşil yaprak kutusu. Geometri ve
+// materyaller modül seviyesinde BİR KEZ üretilir; kare başına yalnız transform yazılır.
+const carrotMat  = new THREE.MeshStandardMaterial({ color: '#ff8a1e', roughness: 0.55, emissive: '#ff8a1e', emissiveIntensity: 0.3, flatShading: true });
+const leafMat    = new THREE.MeshStandardMaterial({ color: '#3a9a48', roughness: 0.8, emissive: '#3a9a48', emissiveIntensity: 0.3, flatShading: true });
 const carrotGeo  = new THREE.ConeGeometry(0.22, 0.8, 6);
-const leafGeo    = new THREE.SphereGeometry(0.18, 6, 4);
+const leafGeo    = new THREE.BoxGeometry(0.07, 0.34, 0.12);
+const LEAVES = [[0, 0], [0.32, 2.1], [-0.32, 4.2]]; // [eğim, y-dönüşü]
+const SPIN = 3;            // rad/s
+const BOB_A = 0.15, BOB_W = Math.PI * 2 * 2; // ±0.15, 2 Hz
+const POP_T = 0.12;        // toplama "pop" süresi (s): ölçek 1 → 1.6 → 0
 
 function CarrotMesh() {
   return (
-    <group rotation={[0, 0, Math.PI]}>
-      <mesh geometry={carrotGeo} material={carrotMat} castShadow />
-      <mesh geometry={leafGeo} material={leafMat} position={[0, -0.5, 0]} />
+    <group>
+      {/* uç aşağıda */}
+      <mesh geometry={carrotGeo} material={carrotMat} rotation={[Math.PI, 0, 0]} castShadow />
+      {LEAVES.map(([tilt, ry], i) => (
+        <group key={i} position={[0, 0.4, 0]} rotation={[0, ry, 0]}>
+          <mesh geometry={leafGeo} material={leafMat} position={[Math.sin(tilt) * 0.17, 0.15, 0]} rotation={[0, 0, -tilt]} />
+        </group>
+      ))}
     </group>
   );
 }
@@ -54,6 +62,7 @@ function resetPool(pool, groupRefs) {
     c.x = 0;
     c.z = SPAWN_Z - i * 50;
     c.active = false;
+    c.pop = 0;
     const grp = groupRefs[i];
     if (grp) grp.visible = false;
   });
@@ -62,7 +71,7 @@ function resetPool(pool, groupRefs) {
 export default function CarrotSpawner() {
   const poolRef    = useRef(
     Array.from({ length: POOL }, (_, i) => ({
-      id: i, x: 0, z: SPAWN_Z - i * 50, active: false,
+      id: i, x: 0, z: SPAWN_Z - i * 50, active: false, pop: 0, phase: (i * 1.37) % (Math.PI * 2),
     }))
   );
   const groupRefs  = useRef(Array(POOL).fill(null));
@@ -86,10 +95,22 @@ export default function CarrotSpawner() {
 
     const hx = horseRef.x;
     timerRef.current += delta;
+    const t = performance.now() / 1000;
 
     // Move and collect
     let collected = 0;
     poolRef.current.forEach((c, i) => {
+      if (c.pop > 0) { // toplama pop animasyonu (yalnız görsel)
+        c.pop -= delta;
+        const grp = groupRefs.current[i];
+        if (grp) {
+          const k = 1 - Math.max(0, c.pop) / POP_T; // 0 → 1
+          const sc = k < 0.5 ? 1 + 1.2 * k : 1.6 * (1 - k) * 2;
+          grp.scale.setScalar(Math.max(0.001, sc));
+          grp.position.y += delta * 3;
+          if (c.pop <= 0) { grp.visible = false; grp.scale.setScalar(1); }
+        }
+      }
       if (!c.active) return;
       c.z += speed * delta;
 
@@ -104,8 +125,8 @@ export default function CarrotSpawner() {
 
       const grp = groupRefs.current[i];
       if (grp) {
-        grp.position.set(c.x, 0.4, c.z);
-        grp.rotation.y += delta * 1.6; // hafif dönüş (allocation yok)
+        grp.position.set(c.x, 0.55 + Math.sin(t * BOB_W + c.phase) * BOB_A, c.z);
+        grp.rotation.y += delta * SPIN; // dönüş (allocation yok)
         grp.visible = true;
       }
 
@@ -120,7 +141,7 @@ export default function CarrotSpawner() {
       const dz = Math.abs(c.z);
       if (dx < COLLECT_DX && dz < COLLECT_DZ) {
         c.active = false;
-        if (grp) grp.visible = false;
+        c.pop = POP_T; // görünür kalır, pop animasyonu sonunda gizlenir
         collected++;
       }
     });
@@ -132,11 +153,14 @@ export default function CarrotSpawner() {
 
     const formation = FORMATIONS[Math.floor(Math.random() * FORMATIONS.length)]();
     for (const pos of formation) {
-      const slot = poolRef.current.find(c => !c.active);
+      const slot = poolRef.current.find(c => !c.active && !(c.pop > 0));
       if (!slot) break;
       slot.x = pos.x;
       slot.z = pos.z;
       slot.active = true;
+      slot.pop = 0;
+      const g = groupRefs.current[slot.id];
+      if (g) g.scale.setScalar(1);
     }
   });
 

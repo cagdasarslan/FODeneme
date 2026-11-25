@@ -10,10 +10,19 @@ export default function LoadingScreen() {
   const [visible, setVisible]   = useState(true);
   const [opacity, setOpacity]   = useState(1);
   const timerRef = useRef(null);
+  // Sahne artık tamamen kodla üretiliyor; yüklenecek dosya yoksa useProgress
+  // hiç 100'e çıkmaz. Kısa bir bekleme sonunda hiçbir yükleme başlamadıysa
+  // ya da yükleme takıldıysa ekranı yine de kapat.
+  const [idleDone, setIdleDone] = useState(false);
+  useEffect(() => {
+    const a = setTimeout(() => { const s = useProgress.getState(); if (!s.active) setIdleDone(true); }, 900);
+    const b = setTimeout(() => setIdleDone(true), 12000);
+    return () => { clearTimeout(a); clearTimeout(b); };
+  }, []);
 
   useEffect(() => {
     // Once loading is fully done (active=false, progress=100), fade out
-    if (!active && progress >= 100) {
+    if ((!active && progress >= 100) || idleDone) {
       clearTimeout(timerRef.current);
       // Small delay so the scene has one frame to render before we hide
       timerRef.current = setTimeout(() => {
@@ -22,11 +31,11 @@ export default function LoadingScreen() {
       }, 300);
     }
     return () => clearTimeout(timerRef.current);
-  }, [active, progress]);
+  }, [active, progress, idleDone]);
 
   if (!visible) return null;
 
-  const pct = Math.floor(progress);
+  const pct = idleDone ? 100 : Math.floor(progress);
 
   return (
     <div style={{ ...S.overlay, opacity }}>
