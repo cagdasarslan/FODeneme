@@ -42,3 +42,69 @@ jobs:
           name: HorseRunner-android-debug-${{ github.run_number }}
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 14
+
+  # ── Play Store için imzalı AAB ─────────────────────────────────────────────
+  # Settings → Secrets and variables → Actions altında şu sırlar tanımlıysa
+  # yükleme anahtarıyla imzalı .aab üretilir (Play Console'a doğrudan yüklenir):
+  #   ANDROID_KEYSTORE_BASE64   yükleme anahtarı (.jks/.keystore, base64)
+  #   ANDROID_KEYSTORE_PASSWORD anahtar deposu parolası
+  #   ANDROID_KEY_ALIAS         anahtar adı (alias)
+  #   ANDROID_KEY_PASSWORD      anahtar parolası
+  # Sırlar yoksa imzasız .aab üretilir (Play bunu kabul etmez; yalnızca kontrol).
+  release-aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HAS_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Web derlemesi ve senkron
+        run: |
+          npm ci
+          npm run build
+          npx cap sync android
+      - name: Yükleme anahtarını yerleştir
+        if: env.HAS_KEY == 'true'
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KS" | base64 --decode > android/app/upload.keystore
+          {
+            echo "storeFile=upload.keystore"
+            echo "storePassword=$KS_PASS"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=${KEY_PASS:-$KS_PASS}"
+          } > android/keystore.properties
+      - name: Release AAB
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon --stacktrace
+      - name: Dosya adı
+        run: |
+          V=$(grep -m1 versionName android/app/build.gradle | sed -E 's/.*"(.*)".*/\1/')
+          C=$(grep -m1 versionCode android/app/build.gradle | sed -E 's/[^0-9]//g')
+          S=$([ "$HAS_KEY" = "true" ] && echo signed || echo UNSIGNED)
+          mkdir -p out
+          cp android/app/build/outputs/bundle/release/*.aab "out/HorseRunner-${V}-${C}-${S}.aab"
+          echo "AAB_NAME=HorseRunner-${V}-${C}-${S}" >> "$GITHUB_ENV"
+          [ "$HAS_KEY" = "true" ] || echo "::warning::Yükleme anahtarı sırları yok — AAB imzasız, Play Console kabul etmez."
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.AAB_NAME }}
+          path: out/*.aab
+          retention-days: 30
+      - name: Anahtarı temizle
+        if: always()
+        run: rm -f android/app/upload.keystore android/keystore.properties
