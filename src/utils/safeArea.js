@@ -7,13 +7,15 @@ import { Capacitor } from '@capacitor/core';
 // Android tam ekran (immersive) çalıştığı için taban değere gerek yok.
 const isIOS = Capacitor.getPlatform() === 'ios';
 
+// Android'de çentik payı MainActivity tarafından --cutout-* değişkenlerine
+// yazılır (bazı WebView'lar env() için 0 döner). Hangisi büyükse o kullanılır.
 export const SAFE_TOP = isIOS
   ? 'max(env(safe-area-inset-top, 0px), 44px)'
-  : 'env(safe-area-inset-top, 0px)';
+  : 'max(env(safe-area-inset-top, 0px), var(--cutout-top, 0px))';
 
 export const SAFE_BOTTOM = isIOS
   ? 'max(env(safe-area-inset-bottom, 0px), 20px)'
-  : 'env(safe-area-inset-bottom, 0px)';
+  : 'max(env(safe-area-inset-bottom, 0px), var(--cutout-bottom, 0px))';
 
 // "calc(8px + <üst güvenli alan>)" gibi ifadeler için yardımcı
 export const topPlus = (px) => `calc(${px}px + ${SAFE_TOP})`;

@@ -1,3 +1,4 @@
+import { SAFE_TOP, BOTTOM_SPACE } from '@/utils/safeArea';
 import { useState, useEffect } from 'react';
 import useGameStore from '@/store/useGameStore';
 import { HORSES } from '@/constants/horses';
@@ -540,8 +541,9 @@ const SC = {
   modal: {
     position: 'fixed', inset: 0, background: backdrop,
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500,
+    padding: 12, paddingTop: `calc(12px + ${SAFE_TOP})`, paddingBottom: `calc(12px + ${BOTTOM_SPACE})`, boxSizing: 'border-box',
   },
-  modalBox: { ...panel, padding: 20, width: 400, maxWidth: '92vw', maxHeight: '80vh', overflowY: 'auto', boxSizing: 'border-box' },
+  modalBox: { ...panel, padding: 20, width: 400, maxWidth: '92vw', maxHeight: '100%', overflowY: 'auto', boxSizing: 'border-box' },
   closeBtn: { ...btn.icon, width: 44, height: 44, fontSize: 18 },
   shopTier: {
     ...tile, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,

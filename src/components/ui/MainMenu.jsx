@@ -11,7 +11,7 @@ import Settings from '@/components/ui/Settings';
 import DailyReward from '@/components/ui/DailyReward';
 import Missions from '@/components/ui/Missions';
 import AdButton from '@/components/ui/AdButton';
-import { showBanner, hideBanner } from '@/services/AdService';
+import { showBanner } from '@/services/AdService';
 import { AD_DAILY_CARROTS, AD_DAILY_MAX, MAP_UNLOCKS, MAP_MEDALS, MEDAL_ICONS } from '@/constants/game';
 import { getActiveEvent } from '@/constants/events';
 import { fetchLeaderboard } from '@/services/LeaderboardService';
@@ -221,11 +221,10 @@ export default function MainMenu() {
   const goal = getDailyGoal(); // dailyScore/chestClaimedDate değişince yenilenir
   const [chestReward, setChestReward] = useState(null); // sandık açılış modalı
 
-  // Banner reklam — yalnızca ana menü/oyun sonu ekranında
-  useEffect(() => {
-    if (phase === 'idle' || phase === 'gameover') showBanner();
-    else hideBanner();
-  }, [phase]);
+  // Banner reklam — her ekranda (menü, oyun içi, oyun sonu) en altta sabit.
+  // Alanı reklam gelmese de AdService ayırır; ekran değişince yeniden dene
+  // (ödüllü reklamdan dönüşte banner kapanmış olabilir).
+  useEffect(() => { showBanner(); }, [phase]);
 
   const activeChar  = CHARACTERS.find(c => c.id === selectedCharacterId) ?? CHARACTERS[0];
   const activeHorse = HORSES.find(h => h.id === selectedHorseId) ?? HORSES[0];
@@ -686,7 +685,7 @@ const styles = {
     minWidth: isMobile ? 'auto' : 380,
     width: isMobile ? '96vw' : 420,
     maxWidth: '96vw',
-    maxHeight: '92vh',
+    maxHeight: '100%',
     overflow: 'hidden',
   },
   scrollArea: {

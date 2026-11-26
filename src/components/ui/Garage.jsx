@@ -457,7 +457,7 @@ const S = {
     paddingTop: SAFE_TOP, paddingBottom: BOTTOM_SPACE, boxSizing: 'border-box',
   },
   panel: {
-    ...panel, padding: 20, width: 680, maxWidth: '96vw', maxHeight: '92vh',
+    ...panel, padding: 20, width: 680, maxWidth: '96vw', maxHeight: '100%',
     overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, boxSizing: 'border-box',
   },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },

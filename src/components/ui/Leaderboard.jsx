@@ -137,7 +137,7 @@ const S = {
   panel: {
     ...panel, padding: '20px 20px',
     width: 420, maxWidth: '95vw',
-    maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+    maxHeight: '100%', display: 'flex', flexDirection: 'column',
   },
   header: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, fontSize: 24 },
   title: { ...titleText(26), flex: 1, margin: 0 },

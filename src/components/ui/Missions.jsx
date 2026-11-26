@@ -110,7 +110,7 @@ export default function Missions({ onClose, onDaily, onLeaderboard }) {
 
 const S = {
   modal: { position: 'fixed', inset: 0, background: backdrop, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 640, padding: 14, paddingTop: `calc(14px + ${SAFE_TOP})`, paddingBottom: `calc(14px + ${BOTTOM_SPACE})`, boxSizing: 'border-box' },
-  box: { ...panel, width: '100%', maxWidth: 400, maxHeight: '88vh', overflowY: 'auto', padding: '18px 16px' },
+  box: { ...panel, width: '100%', maxWidth: 400, maxHeight: '100%', overflowY: 'auto', padding: '18px 16px' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { ...titleText(26), textTransform: 'uppercase' },
   close: { ...btn.icon, width: 44, height: 44, fontSize: 18 },

@@ -14,8 +14,8 @@
 #   IOS_TEAM_ID                10 karakterlik Team ID
 # İsteğe bağlı TestFlight yüklemesi (App Store Connect API anahtarı):
 #   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64
-# İsteğe bağlı değişken (Variables): ADMOB_IOS_APP_ID (ca-app-pub-…~…)
-#   Tanımlı değilse Google'ın TEST uygulama kimliği kullanılır (çökmesin diye).
+# AdMob iOS uygulama kimliği varsayılan olarak canlı hesaptaki kimliktir;
+#   değiştirmek için Variables altında ADMOB_IOS_APP_ID tanımlayın.
 
 name: iOS IPA
 
@@ -75,7 +75,7 @@ jobs:
           PLIST=ios/App/App/Info.plist
           VERSION=$(grep -m1 versionName android/app/build.gradle | sed -E 's/.*"(.*)".*/\1/')
           BUILD=${{ github.run_number }}
-          GAD_ID="${ADMOB_IOS_APP_ID:-ca-app-pub-3940256099942544~1458002511}"
+          GAD_ID="${ADMOB_IOS_APP_ID:-ca-app-pub-3920099901614778~7614854374}"
           PB=/usr/libexec/PlistBuddy
           set_key() { $PB -c "Set :$1 $3" "$PLIST" 2>/dev/null || $PB -c "Add :$1 $2 $3" "$PLIST"; }
           set_key CFBundleShortVersionString string "$VERSION"
@@ -96,7 +96,6 @@ jobs:
           $PB -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" "$PLIST"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "BUILD=$BUILD" >> "$GITHUB_ENV"
-          [ -n "$ADMOB_IOS_APP_ID" ] || echo "::warning::ADMOB_IOS_APP_ID tanımlı değil — Google TEST uygulama kimliği kullanıldı."
 
       # ── İmzasız derleme ────────────────────────────────────────────────────
       - name: Derle (imzasız)

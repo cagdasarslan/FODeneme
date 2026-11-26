@@ -1,0 +1,44 @@
+# Horse Runner — Android derleme kontrolü (imzasız debug APK)
+# Her gönderimde Java/Gradle tarafının derlendiğini doğrular ve test için
+# debug APK'yı artifact olarak bırakır. Mağaza için imzalı AAB yerelde alınır.
+name: Android build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/exciting-pascal-ee0ehg]
+    paths-ignore: ['docs/**', '**.md']
+
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Web derlemesi ve senkron
+        run: |
+          npm ci
+          npm run build
+          npx cap sync android
+      - name: Debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HorseRunner-android-debug-${{ github.run_number }}
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
