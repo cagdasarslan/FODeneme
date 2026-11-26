@@ -1,0 +1,192 @@
+# Horse Runner — iOS IPA derlemesi (GitHub Actions, macOS)
+#
+# Depoda ios/ klasörü tutulmuyor; her derlemede Capacitor ile sıfırdan üretilir.
+#
+# İMZASIZ (varsayılan): sırlar tanımlı değilse imzasız bir .ipa üretilir.
+#   iPhone'a doğrudan kurulamaz; Sideloadly / AltStore gibi bir araç kendi
+#   Apple kimliğinizle yeniden imzalayarak kurar.
+#
+# İMZALI: Settings → Secrets and variables → Actions altında şu sırlar
+# tanımlanırsa App Store / Ad Hoc için imzalı .ipa üretilir:
+#   IOS_CERT_P12_BASE64        Apple Distribution sertifikası (.p12, base64)
+#   IOS_CERT_PASSWORD          .p12 parolası
+#   IOS_PROVISION_PROFILE_BASE64  .mobileprovision (base64)
+#   IOS_TEAM_ID                10 karakterlik Team ID
+# İsteğe bağlı TestFlight yüklemesi (App Store Connect API anahtarı):
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64
+# İsteğe bağlı değişken (Variables): ADMOB_IOS_APP_ID (ca-app-pub-…~…)
+#   Tanımlı değilse Google'ın TEST uygulama kimliği kullanılır (çökmesin diye).
+
+name: iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      export_method:
+        description: 'İmzalı derlemede dağıtım yöntemi'
+        type: choice
+        options: [app-store, ad-hoc]
+        default: app-store
+  push:
+    branches: [claude/exciting-pascal-ee0ehg]
+    paths-ignore: ['docs/**', '**.md']
+
+concurrency:
+  group: ios-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      BUNDLE_ID: com.cagdasarslan.horserunner
+      HAS_SIGNING: ${{ secrets.IOS_CERT_P12_BASE64 != '' && secrets.IOS_PROVISION_PROFILE_BASE64 != '' && secrets.IOS_TEAM_ID != '' }}
+      HAS_ASC: ${{ secrets.ASC_KEY_ID != '' && secrets.ASC_ISSUER_ID != '' && secrets.ASC_KEY_P8_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Xcode sürümü
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)/Contents/Developer" || true
+          xcodebuild -version
+
+      - name: Bağımlılıklar ve web derlemesi
+        run: |
+          npm ci
+          npm run build
+
+      - name: iOS projesini üret
+        run: |
+          npx cap add ios --packagemanager CocoaPods
+          npx cap sync ios
+          # Uygulama simgesi ve açılış ekranı (resources/icon.png)
+          npx --yes @capacitor/assets@3 generate --ios || echo "simge üretimi atlandı"
+
+      - name: Sürüm ve Info.plist ayarları
+        env:
+          ADMOB_IOS_APP_ID: ${{ vars.ADMOB_IOS_APP_ID }}
+        run: |
+          PLIST=ios/App/App/Info.plist
+          VERSION=$(grep -m1 versionName android/app/build.gradle | sed -E 's/.*"(.*)".*/\1/')
+          BUILD=${{ github.run_number }}
+          GAD_ID="${ADMOB_IOS_APP_ID:-ca-app-pub-3940256099942544~1458002511}"
+          PB=/usr/libexec/PlistBuddy
+          set_key() { $PB -c "Set :$1 $3" "$PLIST" 2>/dev/null || $PB -c "Add :$1 $2 $3" "$PLIST"; }
+          set_key CFBundleShortVersionString string "$VERSION"
+          set_key CFBundleVersion string "$BUILD"
+          # AdMob: bu anahtar yoksa Google SDK'sı uygulamayı açılışta çökertir
+          set_key GADApplicationIdentifier string "$GAD_ID"
+          set_key UIStatusBarHidden bool true
+          set_key UIViewControllerBasedStatusBarAppearance bool false
+          set_key ITSAppUsesNonExemptEncryption bool false
+          set_key NSUserTrackingUsageDescription string "Size daha ilgili reklamlar göstermek için kullanılır."
+          $PB -c "Delete :SKAdNetworkItems" "$PLIST" 2>/dev/null || true
+          $PB -c "Add :SKAdNetworkItems array" "$PLIST"
+          $PB -c "Add :SKAdNetworkItems:0 dict" "$PLIST"
+          $PB -c "Add :SKAdNetworkItems:0:SKAdNetworkIdentifier string cstr6suwn9.skadnetwork" "$PLIST"
+          # Yalnızca dikey kullanım
+          $PB -c "Delete :UISupportedInterfaceOrientations" "$PLIST" 2>/dev/null || true
+          $PB -c "Add :UISupportedInterfaceOrientations array" "$PLIST"
+          $PB -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" "$PLIST"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "BUILD=$BUILD" >> "$GITHUB_ENV"
+          [ -n "$ADMOB_IOS_APP_ID" ] || echo "::warning::ADMOB_IOS_APP_ID tanımlı değil — Google TEST uygulama kimliği kullanıldı."
+
+      # ── İmzasız derleme ────────────────────────────────────────────────────
+      - name: Derle (imzasız)
+        if: env.HAS_SIGNING != 'true'
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            -quiet archive
+          mkdir -p "$RUNNER_TEMP/out/Payload"
+          cp -R "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app" "$RUNNER_TEMP/out/Payload/"
+          cd "$RUNNER_TEMP/out" && zip -qry "HorseRunner-${VERSION}-${BUILD}-unsigned.ipa" Payload
+          echo "IPA_PATH=$RUNNER_TEMP/out/HorseRunner-${VERSION}-${BUILD}-unsigned.ipa" >> "$GITHUB_ENV"
+
+      # ── İmzalı derleme ─────────────────────────────────────────────────────
+      - name: Sertifika ve profil kur
+        if: env.HAS_SIGNING == 'true'
+        env:
+          P12: ${{ secrets.IOS_CERT_P12_BASE64 }}
+          P12_PASS: ${{ secrets.IOS_CERT_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+        run: |
+          KC="$RUNNER_TEMP/build.keychain-db"; KC_PASS=$(uuidgen)
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          echo "$PROFILE" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
+          security create-keychain -p "$KC_PASS" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KC_PASS" "$KC"
+          security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASS" -A -t cert -f pkcs12 -k "$KC"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KC_PASS" "$KC"
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision")")
+          NAME=$(/usr/libexec/PlistBuddy -c "Print Name" /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision")")
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
+
+      - name: Derle ve dışa aktar (imzalı)
+        if: env.HAS_SIGNING == 'true'
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          METHOD: ${{ github.event.inputs.export_method || 'app-store' }}
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            -quiet archive
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>${METHOD}</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key><dict><key>${BUNDLE_ID}</key><string>${PROFILE_NAME}</string></dict>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/out"
+          IPA=$(ls "$RUNNER_TEMP"/out/*.ipa | head -1)
+          FINAL="$RUNNER_TEMP/out/HorseRunner-${VERSION}-${BUILD}-${METHOD}.ipa"
+          mv "$IPA" "$FINAL"
+          echo "IPA_PATH=$FINAL" >> "$GITHUB_ENV"
+
+      - name: TestFlight'a yükle
+        if: env.HAS_SIGNING == 'true' && env.HAS_ASC == 'true' && (github.event.inputs.export_method || 'app-store') == 'app-store'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "$ASC_KEY_P8" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          xcrun altool --upload-app -f "$IPA_PATH" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HorseRunner-iOS-${{ env.VERSION }}-${{ env.BUILD }}
+          path: ${{ env.IPA_PATH }}
+          retention-days: 30
+
+      - name: Anahtarlığı temizle
+        if: always() && env.HAS_SIGNING == 'true'
+        run: security delete-keychain "$RUNNER_TEMP/build.keychain-db" || true
